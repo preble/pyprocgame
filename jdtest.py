@@ -16,21 +16,17 @@ class Attract(procgame.Mode):
 		self.game.lamps.startButton.schedule(schedule=0x00000fff, cycle_seconds=0, now=False)
 		self.game.set_status("Press Start")
 
-	def mode_tick(self):
-		if self.game.switches.shooterL.is_closed():
-			self.game.coils.shooterL.pulse(50)
-		if self.game.switches.shooterR.is_closed():
-			self.game.coils.shooterR.pulse(50)
-		if self.game.switches.popperL.is_open(seconds=1.0): # opto!
-			self.game.switches.popperL.reset_timer()
-			print("bam")
-			# We can't do this like this because 
-			self.game.coils.popperL.pulse(20) # BAD!!!
-		if self.game.switches.popperR.is_open(seconds=1.0): # opto!
-			self.game.switches.popperR.reset_timer()
-			print("bam2")
-			# We can't do this like this because 
-			self.game.coils.popperR.pulse(20) # BAD!!!
+	def sw_poopperL_open_for_1s(self): # opto!
+		self.game.coils.popperL.pulse(20)
+
+	def sw_popperR_open_for_1s(self): # opto!
+		self.game.coils.popperR.pulse(20)
+
+	def sw_shooterL_closed_for_1s(self):
+		self.game.coils.shooterL.pulse(20)
+
+	def sw_shooterR_closed_for_1s(self):
+		self.game.coils.shooterR.pulse(20)
 
 	def sw_startButton_closed(self):
 		self.game.set_status("Got start!")
@@ -52,19 +48,7 @@ class StartOfBall(procgame.Mode):
 			self.game.coils.trough.pulse(20)
 		pass
 		
-	def mode_tick(self):
-		if self.game.switches.popperL.is_open(seconds=1.0): # opto!
-			self.game.switches.popperL.reset_timer()
-			print("bam3")
-			# We can't do this like this because 
-			self.game.coils.popperL.pulse(20) # BAD!!!
-		if self.game.switches.popperR.is_open(seconds=1.0): # opto!
-			self.game.switches.popperR.reset_timer()
-			print("bam4")
-			# We can't do this like this because 
-			self.game.coils.popperR.pulse(20) # BAD!!!
-	
-	def sw_trough1_open(self):
+	def sw_trough1_open_for_500ms(self):
 		in_play = self.game.is_ball_in_play()
 		if not in_play:
 			self.game.set_status("Ball dropped")
@@ -76,7 +60,19 @@ class StartOfBall(procgame.Mode):
 		# TODO: What if the ball doesn't make it into the shooter lane?
 		#       We should check for it on a later mode_tick() and possibly re-pulse.
 		return True
+	
+	def sw_popperL_open(self):
+		self.game.set_status("Left popper!")
 		
+	def sw_popperL_open_for_1s(self): # opto!
+		self.game.coils.popperL.pulse(20)
+
+	def sw_popperR_open(self):
+		self.game.set_status("Right popper!")
+
+	def sw_popperR_open_for_1s(self): # opto!
+		self.game.coils.popperR.pulse(20)
+
 	def sw_startButton_closed(self):
 		# Todo: Add players to game
 		return True
@@ -88,6 +84,10 @@ class StartOfBall(procgame.Mode):
 	def sw_fireR_closed(self):
 		if self.game.switches.shooterR.is_closed():
 			self.game.coils.shooterR.pulse(50)
+
+	def sw_startButton_closed_for_2s(self):
+		self.game.set_status("New Game!")
+
 	
 class DMDStatus(procgame.Mode):
 	"""docstring for DMDStatus"""
@@ -113,9 +113,6 @@ class DMDStatus(procgame.Mode):
 	
 	def update(self):
 		f = ""
-		# for col in self.frame:
-		# 	for pixel in col:
-		# 		f += chr(pixel)*4
 		for y in range(32):
 			for x in range(128):
 				f += chr(self.frame[x][y])*4
@@ -147,12 +144,8 @@ class DMDStatus(procgame.Mode):
 		self.update()
 		
 	def mode_tick(self):
-		#self.frame[random.randint(0, 127)][random.randint(0, 31)] = random.randint(0, 255)
 		if len(self.game.modes.modes) > 0:
 			self.draw_text('Topmost- '+str(self.game.modes.modes[0].status_str()), (0,0))
-		# for y in range(4):
-		# 	self.draw_text("Hello! "+str(time.time()), (0, y*6+6))
-		#self.draw_text("Adam was here...", (0, 20))
 
 class TestGame(procgame.GameController):
 	"""docstring for TestGame"""
@@ -174,7 +167,7 @@ class TestGame(procgame.GameController):
 		return self.switches.trough1.is_closed() # TODO: Check other trough switches.
 	
 	def set_status(self, text):
-		self.dmdstatus.draw_text('Last- '+text, (0, 6))
+		self.dmdstatus.draw_text('Last- '+text+' '*20, (0, 6))
 		print(text)
 		
 def main():

@@ -3,7 +3,7 @@ import Queue
 import yaml
 import time
 import copy
-
+import re
 
 class const:
 	"""From http://code.activestate.com/recipes/65207/"""
@@ -19,31 +19,62 @@ class Mode(object):
 		self.game = game
 		self.priority = priority
 		self.accepted_switches = []
+		self.delayed = []
+		self.scan_switch_handlers()
 	
+	def scan_switch_handlers(self):
+		# Format: sw_popperL_open_for_200ms(self, sw):
+		handler_func_re = re.compile('sw_(?P<name>[a-zA-Z0-9]+)_(?P<state>open|closed)(?P<after>_for_(?P<time>[0-9]+)(?P<units>ms|s))?')
+		for item in dir(self):
+			m = handler_func_re.match(item)
+			if m == None:
+				continue
+			seconds = None
+			if m.group('after') != None:
+				seconds = float(m.group('time'))
+				if m.group('units') == 'ms':
+					seconds /= 1000.0
+			
+			# Check validity of switch methods:
+			try:
+				self.game.switches[m.group('name')]
+			except KeyError:
+				print("WARNING: Unknown switch %s for mode method %s in class %s!" % (m.group('name'), item, self.__class__.__name__))
+				continue
+
+			handler = getattr(self, item)
+			
+			# Create a dictionary and add it:
+			et = {'closed':1, 'open':2}[m.group('state')]
+			d = {'name':m.group('name'), 'type':et, 'delay':seconds, 'handler':handler}
+			#print("accepted_switches += %s" % (str(d)))
+			self.accepted_switches += [d]
+			
 	def status_str(self):
 		return self.__class__.__name__
 	
+	def delay(self, name, event_type, delay, handler):
+		self.delayed += [{'name':name, 'time':time.time()+delay, 'handler':handler, 'type':event_type}]
+		self.delayed.sort(lambda x, y: x['time'] - y['time'])
+	
 	def handle_event(self, event):
 		# We want to turn this event into a function call.
-		# TODO: Optimize!
-		# if value not in self.accepted_switches:
-		# 	return
-		# try:
-		type_name = {1:'closed', 2:'open'}[event['type']]
 		sw_name = self.game.switches[event['value']].name
-		func_name = 'sw_'+sw_name+'_'+type_name
-		# except Exception, e:
-		# 	print('Exception composing state call in handle_event:')
-		# 	print type(e)
-		# 	print e.args
-		# 	print e
-		# 	return
-		try:
-			func = getattr(self, func_name)
-		except AttributeError:
-			#print('Mode does not handle '+func_name)
-			return False
-		return func()
+		handled = False
+
+		# Filter out all of the delayed events that have been disqualified by this state change:
+		self.delayed = filter(lambda x: not (sw_name == x['name'] and x['type'] != event['type']), self.delayed)
+		
+		filt = lambda x: (x['type'] == event['type']) and (x['name'] == sw_name)
+		matches = filter(filt, self.accepted_switches)
+		for match in matches:
+			if match['delay'] == None:
+				result = match['handler']()
+				if result == True:
+					handled = True
+			else:
+				self.delay(name=sw_name, event_type=match['type'], delay=match['delay'], handler=match['handler'])
+		return handled
 		
 	def mode_started(self):
 		pass
@@ -52,7 +83,14 @@ class Mode(object):
 	def mode_topmost(self):
 		pass
 	def mode_tick(self):
-		pass
+		# Dispatch any qualifying delayed events:
+		t = time.time()
+		for item in self.delayed:
+			if item['time'] > t:
+				break
+			handler = item['handler']
+			handler()
+		self.delayed = filter(lambda x: x['time'] > t, self.delayed)
 
 class ModeQueue(object):
 	"""docstring for ModeQueue"""
@@ -67,6 +105,7 @@ class ModeQueue(object):
 		mode.mode_started()
 		if mode == self.modes[0]:
 			mode.mode_topmost()
+
 	def remove(self, mode):
 		mode.mode_stopped()
 		for idx, m in enumerate(self.modes):
@@ -75,7 +114,7 @@ class ModeQueue(object):
 				break
 		if len(self.modes) > 0:
 			self.modes[0].mode_topmost()
-	
+
 	def handle_event(self, event):
 		modes = copy.copy(self.modes) # Make a copy so if a mode is added we don't get into a loop.
 		for mode in modes:
