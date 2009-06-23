@@ -16,19 +16,19 @@ class Attract(procgame.Mode):
 		self.game.lamps.startButton.schedule(schedule=0x00000fff, cycle_seconds=0, now=False)
 		self.game.set_status("Press Start")
 
-	def sw_poopperL_open_for_1s(self): # opto!
+	def sw_popperL_open_for_1s(self, sw): # opto!
 		self.game.coils.popperL.pulse(20)
 
-	def sw_popperR_open_for_1s(self): # opto!
+	def sw_popperR_open_for_1s(self, sw): # opto!
 		self.game.coils.popperR.pulse(20)
 
-	def sw_shooterL_closed_for_1s(self):
+	def sw_shooterL_closed_for_1s(self, sw):
 		self.game.coils.shooterL.pulse(20)
 
-	def sw_shooterR_closed_for_1s(self):
+	def sw_shooterR_closed_for_1s(self, sw):
 		self.game.coils.shooterR.pulse(20)
 
-	def sw_startButton_closed(self):
+	def sw_startButton_closed(self, sw):
 		self.game.set_status("Got start!")
 		self.game.modes.add(StartOfBall(self.game))
 		self.game.modes.remove(self)
@@ -48,7 +48,7 @@ class StartOfBall(procgame.Mode):
 			self.game.coils.trough.pulse(20)
 		pass
 		
-	def sw_trough1_open_for_500ms(self):
+	def sw_trough1_open_for_500ms(self, sw):
 		in_play = self.game.is_ball_in_play()
 		if not in_play:
 			self.game.set_status("Ball dropped")
@@ -61,31 +61,31 @@ class StartOfBall(procgame.Mode):
 		#       We should check for it on a later mode_tick() and possibly re-pulse.
 		return True
 	
-	def sw_popperL_open(self):
+	def sw_popperL_open(self, sw):
 		self.game.set_status("Left popper!")
 		
-	def sw_popperL_open_for_1s(self): # opto!
+	def sw_popperL_open_for_1s(self, sw): # opto!
 		self.game.coils.popperL.pulse(20)
 
-	def sw_popperR_open(self):
+	def sw_popperR_open(self, sw):
 		self.game.set_status("Right popper!")
 
-	def sw_popperR_open_for_1s(self): # opto!
+	def sw_popperR_open_for_1s(self, sw): # opto!
 		self.game.coils.popperR.pulse(20)
 
-	def sw_startButton_closed(self):
+	def sw_startButton_closed(self, sw):
 		# Todo: Add players to game
 		return True
 	
-	def sw_fireL_closed(self):
+	def sw_fireL_closed(self, sw):
 		if self.game.switches.shooterL.is_closed():
 			self.game.coils.shooterL.pulse(50)
 	
-	def sw_fireR_closed(self):
+	def sw_fireR_closed(self, sw):
 		if self.game.switches.shooterR.is_closed():
 			self.game.coils.shooterR.pulse(50)
 
-	def sw_startButton_closed_for_2s(self):
+	def sw_startButton_closed_for_2s(self, sw):
 		self.game.set_status("New Game!")
 
 	

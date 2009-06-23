@@ -69,7 +69,7 @@ class Mode(object):
 		matches = filter(filt, self.accepted_switches)
 		for match in matches:
 			if match['delay'] == None:
-				result = match['handler']()
+				result = match['handler'](self.game.switches[match['name']])
 				if result == True:
 					handled = True
 			else:
@@ -89,7 +89,7 @@ class Mode(object):
 			if item['time'] > t:
 				break
 			handler = item['handler']
-			handler()
+			handler(self.game.switches[item['name']])
 		self.delayed = filter(lambda x: x['time'] > t, self.delayed)
 
 class ModeQueue(object):
