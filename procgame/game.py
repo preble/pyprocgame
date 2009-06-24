@@ -13,7 +13,33 @@ class const:
 		self.__dict__[attr] = value
 
 class Mode(object):
-	"""docstring for Mode"""
+	"""Abstraction of a game mode to be subclassed by the game
+	programmer.
+	
+	Modes are essentially a collection of switch even thandlers.  
+	Active modes are held in the GameController object's modes
+	ModeQueue, which dispatches event notifications to modes in
+	order of priority (highest to lowest).  If a higher priority
+	mode's switch event handler method returns True, the event
+	is not passed down to lower modes.
+	
+	Switch event handlers are detected when Mode.__init__() is
+	called by the subclass.  Various switch event handler formats
+	are recognized:
+	
+	sw_switchName_open(self, sw) -- called when a switch (named 
+	                                switchName) is opened
+	sw_switchName_closed(self, sw) -- closed variant of the above
+	sw_switchName_open_for_1s(self, sw)
+	  -- called when switchName has been open continuously for
+	     one second
+	sw_switchName_closed_for_2s(self, sw)
+	sw_switchName_closed_for_100ms(self, sw)
+	sw_switchName_open_for_500ms(self, sw)
+	  -- variants of the above
+	
+	Modes can be programatically configured using add_switch_handler().
+	"""
 	def __init__(self, game, priority):
 		super(Mode, self).__init__()
 		self.game = game
@@ -40,6 +66,16 @@ class Mode(object):
 			self.add_switch_handler(name=m.group('name'), event_type=m.group('state'), delay=seconds, handler=handler)
 	
 	def add_switch_handler(self, name, event_type, delay, handler):
+		"""Programatically configure a switch event handler.
+		
+		Keyword arguments:
+		name       -- valid switch name
+		event_type -- 'open' or 'closed'
+		delay      -- float number of seconds that the state should be held 
+		              before invoking the handler, or None if it should be
+		              invoked immediately.
+		handler    -- method to call with signature handler(self, switch)
+		"""
 		et = {'closed':1, 'open':2}[event_type]
 		sw = None
 		try:
@@ -54,6 +90,18 @@ class Mode(object):
 		return self.__class__.__name__
 	
 	def delay(self, name, event_type, delay, handler, param=None):
+		"""Schedule the run loop to call the given handler at a later time.
+		
+		Keyword arguments:
+		name -- string name of the event, usually the corresponding switch name
+		event_type -- 'closed', 'open', or None
+		delay      -- number of seconds to wait before calling the handler (float)
+		handler    -- function to be called once delay seconds have elapsed
+		param      -- value to be passed as the first (non-self) argument to handler.
+		
+		If param is None, handler's signature must be handler(self).  Otherwise,
+		it is handler(self, param) to match the switch method handler pattern.
+		"""
 		if type(event_type) == str:
 			event_type = {'closed':1, 'open':2}[event_type]
 		self.delayed += [{'name':name, 'time':time.time()+delay, 'handler':handler, 'type':event_type, 'param':param}]
@@ -80,12 +128,25 @@ class Mode(object):
 		return handled
 		
 	def mode_started(self):
+		"""Notifies the mode that it is now active on the mode queue.
+		
+		This method should not be invoked directly; it is called by the GameController run loop.
+		"""
 		pass
 	def mode_stopped(self):
+		"""Notofies the mode that it has been removed from the mode queue.
+		
+		This method should not be invoked directly; it is called by the GameController run loop.
+		"""
 		pass
 	def mode_topmost(self):
+		"""Notifies the mode that it is now the topmost mode on the mode queue.
+		
+		This method should not be invoked directly; it is called by the GameController run loop.
+		"""
 		pass
 	def mode_tick(self):
+		"""Called by the GameController run loop during each loop when the mode is running."""
 		# Dispatch any qualifying delayed events:
 		t = time.time()
 		for item in self.delayed:
@@ -215,7 +276,7 @@ class Switch(GameItem):
 
 
 class GameController(object):
-	"""docstring for GameController"""
+	"""Core object comprising modes, coils, lamps, switches."""
 	def __init__(self, machineType):
 		super(GameController, self).__init__()
 		self.machineType = machineType
@@ -282,8 +343,7 @@ class GameController(object):
 				self.switches.items_by_number[sw_num].set_state(states[sw_num] == 1)
 	
 	def run_loop(self):
-		"""docstring for run_loop"""
-		#try:
+		"""Called by the programmer to read and process switch events until interrupted."""
 		while True:
 			for event in self.proc.get_events():
 				event_type = event['type']
@@ -294,14 +354,3 @@ class GameController(object):
 				self.modes.handle_event(event)
 			self.modes.tick()
 			self.proc.watchdog_tickle()
-		#except Exception, e:
-		#	raise e
-
-
-# def main(machineType):
-# 	"""main"""
-# 	with GameController(machineType) as proc:
-# 		proc.modes.add(AttractMode())
-# 		proc.run_loop()
-# 
-# if __name__ == '__main__': main('wpc')
