@@ -1,31 +1,38 @@
-from procgame import procgame # This is kinda goofy.
+import procgame
+from procgame import *
 from threading import Thread
 import sys
 import random
 import string
 import time
 
-class Attract(procgame.Mode):
+class Attract(game.Mode):
 	"""docstring for AttractMode"""
 	def __init__(self, game):
-		procgame.Mode.__init__(self, game, 1)
+		super(Attract, self).__init__(game, 1)
 
 	def mode_topmost(self):
 		self.game.lamps.gi01.schedule(schedule=0xffffffff, cycle_seconds=0, now=False)
 		self.game.lamps.gi02.disable()
 		self.game.lamps.startButton.schedule(schedule=0x00000fff, cycle_seconds=0, now=False)
 		self.game.set_status("Press Start")
+		for name in ['popperL', 'popperR']:
+			if self.game.switches[name].is_open():
+				self.game.coils[name].pulse()
+		for name in ['shooterL', 'shooterR']:
+			if self.game.switches[name].is_closed():
+				self.game.coils[name].pulse()
 
-	def sw_popperL_open_for_1s(self, sw): # opto!
+	def sw_popperL_open_for_500ms(self, sw): # opto!
 		self.game.coils.popperL.pulse(20)
 
-	def sw_popperR_open_for_1s(self, sw): # opto!
+	def sw_popperR_open_for_500ms(self, sw): # opto!
 		self.game.coils.popperR.pulse(20)
 
-	def sw_shooterL_closed_for_1s(self, sw):
+	def sw_shooterL_closed_for_500ms(self, sw):
 		self.game.coils.shooterL.pulse(20)
 
-	def sw_shooterR_closed_for_1s(self, sw):
+	def sw_shooterR_closed_for_500ms(self, sw):
 		self.game.coils.shooterR.pulse(20)
 
 	def sw_startButton_closed(self, sw):
@@ -35,10 +42,10 @@ class Attract(procgame.Mode):
 		return True
 
 
-class StartOfBall(procgame.Mode):
+class StartOfBall(game.Mode):
 	"""docstring for AttractMode"""
 	def __init__(self, game):
-		procgame.Mode.__init__(self, game, 2)
+		super(StartOfBall, self).__init__(game, 2)
 
 	def mode_started(self):
 		self.game.lamps.gi02.schedule(schedule=0xffffffff, cycle_seconds=0, now=True)
@@ -46,7 +53,7 @@ class StartOfBall(procgame.Mode):
 		if self.game.switches.trough6.is_open():
 			self.game.set_status("Pulsing trough")
 			self.game.coils.trough.pulse(20)
-		pass
+		self.game.modes.add(procgame.modes.BasicDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE'))
 		
 	def sw_trough1_open_for_500ms(self, sw):
 		in_play = self.game.is_ball_in_play()
@@ -64,13 +71,13 @@ class StartOfBall(procgame.Mode):
 	def sw_popperL_open(self, sw):
 		self.game.set_status("Left popper!")
 		
-	def sw_popperL_open_for_1s(self, sw): # opto!
+	def sw_popperL_open_for_500ms(self, sw): # opto!
 		self.game.coils.popperL.pulse(20)
 
 	def sw_popperR_open(self, sw):
 		self.game.set_status("Right popper!")
 
-	def sw_popperR_open_for_1s(self, sw): # opto!
+	def sw_popperR_open_for_500ms(self, sw): # opto!
 		self.game.coils.popperR.pulse(20)
 
 	def sw_startButton_closed(self, sw):
@@ -87,12 +94,11 @@ class StartOfBall(procgame.Mode):
 
 	def sw_startButton_closed_for_2s(self, sw):
 		self.game.set_status("New Game!")
-
 	
-class DMDStatus(procgame.Mode):
+class DMDStatus(game.Mode):
 	"""docstring for DMDStatus"""
 	def __init__(self, game):
-		procgame.Mode.__init__(self, game, 0)
+		super(DMDStatus, self).__init__(game, 0)
 		self.frame = self.create_frame()
 		self.font = self.create_frame()
 		f = open('font5x6.dmd', 'r')
@@ -147,10 +153,10 @@ class DMDStatus(procgame.Mode):
 		if len(self.game.modes.modes) > 0:
 			self.draw_text('Topmost- '+str(self.game.modes.modes[0].status_str()), (0,0))
 
-class TestGame(procgame.GameController):
+class TestGame(game.GameController):
 	"""docstring for TestGame"""
 	def __init__(self, machineType):
-		procgame.GameController.__init__(self, machineType)
+		super(TestGame, self).__init__(machineType)
 		self.dmdstatus = DMDStatus(self)
 		
 	def setup(self):

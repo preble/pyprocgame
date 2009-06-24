@@ -1,1 +1,1 @@
-import procgame
+__all__ = ['game', 'modes']

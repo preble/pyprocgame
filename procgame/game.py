@@ -34,27 +34,29 @@ class Mode(object):
 				seconds = float(m.group('time'))
 				if m.group('units') == 'ms':
 					seconds /= 1000.0
-			
-			# Check validity of switch methods:
-			try:
-				self.game.switches[m.group('name')]
-			except KeyError:
-				print("WARNING: Unknown switch %s for mode method %s in class %s!" % (m.group('name'), item, self.__class__.__name__))
-				continue
 
 			handler = getattr(self, item)
 			
-			# Create a dictionary and add it:
-			et = {'closed':1, 'open':2}[m.group('state')]
-			d = {'name':m.group('name'), 'type':et, 'delay':seconds, 'handler':handler}
-			#print("accepted_switches += %s" % (str(d)))
-			self.accepted_switches += [d]
-			
+			self.add_switch_handler(name=m.group('name'), event_type=m.group('state'), delay=seconds, handler=handler)
+	
+	def add_switch_handler(self, name, event_type, delay, handler):
+		et = {'closed':1, 'open':2}[event_type]
+		sw = None
+		try:
+			sw = self.game.switches[name]
+		except KeyError:
+			print("WARNING: Unknown switch %s for mode method %s in class %s!" % (m.group('name'), item, self.__class__.__name__))
+			return
+		d = {'name':name, 'type':et, 'delay':delay, 'handler':handler, 'param':sw}
+		self.accepted_switches += [d]
+	
 	def status_str(self):
 		return self.__class__.__name__
 	
-	def delay(self, name, event_type, delay, handler):
-		self.delayed += [{'name':name, 'time':time.time()+delay, 'handler':handler, 'type':event_type}]
+	def delay(self, name, event_type, delay, handler, param=None):
+		if type(event_type) == str:
+			event_type = {'closed':1, 'open':2}[event_type]
+		self.delayed += [{'name':name, 'time':time.time()+delay, 'handler':handler, 'type':event_type, 'param':param}]
 		self.delayed.sort(lambda x, y: x['time'] - y['time'])
 	
 	def handle_event(self, event):
@@ -69,11 +71,12 @@ class Mode(object):
 		matches = filter(filt, self.accepted_switches)
 		for match in matches:
 			if match['delay'] == None:
-				result = match['handler'](self.game.switches[match['name']])
+				handler = match['handler']
+				result = handler(self.game.switches[match['name']])
 				if result == True:
 					handled = True
 			else:
-				self.delay(name=sw_name, event_type=match['type'], delay=match['delay'], handler=match['handler'])
+				self.delay(name=sw_name, event_type=match['type'], delay=match['delay'], handler=match['handler'], param=match['param'])
 		return handled
 		
 	def mode_started(self):
@@ -89,7 +92,10 @@ class Mode(object):
 			if item['time'] > t:
 				break
 			handler = item['handler']
-			handler(self.game.switches[item['name']])
+			if item['param'] != None:
+				handler(item['param'])
+			else:
+				handler()
 		self.delayed = filter(lambda x: x['time'] > t, self.delayed)
 
 class ModeQueue(object):
@@ -154,15 +160,22 @@ class GameItem(object):
 		self.number = number
 
 class Driver(GameItem):
+	def __init__(self, game, name, number):
+		GameItem.__init__(self, game, name, number)
+		self.default_pulse_time = 30
 	def disable(self):
 		print("Driver %s - disable" % (self.name))
 		self.game.proc.driver_disable(self.number)
-	def pulse(self, milliseconds):
+	def pulse(self, milliseconds=None):
+		if milliseconds == None:
+			milliseconds = self.default_pulse_time
 		print("Driver %s - pulse %d" % (self.name, milliseconds))
 		self.game.proc.driver_pulse(self.number, milliseconds)
 	def schedule(self, schedule, cycle_seconds, now):
 		print("Driver %s - schedule %08x" % (self.name, schedule))
 		self.game.proc.driver_schedule(number=self.number, schedule=schedule, cycle_seconds=cycle_seconds, now=now)
+	def enable(self):
+		self.schedule(0xffffffff, 0, True)
 	def state(self):
 		return self.game.proc.driver_get_state(self.number)
 
