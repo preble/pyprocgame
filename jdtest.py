@@ -48,13 +48,18 @@ class StartOfBall(game.Mode):
 		super(StartOfBall, self).__init__(game, 2)
 
 	def mode_started(self):
+		self.game.enable_flippers(enable=True)
 		self.game.lamps.gi02.schedule(schedule=0xffffffff, cycle_seconds=0, now=True)
 		self.game.lamps.startButton.disable()
 		if self.game.switches.trough6.is_open():
 			self.game.set_status("Pulsing trough")
 			self.game.coils.trough.pulse(20)
-		self.game.modes.add(procgame.modes.BasicDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE'))
-		
+		#self.game.modes.add(procgame.modes.BasicDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE'))
+		self.game.modes.add(procgame.modes.ProgressiveDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE', advance_switch='subwayEnter1'))
+	
+	def mode_stopped(self):
+		self.game.enable_flippers(enable=False)
+	
 	def sw_trough1_open_for_500ms(self, sw):
 		in_play = self.game.is_ball_in_play()
 		if not in_play:

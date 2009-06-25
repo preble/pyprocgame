@@ -44,11 +44,11 @@ class Mode(object):
 		super(Mode, self).__init__()
 		self.game = game
 		self.priority = priority
-		self.accepted_switches = []
-		self.delayed = []
-		self.scan_switch_handlers()
+		self.__accepted_switches = []
+		self.__delayed = []
+		self.__scan_switch_handlers()
 	
-	def scan_switch_handlers(self):
+	def __scan_switch_handlers(self):
 		# Format: sw_popperL_open_for_200ms(self, sw):
 		handler_func_re = re.compile('sw_(?P<name>[a-zA-Z0-9]+)_(?P<state>open|closed)(?P<after>_for_(?P<time>[0-9]+)(?P<units>ms|s))?')
 		for item in dir(self):
@@ -84,7 +84,7 @@ class Mode(object):
 			print("WARNING: Unknown switch %s for mode method %s in class %s!" % (m.group('name'), item, self.__class__.__name__))
 			return
 		d = {'name':name, 'type':et, 'delay':delay, 'handler':handler, 'param':sw}
-		self.accepted_switches += [d]
+		self.__accepted_switches += [d]
 	
 	def status_str(self):
 		return self.__class__.__name__
@@ -104,8 +104,8 @@ class Mode(object):
 		"""
 		if type(event_type) == str:
 			event_type = {'closed':1, 'open':2}[event_type]
-		self.delayed += [{'name':name, 'time':time.time()+delay, 'handler':handler, 'type':event_type, 'param':param}]
-		self.delayed.sort(lambda x, y: x['time'] - y['time'])
+		self.__delayed += [{'name':name, 'time':time.time()+delay, 'handler':handler, 'type':event_type, 'param':param}]
+		self.__delayed.sort(lambda x, y: x['time'] - y['time'])
 	
 	def handle_event(self, event):
 		# We want to turn this event into a function call.
@@ -113,10 +113,10 @@ class Mode(object):
 		handled = False
 
 		# Filter out all of the delayed events that have been disqualified by this state change:
-		self.delayed = filter(lambda x: not (sw_name == x['name'] and x['type'] != event['type']), self.delayed)
+		self.__delayed = filter(lambda x: not (sw_name == x['name'] and x['type'] != event['type']), self.__delayed)
 		
 		filt = lambda x: (x['type'] == event['type']) and (x['name'] == sw_name)
-		matches = filter(filt, self.accepted_switches)
+		matches = filter(filt, self.__accepted_switches)
 		for match in matches:
 			if match['delay'] == None:
 				handler = match['handler']
@@ -149,7 +149,7 @@ class Mode(object):
 		"""Called by the GameController run loop during each loop when the mode is running."""
 		# Dispatch any qualifying delayed events:
 		t = time.time()
-		for item in self.delayed:
+		for item in self.__delayed:
 			if item['time'] > t:
 				break
 			handler = item['handler']
@@ -157,7 +157,7 @@ class Mode(object):
 				handler(item['param'])
 			else:
 				handler()
-		self.delayed = filter(lambda x: x['time'] > t, self.delayed)
+		self.__delayed = filter(lambda x: x['time'] > t, self.__delayed)
 
 class ModeQueue(object):
 	"""docstring for ModeQueue"""
@@ -198,23 +198,24 @@ class ModeQueue(object):
 class AttrCollection(object):
 	"""docstring for AttrCollection"""
 	def __init__(self):
-		self.items_by_name = {}
-		self.items_by_number = {}
+		self.__items_by_name = {}
+		self.__items_by_number = {}
 	def __getattr__(self, attr):
 		if type(attr) == str:
-			return self.items_by_name[attr]
+			return self.__items_by_name[attr]
 		else:
-			return self.items_by_number[attr]
+			return self.__items_by_number[attr]
 	def add(self, item, value):
-		self.items_by_name[item] = value
-		self.items_by_number[value.number] = value
+		self.__items_by_name[item] = value
+		self.__items_by_number[value.number] = value
 	def __iter__(self):
-	        for item in self.items_by_number.itervalues():
+	        for item in self.__items_by_number.itervalues():
 	            yield item
 	def __getitem__(self, index):
 		return self.__getattr__(index)
 		
 class GameItem(object):
+	"""Base class for Driver and Switch.  Contained in an instance of AttrCollection within the GameController."""
 	def __init__(self, game, name, number):
 		self.game = game
 		self.name = name
@@ -286,6 +287,7 @@ class GameController(object):
 		self.lamps = AttrCollection()
 		self.switches = AttrCollection()
 		self.t0 = time.time()
+		self.config = None
 	
 	def __enter__(self):
 		pass
@@ -294,12 +296,15 @@ class GameController(object):
 		del self.proc
 		
 	def load_config(self, filename):
-		yaml_dict = yaml.load(open(filename, 'r'))
+		"""Reads the YAML configuration file into memory.
+		Configures the switches, lamps, and coils members.
+		Enables notifyHost for the open and closed debounced states on each configured switch."""
+		self.config = yaml.load(open(filename, 'r'))
 		pairs = [('PRCoils', self.coils, Driver), 
 		         ('PRLamps', self.lamps, Driver), 
 		         ('PRSwitches', self.switches, Switch)]
 		for section, collection, klass in pairs:
-			sect_dict = yaml_dict[section]
+			sect_dict = self.config[section]
 			print 'Processing section: %s' % (section)
 			for name in sect_dict:
 				item = sect_dict[name]
@@ -312,43 +317,50 @@ class GameController(object):
 			self.proc.switch_update_rule(switch.number, 'closed_debounced', {'notifyHost':True}, [])
 			self.proc.switch_update_rule(switch.number, 'open_debounced', {'notifyHost':True}, [])
 		
-		for flipper in yaml_dict['PRFlippers']:
+		# Configure the initial switch states:
+		states = self.proc.switch_get_states()
+		for sw in self.switches:
+				sw.set_state(states[sw.number] == 1)
+	
+	def enable_flippers(self, enable):
+		"""Enables or disables the flippers AND bumpers."""
+		for flipper in self.config['PRFlippers']:
 			print("  programming flipper %s" % (flipper))
 			main_coil = self.coils[flipper+'Main']
 			hold_coil = self.coils[flipper+'Hold']
 			switch_num = self.switches[flipper].number
-			
-			main_state = pinproc.driver_state_pulse(main_coil.state(), 34)
-			hold_state = pinproc.driver_state_pulse(hold_coil.state(), 0)
-			
-			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False}, [main_state, hold_state])
-			#self.proc.switch_update_rule(switch_num, 'closed_debounced', {'notifyHost':True}, [])
-			
-			main_state = pinproc.driver_state_disable(main_coil.state())
-			hold_state = pinproc.driver_state_disable(hold_coil.state())
-			
-			self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False}, [main_state, hold_state])
-			#self.proc.switch_update_rule(switch_num, 'open_debounced', {'notifyHost':True}, [])
+
+			drivers = []
+			if enable:
+				drivers += [pinproc.driver_state_pulse(main_coil.state(), 34)]
+				drivers += [pinproc.driver_state_pulse(hold_coil.state(), 0)]
+
+			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False}, drivers)
 		
-		for bumper in yaml_dict['PRBumpers']:
+			drivers = []
+			if enable:
+				drivers += [pinproc.driver_state_disable(main_coil.state())]
+				drivers += [pinproc.driver_state_disable(hold_coil.state())]
+
+			self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False}, drivers)
+	
+		for bumper in self.config['PRBumpers']:
 			switch_num = self.switches[bumper].number
 			coil = self.coils[bumper]
-			state = pinproc.driver_state_pulse(coil.state(), 34)
-			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False}, [state])
-			#self.proc.switch_update_rule(switch_num, 'closed_debounced', {'notifyHost':True}, [])
-		
-		states = self.proc.switch_get_states()
-		for sw_num in range(len(states)):
-			if sw_num in self.switches.items_by_number:
-				self.switches.items_by_number[sw_num].set_state(states[sw_num] == 1)
-	
+
+			drivers = []
+			if enable:
+				drivers += [pinproc.driver_state_pulse(coil.state(), 34)]
+
+			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False}, drivers)
+
 	def run_loop(self):
 		"""Called by the programmer to read and process switch events until interrupted."""
 		while True:
 			for event in self.proc.get_events():
 				event_type = event['type']
 				event_value = event['value']
-				sw = self.switches.items_by_number[event_value]
+				sw = self.switches[event_value]
 				sw.set_state(event_type == 1)
 				print "% 10.3f %s:\t%s" % (time.time()-self.t0, sw.name, sw.state_str())
 				self.modes.handle_event(event)
