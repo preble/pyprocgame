@@ -356,13 +356,20 @@ class GameController(object):
 
 	def run_loop(self):
 		"""Called by the programmer to read and process switch events until interrupted."""
-		while True:
-			for event in self.proc.get_events():
-				event_type = event['type']
-				event_value = event['value']
-				sw = self.switches[event_value]
-				sw.set_state(event_type == 1)
-				print "% 10.3f %s:\t%s" % (time.time()-self.t0, sw.name, sw.state_str())
-				self.modes.handle_event(event)
-			self.modes.tick()
-			self.proc.watchdog_tickle()
+		loops = 0
+		try:
+			while True:
+				loops += 1
+				for event in self.proc.get_events():
+					event_type = event['type']
+					event_value = event['value']
+					sw = self.switches[event_value]
+					sw.set_state(event_type == 1)
+					print "% 10.3f %s:\t%s" % (time.time()-self.t0, sw.name, sw.state_str())
+					self.modes.handle_event(event)
+				self.modes.tick()
+				self.proc.watchdog_tickle()
+		finally:
+			if loops != 0:
+				dt = time.time()-self.t0
+				print "\nOverall loop rate: %0.3fHz\n" % (loops/dt)
