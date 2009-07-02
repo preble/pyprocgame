@@ -6,6 +6,8 @@ class BasicDropTargetBank(Mode):
 		Mode.__init__(self, game, 8)
 		self.letters = letters
 		self.prefix = prefix
+		self.on_completed = None
+		self.on_advance = None
 		# Ordinarily a mode would have sw_switchName_open() handlers, 
 		# but because this is a generic Mode we will configure them
 		# programatically to all call the dropped() method:
@@ -19,7 +21,10 @@ class BasicDropTargetBank(Mode):
 		"""General handler for all drop target switches"""
 		self.game.lamps[sw.name].schedule(schedule=0xf0f0f0f0, cycle_seconds=1, now=True)
 		if self.all_down():
+			self.on_completed(self)
 			self.animated_reset(seconds=2.0)
+		else:
+			self.on_advance(self)
 	
 	def chase_lamps(self):
 		"""Perform an animation using the lamps."""
@@ -80,8 +85,10 @@ class ProgressiveDropTargetBank(BasicDropTargetBank):
 				use_next = True
 		if new_target == None:
 			# All of them must be down!
+			self.on_completed(self)
 			self.animated_reset(2.0)
 		else:
+			self.on_advance(self)
 			self.game.lamps[self.current_target].enable()
 			self.current_target = new_target
 			self.game.lamps[self.current_target].schedule(schedule=0xf0f0f0f0, cycle_seconds=0, now=True)

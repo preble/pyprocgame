@@ -105,7 +105,13 @@ class Mode(object):
 		if type(event_type) == str:
 			event_type = {'closed':1, 'open':2}[event_type]
 		self.__delayed += [{'name':name, 'time':time.time()+delay, 'handler':handler, 'type':event_type, 'param':param}]
-		self.__delayed.sort(lambda x, y: x['time'] - y['time'])
+		try:
+			self.__delayed.sort(lambda x, y: int((x['time'] - y['time'])*100))
+		except TypeError, ex:
+			# Debugging code:
+			for x in self.__delayed:
+				print(x['name'], x['time'], type(x['time']), x['handler'], x['type'], x['param'])
+			raise ex
 	
 	def handle_event(self, event):
 		# We want to turn this event into a function call.
@@ -274,7 +280,13 @@ class Switch(GameItem):
 		else:
 			return 'open  '
 
-
+class Player(object):
+	"""docstring for Player"""
+	def __init__(self, name):
+		super(Player, self).__init__()
+		self.score = 0
+		self.name = name
+	
 
 class GameController(object):
 	"""Core object comprising modes, coils, lamps, switches."""
@@ -282,10 +294,14 @@ class GameController(object):
 		super(GameController, self).__init__()
 		self.machineType = machineType
 		self.proc = pinproc.PinPROC(self.machineType)
+		self.proc.reset(1)
 		self.modes = ModeQueue()
 		self.coils = AttrCollection()
 		self.lamps = AttrCollection()
 		self.switches = AttrCollection()
+		self.ball = 0
+		self.players = []
+		self.current_player_index = 0
 		self.t0 = time.time()
 		self.config = None
 	
@@ -294,6 +310,24 @@ class GameController(object):
 	
 	def __exit__(self):
 		del self.proc
+	
+	def reset(self):
+		"""Reset the game state as a slam tilt might."""
+		self.ball = 0
+		self.players = []
+		self.current_player_index = 0
+		self.modes.modes = []
+	
+	def current_player(self):
+		if len(self.players) > self.current_player_index:
+			return self.players[self.current_player_index]
+		else:
+			return None
+	
+	def add_player(self, player_class=Player):
+		player = player_class('Player %d' % (len(self.players) + 1))
+		self.players += [player]
+		return player
 		
 	def load_config(self, filename):
 		"""Reads the YAML configuration file into memory.
