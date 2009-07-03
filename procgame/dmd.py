@@ -216,6 +216,31 @@ class TextLayer(Layer):
 			self.frame = None
 		return self.frame
 
+class ScriptedLayer(object):
+	"""docstring for ScriptedLayer"""
+	def __init__(self, width, height, script):
+		super(ScriptedLayer, self).__init__()
+		self.buffer = Frame(width, height)
+		self.script = script
+		self.script_index = 0
+		self.frame_start_time = None
+	
+	def next_frame(self):
+		# This assumes looping.  TODO: Add code to not loop!
+		if self.frame_start_time == None:
+			self.frame_start_time = time.time()
+		script_item = self.script[script_index]
+		time_on_frame = time.time() - self.frame_start_time
+		if time_on_frame > script_item['seconds']:
+			# Time for the next frame:
+			script_index += 1
+			if script_index == len(self.script):
+				script_index = 0
+			script_item = self.script[script_index]
+			self.frame_start_time = time.time()
+		return script_item['layer'].next_frame()
+			
+
 class GroupedLayer(Layer):
 	"""docstring for GroupedLayer"""
 	def __init__(self, width, height, layers=[]):
