@@ -150,6 +150,9 @@ class Layer(object):
 		super(Layer, self).__init__()
 		self.opaque = opaque
 		self.set_target_position(0, 0)
+		self.target_x_offset = 0
+		self.target_y_offset = 0
+		self.enabled = True
 	def set_target_position(self, x, y):
 		"""Sets the location in the final output that this layer will be positioned at."""
 		self.target_x = x
@@ -161,7 +164,7 @@ class Layer(object):
 		"""Composites the next frame of this layer onto the given target buffer."""
 		src = self.next_frame()
 		if src != None:
-			Frame.copy_rect(dst=target, dst_x=self.target_x, dst_y=self.target_y, src=src, src_x=0, src_y=0, width=src.width, height=src.height)
+			Frame.copy_rect(dst=target, dst_x=self.target_x+self.target_x_offset, dst_y=self.target_y+self.target_y_offset, src=src, src_x=0, src_y=0, width=src.width, height=src.height)
 
 class AnimatedLayer(Layer):
 	"""Collection of frames displayed sequentially, as an animation.  Optionally holds the last frame on-screen."""
@@ -180,54 +183,55 @@ class AnimatedLayer(Layer):
 
 class TextLayer(Layer):
 	"""Layer that displays text."""
-	def __init__(self, x, y, opaque=False):
+	def __init__(self, x, y, font, justify="left", opaque=False):
 		super(TextLayer, self).__init__(opaque)
 		self.set_target_position(x, y)
+		self.font = font
 		self.started_at = None
 		self.seconds = None # Number of seconds to show the text for
 		self.frame = None # Frame that text is rendered into.
-		self.font = None
+		self.justify = justify
 		
 	def set_text(self, text, seconds=None):
 		"""Displays the given message for the given number of seconds."""
 		self.started_at = None
 		self.seconds = seconds
 		if text == None:
-			self.opaque = False
 			self.frame = None
 		else:
-			self.opaque = True
 			(w, h) = self.font.size(text)
 			self.frame = Frame(w, h)
 			self.font.draw(self.frame, text, 0, 0)
+			if self.justify == "left":
+				(self.target_x_offset, self.target_y_offset) = (0,0)
+			elif self.justify == "right":
+				(self.target_x_offset, self.target_y_offset) = (-w,0)
+			elif self.justify == "center":
+				(self.target_x_offset, self.target_y_offset) = (-w/2,0)
 
 	def next_frame(self):
 		if self.started_at == None:
 			self.started_at = time.time()
-		if (self.seconds != None) and ((self.started_at + self.seconds) > time.time()):
-			self.opaque = False
+		if (self.seconds != None) and ((self.started_at + self.seconds) < time.time()):
 			self.frame = None
 		return self.frame
 
 class GroupedLayer(Layer):
 	"""docstring for GroupedLayer"""
-	def __init__(self, width, height):
+	def __init__(self, width, height, layers=[]):
 		super(GroupedLayer, self).__init__()
 		self.buffer = Frame(width, height)
-		self.layers = []
-		self.clear()
+		self.layers = layers
 
-	def clear(self):
-		"""Clear the scratch buffer"""
-		self.buffer = Frame(self.buffer.width, self.buffer.height)
-		
 	def next_frame(self):
-		self.clear()
+		self.buffer = Frame(self.buffer.width, self.buffer.height)
 		for layer in self.layers:
-			layer.composite_next(self.buffer)
+			if layer.enabled:
+				layer.composite_next(self.buffer)
 			if layer.opaque:
 				break
 		return self.buffer
+
 
 class DisplayController(GroupedLayer):
 	"""docstring for DisplayController"""

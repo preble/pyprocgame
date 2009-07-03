@@ -11,10 +11,21 @@ import math
 
 locale.setlocale(locale.LC_ALL, "") # Used to put commas in the score.
 
+fonts_path = "/Users/adam/Documents/DMD/"
+font_tiny7 = dmd.Font(fonts_path+"04B-03-7px.dmd")
+font_jazz18 = dmd.Font(fonts_path+"Jazz18-18px.dmd")
+
 class Attract(game.Mode):
 	"""docstring for AttractMode"""
 	def __init__(self, game):
 		super(Attract, self).__init__(game, 1)
+		self.layer = dmd.GroupedLayer(128, 32, [])
+		l = dmd.TextLayer(128/2, 7, font_jazz18, "center")
+		l.set_text("Press Start")
+		self.layer.layers += [l]
+		l = dmd.TextLayer(128/2, 32-7, font_tiny7, "center")
+		l.set_text("Free Play")
+		self.layer.layers += [l]
 
 	def mode_topmost(self):
 		self.game.lamps.gi01.schedule(schedule=0xffffffff, cycle_seconds=0, now=False)
@@ -28,6 +39,15 @@ class Attract(game.Mode):
 			if self.game.switches[name].is_closed():
 				self.game.coils[name].pulse()
 
+	def mode_started(self):
+		self.game.dmd.layers.insert(0, self.layer)
+
+	def mode_stopped(self):
+		self.game.dmd.layers.remove(self.layer)
+		
+	def mode_tick(self):
+		self.layer.layers[0].enabled = (int(1.5 * time.time()) % 2) == 0
+					
 	def sw_popperL_open_for_500ms(self, sw): # opto!
 		self.game.coils.popperL.pulse(20)
 
@@ -54,8 +74,10 @@ class StartOfBall(game.Mode):
 	"""docstring for AttractMode"""
 	def __init__(self, game):
 		super(StartOfBall, self).__init__(game, 2)
+		self.game_display = GameDisplay(self.game)
 
 	def mode_started(self):
+		self.game.modes.add(self.game_display)
 		self.game.enable_flippers(enable=True)
 		self.game.lamps.gi02.schedule(schedule=0xffffffff, cycle_seconds=0, now=True)
 		self.game.lamps.startButton.disable()
@@ -70,6 +92,7 @@ class StartOfBall(game.Mode):
 	
 	def mode_stopped(self):
 		self.game.enable_flippers(enable=False)
+		self.game.modes.remove(self.game_display)
 	
 	def on_droptarget_advance(self, mode):
 		self.game.sound.beep()
@@ -132,41 +155,48 @@ class StartOfBall(game.Mode):
 		self.game.sound.play('outlane')
 	def sw_outlaneR_closed(self, sw):
 		self.game.sound.play('outlane')
-	
-class DMDStatus(game.Mode):
-	"""docstring for DMDStatus"""
+
+class GameDisplay(game.Mode):
+	"""Displays the score and other game state information on the DMD."""
 	def __init__(self, game):
-		super(DMDStatus, self).__init__(game, 0)
-		self.frame = dmd.Frame(128, 32)
-		self.font = dmd.Font("/Users/adam/Documents/DMD/04B-03-7px.dmd")
-		#self.font = dmd.Font("/Users/adam/Documents/DMD/Futura29-32px.dmd")
-		#self.font = dmd.Font("/Users/adam/Documents/DMD/Monaco9-10px.dmd")
-		#self.font = dmd.Font("/Users/adam/Documents/DMD/04B-03-7px.dmd")
-		#self.font = dmd.Font("/Users/adam/Documents/DMD/Silkscreen8-7px.dmd")
-		self.dmd = dmd.DisplayController(self.game.proc, width=128, height=32)
-		self.dmd_text_layer = dmd.TextLayer(0, 0)
-		self.dmd_text_layer.font = self.font
-		self.dmd.layers += [self.dmd_text_layer]
-	
-	def clear(self):
-		self.frame = dmd.Frame(128, 32)
-	
-	def update(self):
-		self.dmd.update()
-	
-	def draw_text(self, text, position = (0, 0), update=True):
-		self.dmd_text_layer.set_text(text)
-		if update: self.update()
-		
+		super(GameDisplay, self).__init__(game, 0)
+		self.status_layer = dmd.TextLayer(0, 0, font_tiny7)
+		self.game_layer = dmd.TextLayer(0, 25, font_tiny7)
+		self.score_layer = dmd.TextLayer(128/2, 7, font_jazz18, "center")
+		self.score_layer.set_text("1,000,000")
+		self.layer = dmd.GroupedLayer(128, 32, [self.score_layer, self.status_layer, self.game_layer])
+
+	def mode_started(self):
+		self.game.dmd.layers.insert(0, self.layer)
+
+	def mode_stopped(self):
+		self.game.dmd.layers.remove(self.layer)
+
 	def mode_tick(self):
-		if len(self.game.modes.modes) > 0:
-			self.draw_text('Topmost: '+str(self.game.modes.modes[0].status_str()), (0,0))
 		if len(self.game.players) > 0:
-			self.draw_text('%s - %s - Ball %d' % (self.game.current_player().name, commatize(self.game.current_player().score), self.game.ball), (0, 21))
-		#self.update()
-		#self.draw_text('Futura 290', (int(random.uniform(-50, 50)), int(random.uniform(-50, 50))))
-		#self.draw_text('Futura 290', (int(random.uniform(-5, 5)), 0))
-		#self.draw_text('Futura 290', (int(random.uniform(-0, 0) + math.sin(time.time()) * 20), int(random.uniform(-0, 0) + math.cos(time.time()) * 20)))
+			self.score_layer.set_text(commatize(self.game.current_player().score))
+			self.game_layer.set_text('%s - Ball %d' % (self.game.current_player().name, self.game.ball))
+		self.game.dmd.update()
+
+class PopupDisplay(game.Mode):
+	"""Displays a pop-up message on the DMD."""
+	def __init__(self, game):
+		super(PopupDisplay, self).__init__(game, 0)
+		self.status_layer = dmd.TextLayer(128/2, 32-7, font_tiny7, "center")
+	
+	def set_text(self, text, seconds=5):
+		self.status_layer.set_text(text, seconds)
+	
+	def mode_started(self):
+		self.game.dmd.layers.insert(0, self.status_layer)
+		
+	def mode_stopped(self):
+		self.game.dmd.layers.remove(self.status_layer)
+	
+	def mode_tick(self):
+		#if len(self.game.modes.modes) > 0:
+		#	self.mode_layer.set_text('Topmost: '+str(self.game.modes.modes[0].status_str()))
+		self.game.dmd.update()
 
 def commatize(n):
 	return locale.format("%d", n, True)
@@ -191,8 +221,9 @@ class TestGame(game.GameController):
 	"""docstring for TestGame"""
 	def __init__(self, machineType):
 		super(TestGame, self).__init__(machineType)
-		self.dmdstatus = DMDStatus(self)
 		self.sound = SoundController(self)
+		self.dmd = dmd.DisplayController(self.proc, width=128, height=32)
+		self.popup = PopupDisplay(self)
 		
 	def setup(self):
 		"""docstring for setup"""
@@ -204,14 +235,14 @@ class TestGame(game.GameController):
 		
 	def reset(self):
 		super(TestGame, self).reset()
-		self.modes.add(self.dmdstatus)
+		self.modes.add(self.popup)
 		self.modes.add(Attract(self))
 		
 	def is_ball_in_play(self):
 		return self.switches.trough1.is_closed() # TODO: Check other trough switches.
 	
 	def set_status(self, text):
-		self.dmdstatus.draw_text('Last: '+text+' '*20, (0, 8))
+		self.popup.set_text(text)
 		print(text)
 	
 	def score(self, points):
