@@ -21,9 +21,9 @@ class Attract(game.Mode):
 	def __init__(self, game):
 		super(Attract, self).__init__(game, 1)
 		self.layer = dmd.GroupedLayer(128, 32, [])
-		press_start = dmd.TextLayer(128/2, 7, font_jazz18, "center")
-		press_start.set_text("Press Start")
-		l = dmd.ScriptedLayer(128, 32, [{'seconds':0.7, 'layer':press_start}, {'seconds':0.5, 'layer':None}])
+		press_start = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("Press Start")
+		proc_banner = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("pyprocgame")
+		l = dmd.ScriptedLayer(128, 32, [{'seconds':2.0, 'layer':press_start}, {'seconds':2.0, 'layer':proc_banner}])
 		self.layer.layers += [l]
 		l = dmd.TextLayer(128/2, 32-7, font_tiny7, "center")
 		l.set_text("Free Play")
@@ -64,10 +64,11 @@ class Attract(game.Mode):
 		self.game.coils.shooterR.pulse(20)
 
 	def sw_startButton_closed(self, sw):
-		self.game.modes.add(StartOfBall(self.game))
+		self.game.ball = 1
 		self.game.modes.remove(self)
 		self.game.sound.beep()
 		self.game.add_player()
+		self.game.start_ball()
 		return True
 
 
@@ -78,7 +79,8 @@ class StartOfBall(game.Mode):
 		self.game_display = GameDisplay(self.game)
 
 	def mode_started(self):
-		self.game.ball = 1
+		self.game.coils.flasherPursuitL.schedule(0x00001010, cycle_seconds=1, now=True)
+		self.game.coils.flasherPursuitR.schedule(0x00000101, cycle_seconds=1, now=True)
 		self.game.modes.add(self.game_display)
 		self.game.enable_flippers(enable=True)
 		self.game.lamps.gi02.schedule(schedule=0xffffffff, cycle_seconds=0, now=True)
@@ -113,7 +115,7 @@ class StartOfBall(game.Mode):
 	def sw_trough1_open_for_500ms(self, sw):
 		in_play = self.game.is_ball_in_play()
 		if not in_play:
-			self.game.mark_end_of_ball()
+			self.game.end_ball()
 			trough6_closed = self.game.switches.trough6.is_open()
 			shooterR_closed = self.game.switches.shooterR.is_closed()
 			if trough6_closed and not shooterR_closed and self.game.ball != 0:
@@ -124,15 +126,24 @@ class StartOfBall(game.Mode):
 	
 	def sw_popperL_open(self, sw):
 		self.game.set_status("Left popper!")
+		self.game.coils.flashersLowerLeft.schedule(0x333, cycle_seconds=1, now=True)
 		
 	def sw_popperL_open_for_500ms(self, sw): # opto!
 		self.game.coils.popperL.pulse(20)
+		self.game.score(2000)
 
 	def sw_popperR_open(self, sw):
 		self.game.set_status("Right popper!")
+		self.game.coils.flashersRtRamp.schedule(0x333, cycle_seconds=1, now=True)
 
 	def sw_popperR_open_for_500ms(self, sw): # opto!
 		self.game.coils.popperR.pulse(20)
+		self.game.score(2000)
+	
+	def sw_rightRampExit_closed(self, sw):
+		self.game.set_status("Right ramp!")
+		self.game.coils.flashersRtRamp.schedule(0x333, cycle_seconds=1, now=True)
+		self.game.score(2000)
 	
 	def sw_fireL_closed(self, sw):
 		if self.game.switches.shooterL.is_closed():
@@ -235,6 +246,7 @@ class TestGame(game.GameController):
 		print("Initial switch states:")
 		for sw in self.switches:
 			print("  %s:\t%s" % (sw.name, sw.state_str()))
+		self.start_of_ball_mode = StartOfBall(self)
 		self.reset()
 		
 	def reset(self):
@@ -242,14 +254,21 @@ class TestGame(game.GameController):
 		self.modes.add(self.popup)
 		self.modes.add(Attract(self))
 		
+	def ball_starting(self):
+		super(TestGame, self).ball_starting()
+		self.modes.add(self.start_of_ball_mode)
+		
 	def ball_ended(self):
+		self.modes.remove(self.start_of_ball_mode)
 		super(TestGame, self).ball_ended()
 		
 	def game_ended(self):
 		super(TestGame, self).game_ended()
-		for mode in copy.copy(self.modes.modes):
-			self.modes.remove(mode)
-		self.reset()
+		self.modes.remove(self.start_of_ball_mode)
+		# for mode in copy.copy(self.modes.modes):
+		# 	self.modes.remove(mode)
+		# self.reset()
+		self.modes.add(Attract(self))
 		self.set_status("Game Over")
 		
 	def is_ball_in_play(self):

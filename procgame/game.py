@@ -336,12 +336,20 @@ class GameController(object):
 		player = player_class('Player %d' % (len(self.players) + 1))
 		self.players += [player]
 		return player
+
+	def start_ball(self):
+		"""Called by the implementor to notify the game that (usually the first) ball should be started."""
+		self.ball_starting()
+
+	def ball_starting(self):
+		"""Called by the game framework when a new ball is starting."""
+		pass
 	
 	def ball_ended(self):
 		"""Called by the game framework when the current ball has ended."""
 		pass
 	
-	def mark_end_of_ball(self):
+	def end_ball(self):
 		"""Called by the implementor to notify the game that the current ball has ended."""
 		self.ball_ended()
 		if self.current_player_index + 1 == len(self.players):
@@ -350,13 +358,15 @@ class GameController(object):
 		else:
 			self.current_player_index += 1
 		if self.ball > self.balls_per_game:
-			self.mark_end_of_game()
+			self.end_game()
+		else:
+			self.ball_starting() # Consider: Do we want to call this here, or should it be called by the game? (for bonus sequence)
 		
 	def game_ended(self):
 		"""Called by the GameController when the current game has ended."""
 		pass
 		
-	def mark_end_of_game(self):
+	def end_game(self):
 		"""Called by the implementor to mark notify the game that the game has ended."""
 		self.game_ended()
 		self.ball = 0

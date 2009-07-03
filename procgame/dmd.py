@@ -169,6 +169,7 @@ class TextLayer(Layer):
 				(self.target_x_offset, self.target_y_offset) = (-w,0)
 			elif self.justify == "center":
 				(self.target_x_offset, self.target_y_offset) = (-w/2,0)
+		return self
 
 	def next_frame(self):
 		if self.started_at == None:
