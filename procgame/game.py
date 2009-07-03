@@ -175,15 +175,17 @@ class ModeQueue(object):
 		self.modes += [mode]
 		# Sort by priority, descending:
 		self.modes.sort(lambda x, y: y.priority - x.priority)
+		print "Added %s, now: %s" % (str(mode), str(self))
 		mode.mode_started()
 		if mode == self.modes[0]:
 			mode.mode_topmost()
 
 	def remove(self, mode):
-		mode.mode_stopped()
 		for idx, m in enumerate(self.modes):
 			if m == mode:
 				del self.modes[idx]
+				print "Removed %s, now: %s" % (str(mode), str(self))
+				mode.mode_stopped()
 				break
 		if len(self.modes) > 0:
 			self.modes[0].mode_topmost()
@@ -200,6 +202,11 @@ class ModeQueue(object):
 		for mode in modes:
 			mode.mode_tick()
 		
+	def __str__(self):
+		s = ""
+		for mode in self.modes:
+			s += "#%d %s  " % (mode.priority, str(mode))
+		return s
 
 class AttrCollection(object):
 	"""docstring for AttrCollection"""
@@ -304,6 +311,7 @@ class GameController(object):
 		self.current_player_index = 0
 		self.t0 = time.time()
 		self.config = None
+		self.balls_per_game = 3
 	
 	def __enter__(self):
 		pass
@@ -328,6 +336,30 @@ class GameController(object):
 		player = player_class('Player %d' % (len(self.players) + 1))
 		self.players += [player]
 		return player
+	
+	def ball_ended(self):
+		"""Called by the game framework when the current ball has ended."""
+		pass
+	
+	def mark_end_of_ball(self):
+		"""Called by the implementor to notify the game that the current ball has ended."""
+		self.ball_ended()
+		if self.current_player_index + 1 == len(self.players):
+			self.ball += 1
+			self.current_player_index = 0
+		else:
+			self.current_player_index += 1
+		if self.ball > self.balls_per_game:
+			self.mark_end_of_game()
+		
+	def game_ended(self):
+		"""Called by the GameController when the current game has ended."""
+		pass
+		
+	def mark_end_of_game(self):
+		"""Called by the implementor to mark notify the game that the game has ended."""
+		self.game_ended()
+		self.ball = 0
 		
 	def load_config(self, filename):
 		"""Reads the YAML configuration file into memory.

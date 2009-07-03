@@ -10,6 +10,8 @@ class Frame(pinproc.DMDBuffer):
 		self.height = height
 
 	def copy_rect(dst, dst_x, dst_y, src, src_x, src_y, width, height):
+		if not (issubclass(type(dst), pinproc.DMDBuffer) and issubclass(type(src), pinproc.DMDBuffer)):
+			raise ValueError, "Incorrect types"
 		src.copy_to_rect(dst, dst_x, dst_y, src_x, src_y, width, height)
 	copy_rect = staticmethod(copy_rect)
 
