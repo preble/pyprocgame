@@ -2,20 +2,15 @@ import pinproc
 import struct
 import time
 
-class Frame(object):
+class Frame(pinproc.DMDBuffer):
 	"""DMD frame/bitmap."""
 	def __init__(self, width, height):
-		super(Frame, self).__init__()
+		super(Frame, self).__init__(width, height)
 		self.width = width
 		self.height = height
-		self.clear()
 
-	def clear(self):
-		"""Set this frame to black."""
-		self.data = pinproc.DMDBuffer(self.width, self.height)
-		
 	def copy_rect(dst, dst_x, dst_y, src, src_x, src_y, width, height):
-		src.data.copy_to_rect(dst.data, dst_x, dst_y, src_x, src_y, width, height)
+		src.copy_to_rect(dst, dst_x, dst_y, src_x, src_y, width, height)
 	copy_rect = staticmethod(copy_rect)
 
 class Animation(object):
@@ -51,7 +46,7 @@ class Animation(object):
 		for frame_index in range(frame_count):
 			str_frame = f.read(self.width * self.height)
 			new_frame = Frame(self.width, self.height)
-			new_frame.data.set_data(str_frame)
+			new_frame.set_data(str_frame)
 			self.frames += [new_frame]
 
 class Font(object):
@@ -81,7 +76,7 @@ class Font(object):
 		self.bitmap = self.__anim.frames[0]
 		self.char_widths = []
 		for i in range(96):
-			self.char_widths += [self.__anim.frames[1].data.get_dot(i%self.__anim.width, i/self.__anim.width)]
+			self.char_widths += [self.__anim.frames[1].get_dot(i%self.__anim.width, i/self.__anim.width)]
 		
 	def draw(self, frame, text, x, y):
 		"""Uses this font's characters to draw the given string at the given position."""
@@ -204,7 +199,6 @@ class ScriptedLayer(Layer):
 			self.frame_start_time = time.time()
 		layer = script_item['layer']
 		if layer != None:
-			#return layer.next_frame()
 			self.buffer.clear()
 			layer.composite_next(self.buffer)
 			return self.buffer
@@ -239,10 +233,5 @@ class DisplayController(GroupedLayer):
 		"""Update the DMD."""
 		frame = self.next_frame()
 		if frame != None:
-			self.proc.dmd_draw(frame.data)
-			# f = ""
-			# for y in range(frame.height):
-			# 	for x in range(frame.width):
-			# 		f += chr(frame.data[x][y]*60)*4
-			# self.proc.dmd_draw(f)
+			self.proc.dmd_draw(frame)
 
