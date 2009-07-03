@@ -1,56 +1,21 @@
+import pinproc
 import struct
 import time
 
 class Frame(object):
 	"""DMD frame/bitmap."""
-	def __init__(self, width, height, data=None):
+	def __init__(self, width, height):
 		super(Frame, self).__init__()
 		self.width = width
 		self.height = height
-		if data == None:
-			self.clear()
-		else:
-			self.data = data
+		self.clear()
 
 	def clear(self):
 		"""Set this frame to black."""
-		self.data = []
-		for x in range(self.width):
-			self.data += [[0] * self.height]
-		
-	def set_dot(self, x, y, value):
-		"""Assign the value for one pixel."""
-		self.data[x][y] = value
-
-	def get_dot(self, x, y):
-		"""Returns the value of the specified pixel."""
-		return self.data[x][y]
+		self.data = pinproc.DMDBuffer(self.width, self.height)
 		
 	def copy_rect(dst, dst_x, dst_y, src, src_x, src_y, width, height):
-		"""Static method to copy a rectangle of a frame into another."""
-		if dst_x < 0:
-			src_x += -dst_x
-			width -= -dst_x
-			dst_x = 0
-		if dst_y < 0:
-			src_y += -dst_y
-			height -= -dst_y
-			dst_y = 0
-		if src_x < 0:
-			dst_x += -src_x
-			width -= -src_x
-			src_x = 0
-		if src_y < 0:
-			dst_y += -src_y
-			height -= -src_y
-			src_y = 0
-		if src_x + width  > src.width:  width = src.width - src_x
-		if src_y + height > src.height: height = src.height - src_y
-		if dst_x + width  > dst.width:  width = dst.width - dst_x
-		if dst_y + height > dst.height: height = dst.height - dst_y
-		for x in xrange(0, width):
-			for y in xrange(0, height):
-				dst.set_dot(dst_x + x, dst_y + y, src.get_dot(src_x + x, src_y + y))
+		src.data.copy_to_rect(dst.data, dst_x, dst_y, src_x, src_y, width, height)
 	copy_rect = staticmethod(copy_rect)
 
 class Animation(object):
@@ -85,9 +50,8 @@ class Animation(object):
 		print(frame_count, self.width, self.height)
 		for frame_index in range(frame_count):
 			str_frame = f.read(self.width * self.height)
-			new_frame = Frame(self.width, self.height) #, map(lambda x: ord(x), str_frame))
-			for i in range(len(str_frame)):
-				new_frame.set_dot(i % self.width, i / self.width, ord(str_frame[i]))
+			new_frame = Frame(self.width, self.height)
+			new_frame.data.set_data(str_frame)
 			self.frames += [new_frame]
 
 class Font(object):
@@ -117,7 +81,7 @@ class Font(object):
 		self.bitmap = self.__anim.frames[0]
 		self.char_widths = []
 		for i in range(96):
-			self.char_widths += [self.__anim.frames[1].get_dot(i%self.__anim.width, i/self.__anim.width)]
+			self.char_widths += [self.__anim.frames[1].data.get_dot(i%self.__anim.width, i/self.__anim.width)]
 		
 	def draw(self, frame, text, x, y):
 		"""Uses this font's characters to draw the given string at the given position."""
@@ -275,9 +239,10 @@ class DisplayController(GroupedLayer):
 		"""Update the DMD."""
 		frame = self.next_frame()
 		if frame != None:
-			f = ""
-			for y in range(frame.height):
-				for x in range(frame.width):
-					f += chr(frame.data[x][y]*60)*4
-			self.proc.dmd_draw(f)
+			self.proc.dmd_draw(frame.data)
+			# f = ""
+			# for y in range(frame.height):
+			# 	for x in range(frame.width):
+			# 		f += chr(frame.data[x][y]*60)*4
+			# self.proc.dmd_draw(f)
 
