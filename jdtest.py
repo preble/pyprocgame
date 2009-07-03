@@ -20,12 +20,14 @@ class Attract(game.Mode):
 	def __init__(self, game):
 		super(Attract, self).__init__(game, 1)
 		self.layer = dmd.GroupedLayer(128, 32, [])
-		l = dmd.TextLayer(128/2, 7, font_jazz18, "center")
-		l.set_text("Press Start")
+		press_start = dmd.TextLayer(128/2, 7, font_jazz18, "center")
+		press_start.set_text("Press Start")
+		l = dmd.ScriptedLayer(128, 32, [{'seconds':1.0, 'layer':press_start}, {'seconds':0.5, 'layer':None}])
 		self.layer.layers += [l]
 		l = dmd.TextLayer(128/2, 32-7, font_tiny7, "center")
 		l.set_text("Free Play")
 		self.layer.layers += [l]
+		
 
 	def mode_topmost(self):
 		self.game.lamps.gi01.schedule(schedule=0xffffffff, cycle_seconds=0, now=False)
@@ -46,7 +48,8 @@ class Attract(game.Mode):
 		self.game.dmd.layers.remove(self.layer)
 		
 	def mode_tick(self):
-		self.layer.layers[0].enabled = (int(1.5 * time.time()) % 2) == 0
+		#self.layer.layers[0].enabled = (int(1.5 * time.time()) % 2) == 0
+		pass
 					
 	def sw_popperL_open_for_500ms(self, sw): # opto!
 		self.game.coils.popperL.pulse(20)

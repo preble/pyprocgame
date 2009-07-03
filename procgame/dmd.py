@@ -216,8 +216,8 @@ class TextLayer(Layer):
 			self.frame = None
 		return self.frame
 
-class ScriptedLayer(object):
-	"""docstring for ScriptedLayer"""
+class ScriptedLayer(Layer):
+	"""Displays a set of layers based on a simple script (dictionary)."""
 	def __init__(self, width, height, script):
 		super(ScriptedLayer, self).__init__()
 		self.buffer = Frame(width, height)
@@ -229,16 +229,23 @@ class ScriptedLayer(object):
 		# This assumes looping.  TODO: Add code to not loop!
 		if self.frame_start_time == None:
 			self.frame_start_time = time.time()
-		script_item = self.script[script_index]
+		script_item = self.script[self.script_index]
 		time_on_frame = time.time() - self.frame_start_time
 		if time_on_frame > script_item['seconds']:
 			# Time for the next frame:
-			script_index += 1
-			if script_index == len(self.script):
-				script_index = 0
-			script_item = self.script[script_index]
+			self.script_index += 1
+			if self.script_index == len(self.script):
+				self.script_index = 0
+			script_item = self.script[self.script_index]
 			self.frame_start_time = time.time()
-		return script_item['layer'].next_frame()
+		layer = script_item['layer']
+		if layer != None:
+			#return layer.next_frame()
+			self.buffer.clear()
+			layer.composite_next(self.buffer)
+			return self.buffer
+		else:
+			return None
 			
 
 class GroupedLayer(Layer):
@@ -249,7 +256,7 @@ class GroupedLayer(Layer):
 		self.layers = layers
 
 	def next_frame(self):
-		self.buffer = Frame(self.buffer.width, self.buffer.height)
+		self.buffer.clear()
 		for layer in self.layers:
 			if layer.enabled:
 				layer.composite_next(self.buffer)
