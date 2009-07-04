@@ -113,6 +113,14 @@ class Mode(object):
 				print(x['name'], x['time'], type(x['time']), x['handler'], x['type'], x['param'])
 			raise ex
 	
+	def cancel_delayed(self, name):
+		"""Removes the given named delays from the delayed list, cancelling their execution."""
+		if type(name) == list:
+			for n in name:
+				self.cancel_delayed(n)
+		else:
+			self.__delayed = filter(lambda x: x['name'] != name, self.__delayed)
+	
 	def handle_event(self, event):
 		# We want to turn this event into a function call.
 		sw_name = self.game.switches[event['value']].name
@@ -172,6 +180,8 @@ class ModeQueue(object):
 		self.modes = []
 		
 	def add(self, mode):
+		if mode in self.modes:
+			raise ValueError, "Attempted to add mode "+str(mode)+", already in mode queue."
 		self.modes += [mode]
 		# Sort by priority, descending:
 		self.modes.sort(lambda x, y: y.priority - x.priority)
@@ -361,7 +371,17 @@ class GameController(object):
 			self.end_game()
 		else:
 			self.ball_starting() # Consider: Do we want to call this here, or should it be called by the game? (for bonus sequence)
-		
+	
+	def game_started(self):
+		"""Called by the GameController when a new game is starting."""
+		self.ball = 1
+		self.players = []
+		self.current_player_index = 0
+
+	def start_game(self):
+		"""Called by the implementor to notify the game that the game has started."""
+		self.game_started()
+	
 	def game_ended(self):
 		"""Called by the GameController when the current game has ended."""
 		pass
@@ -440,9 +460,13 @@ class GameController(object):
 					event_type = event['type']
 					event_value = event['value']
 					sw = self.switches[event_value]
-					sw.set_state(event_type == 1)
-					print "% 10.3f %s:\t%s" % (time.time()-self.t0, sw.name, sw.state_str())
-					self.modes.handle_event(event)
+					recvd_state = event_type == 1
+					if sw.state != recvd_state:
+						sw.set_state(recvd_state)
+						print "% 10.3f %s:\t%s" % (time.time()-self.t0, sw.name, sw.state_str())
+						self.modes.handle_event(event)
+					else:
+						print "% 10.3f DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s" % (time.time()-self.t0, sw.name, sw.state_str())
 				self.modes.tick()
 				self.proc.watchdog_tickle()
 		finally:

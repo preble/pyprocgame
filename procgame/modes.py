@@ -6,6 +6,7 @@ class BasicDropTargetBank(Mode):
 		Mode.__init__(self, game, 8)
 		self.letters = letters
 		self.prefix = prefix
+		self.auto_reset = True
 		self.on_completed = None
 		self.on_advance = None
 		# Ordinarily a mode would have sw_switchName_open() handlers, 
@@ -22,7 +23,8 @@ class BasicDropTargetBank(Mode):
 		self.game.lamps[sw.name].schedule(schedule=0xf0f0f0f0, cycle_seconds=1, now=True)
 		if self.all_down():
 			self.on_completed(self)
-			self.animated_reset(seconds=2.0)
+			if self.auto_reset:
+				self.animated_reset(seconds=2.0)
 		else:
 			self.on_advance(self)
 	
@@ -86,24 +88,26 @@ class ProgressiveDropTargetBank(BasicDropTargetBank):
 		if new_target == None:
 			# All of them must be down!
 			self.on_completed(self)
-			self.animated_reset(2.0)
+			if self.auto_reset:
+				self.animated_reset(2.0)
 		else:
 			self.on_advance(self)
 			self.game.lamps[self.current_target].enable()
 			self.current_target = new_target
 			self.game.lamps[self.current_target].schedule(schedule=0xf0f0f0f0, cycle_seconds=0, now=True)
-			if self.all_down():
+			if self.all_down() and self.auto_reset:
 				self.reset_drop_target_bank()
 			
 	def dropped(self, sw):
 		"""General handler for all individual drop target switch events.
 		Advances the current target if it was hit.  
 		Otherwise it advances and physically resets the bank if all targets are now down."""
-		if sw.name == self.current_target:
-			self.advance()
-		elif self.all_down():
-			self.advance()
-			self.reset_drop_target_bank()
+		self.advance() # Given how advance() works, this is probably a sufficient replacement for the below:
+		# if sw.name == self.current_target:
+		# 	self.advance()
+		# elif self.all_down():
+		# 	self.advance()
+		# 	self.reset_drop_target_bank()
 
 	def animated_reset(self, seconds):
 		"""Performs an animated reset and sets the current target back to the first target."""

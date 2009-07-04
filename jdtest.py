@@ -64,9 +64,8 @@ class Attract(game.Mode):
 		self.game.coils.shooterR.pulse(20)
 
 	def sw_startButton_closed(self, sw):
-		self.game.ball = 1
 		self.game.modes.remove(self)
-		self.game.sound.beep()
+		self.game.start_game()
 		self.game.add_player()
 		self.game.start_ball()
 		return True
@@ -79,38 +78,41 @@ class StartOfBall(game.Mode):
 		self.game_display = GameDisplay(self.game)
 
 	def mode_started(self):
-		self.game.coils.flasherPursuitL.schedule(0x00001010, cycle_seconds=1, now=True)
-		self.game.coils.flasherPursuitR.schedule(0x00000101, cycle_seconds=1, now=True)
+		self.game.coils.flasherPursuitL.schedule(0x00001010, cycle_seconds=1, now=False)
+		self.game.coils.flasherPursuitR.schedule(0x00000101, cycle_seconds=1, now=False)
 		self.game.modes.add(self.game_display)
 		self.game.enable_flippers(enable=True)
 		self.game.lamps.gi02.schedule(schedule=0xffffffff, cycle_seconds=0, now=True)
 		self.game.lamps.startButton.disable()
 		if self.game.switches.trough6.is_open():
 			self.game.coils.trough.pulse(20)
-		dropTargets = procgame.modes.BasicDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE')
-		#dropTargets = procgame.modes.ProgressiveDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE', advance_switch='subwayEnter1')
-		dropTargets.on_advance = self.on_droptarget_advance
-		dropTargets.on_completed = self.on_droptarget_completed
-		self.game.modes.add(dropTargets)
+		drops = procgame.modes.BasicDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE')
+		#drops = procgame.modes.ProgressiveDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE', advance_switch='subwayEnter1')
+		drops.on_advance = self.on_drops_advance
+		drops.on_completed = self.on_drops_completed
+		drops.auto_reset = False
+		self.game.modes.add(drops)
+		self.drop_targets_completed_hurryup = DropTargetsCompletedHurryup(self.game, priority=self.priority+1, drop_target_mode=drops)
 	
 	def mode_stopped(self):
 		self.game.enable_flippers(enable=False)
 		self.game.modes.remove(self.game_display)
+		self.game.modes.remove(self.drop_targets_completed_hurryup) # TODO: Should track parent/child relationship for modes and remove children when parent goes away..?
 	
 	def sw_slingL_closed(self, sw):
 		self.game.score(100)
 	def sw_slingR_closed(self, sw):
 		self.game.score(100)
 	
-	def on_droptarget_advance(self, mode):
+	def on_drops_advance(self, mode):
 		self.game.sound.beep()
 		self.game.score(5000)
 		pass
 		
-	def on_droptarget_completed(self, mode):
+	def on_drops_completed(self, mode):
 		self.game.sound.beep()
 		self.game.score(10000)
-		pass
+		self.game.modes.add(self.drop_targets_completed_hurryup)
 	
 	def sw_trough1_open_for_500ms(self, sw):
 		in_play = self.game.is_ball_in_play()
@@ -126,7 +128,7 @@ class StartOfBall(game.Mode):
 	
 	def sw_popperL_open(self, sw):
 		self.game.set_status("Left popper!")
-		self.game.coils.flashersLowerLeft.schedule(0x333, cycle_seconds=1, now=True)
+		self.game.coils.flashersLowerLeft.schedule(0x333, cycle_seconds=1, now=False)
 		
 	def sw_popperL_open_for_500ms(self, sw): # opto!
 		self.game.coils.popperL.pulse(20)
@@ -134,7 +136,7 @@ class StartOfBall(game.Mode):
 
 	def sw_popperR_open(self, sw):
 		self.game.set_status("Right popper!")
-		self.game.coils.flashersRtRamp.schedule(0x333, cycle_seconds=1, now=True)
+		self.game.coils.flashersRtRamp.schedule(0x333, cycle_seconds=1, now=False)
 
 	def sw_popperR_open_for_500ms(self, sw): # opto!
 		self.game.coils.popperR.pulse(20)
@@ -142,7 +144,7 @@ class StartOfBall(game.Mode):
 	
 	def sw_rightRampExit_closed(self, sw):
 		self.game.set_status("Right ramp!")
-		self.game.coils.flashersRtRamp.schedule(0x333, cycle_seconds=1, now=True)
+		self.game.coils.flashersRtRamp.schedule(0x333, cycle_seconds=1, now=False)
 		self.game.score(2000)
 	
 	def sw_fireL_closed(self, sw):
@@ -171,6 +173,49 @@ class StartOfBall(game.Mode):
 	def sw_outlaneR_closed(self, sw):
 		self.game.score(1000)
 		self.game.sound.play('outlane')
+
+class DropTargetsCompletedHurryup(game.Mode):
+	"""docstring for AttractMode"""
+	def __init__(self, game, priority, drop_target_mode):
+		super(DropTargetsCompletedHurryup, self).__init__(game, priority)
+		self.drop_target_mode = drop_target_mode
+		self.countdown_layer = dmd.TextLayer(128/2, 7, font_jazz18, "center")
+		self.banner_layer = dmd.TextLayer(128/2, 7, font_jazz18, "center")
+		self.layer = dmd.GroupedLayer(128, 32, [self.countdown_layer, self.banner_layer])
+	
+	def mode_started(self):
+		self.game.dmd.layers.append(self.layer)
+		self.banner_layer.set_text("HURRY-UP!", 3)
+		self.seconds_remaining = 13
+		self.update_and_delay()
+		self.game.lamps.multiballJackpot.schedule(schedule=0x33333333, cycle_seconds=0, now=True)
+
+	def mode_stopped(self):
+		self.game.dmd.layers.remove(self.layer)
+		self.drop_target_mode.animated_reset(1.0)
+		self.game.lamps.multiballJackpot.disable()
+	
+	def sw_subwayEnter1_closed(self, sw):
+		self.game.score(1000*1000)
+		self.banner_layer.set_text("1 MILLION!", 2)
+		self.game.coils.flasherGlobe.pulse(50)
+		self.cancel_delayed(['grace', 'countdown'])
+		self.delay(name='end_of_mode', event_type=None, delay=3.0, handler=self.delayed_removal)
+	
+	def update_and_delay(self):
+		self.countdown_layer.set_text("%d seconds" % (self.seconds_remaining))
+		self.delay(name='countdown', event_type=None, delay=1, handler=self.one_less_second)
+		
+	def one_less_second(self):
+		self.seconds_remaining -= 1
+		if self.seconds_remaining >= 0:
+			self.update_and_delay()
+		else:
+			self.delay(name='grace', event_type=None, delay=0.5, handler=self.delayed_removal)
+			
+	def delayed_removal(self):
+		self.game.modes.remove(self)
+		
 
 class GameDisplay(game.Mode):
 	"""Displays the score and other game state information on the DMD."""
