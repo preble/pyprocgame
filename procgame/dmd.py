@@ -1,6 +1,7 @@
 import pinproc
 import struct
 import time
+import os
 
 class Frame(pinproc.DMDBuffer):
 	"""DMD frame/bitmap."""
@@ -44,7 +45,8 @@ class Animation(object):
 		frame_count = struct.unpack("I", f.read(4))[0]
 		self.width = struct.unpack("I", f.read(4))[0]
 		self.height = struct.unpack("I", f.read(4))[0]
-		#print(frame_count, self.width, self.height)
+		if os.path.getsize(filename) != 16 + self.width * self.height * frame_count:
+			raise ValueError, "File size inconsistent with header information.  Old or incompatible file format?"
 		for frame_index in range(frame_count):
 			str_frame = f.read(self.width * self.height)
 			new_frame = Frame(self.width, self.height)
