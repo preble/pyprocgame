@@ -23,10 +23,11 @@ class Attract(game.Mode):
 		self.layer = dmd.GroupedLayer(128, 32, [])
 		press_start = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("Press Start")
 		proc_banner = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("pyprocgame")
-		l = dmd.ScriptedLayer(128, 32, [{'seconds':2.0, 'layer':press_start}, {'seconds':2.0, 'layer':proc_banner}])
+		splash = dmd.FrameLayer(opaque=True, frame=dmd.Animation().load(fonts_path+'Splash.dmd').frames[0])
+		l = dmd.ScriptedLayer(128, 32, [{'seconds':2.0, 'layer':splash}, {'seconds':2.0, 'layer':press_start}, {'seconds':2.0, 'layer':proc_banner}])
 		self.layer.layers += [l]
 		l = dmd.TextLayer(128/2, 32-7, font_tiny7, "center")
-		l.set_text("Free Play")
+		#l.set_text("Free Play")
 		self.layer.layers += [l]
 		
 

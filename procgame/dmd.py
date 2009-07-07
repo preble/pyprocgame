@@ -44,12 +44,13 @@ class Animation(object):
 		frame_count = struct.unpack("I", f.read(4))[0]
 		self.width = struct.unpack("I", f.read(4))[0]
 		self.height = struct.unpack("I", f.read(4))[0]
-		print(frame_count, self.width, self.height)
+		#print(frame_count, self.width, self.height)
 		for frame_index in range(frame_count):
 			str_frame = f.read(self.width * self.height)
 			new_frame = Frame(self.width, self.height)
 			new_frame.set_data(str_frame)
 			self.frames += [new_frame]
+		return self
 
 class Font(object):
 	"""A DMD bitmap font."""
@@ -126,6 +127,13 @@ class Layer(object):
 		src = self.next_frame()
 		if src != None:
 			Frame.copy_rect(dst=target, dst_x=self.target_x+self.target_x_offset, dst_y=self.target_y+self.target_y_offset, src=src, src_x=0, src_y=0, width=src.width, height=src.height)
+
+class FrameLayer(Layer):
+	def __init__(self, opaque=False, frame=None):
+		super(FrameLayer, self).__init__(opaque)
+		self.frame = frame
+	def next_frame(self):
+		return self.frame
 
 class AnimatedLayer(Layer):
 	"""Collection of frames displayed sequentially, as an animation.  Optionally holds the last frame on-screen."""
