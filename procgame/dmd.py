@@ -187,6 +187,9 @@ class TextLayer(Layer):
 		if (self.seconds != None) and ((self.started_at + self.seconds) < time.time()):
 			self.frame = None
 		return self.frame
+	
+	def is_visible(self):
+		return self.frame != None
 
 class ScriptedLayer(Layer):
 	"""Displays a set of layers based on a simple script (dictionary)."""

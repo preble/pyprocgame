@@ -1,4 +1,5 @@
 from game import *
+import traceback
 
 class BasicDropTargetBank(Mode):
 	"""Basic Drop Target Bank mode."""
@@ -20,6 +21,8 @@ class BasicDropTargetBank(Mode):
 		
 	def dropped(self, sw):
 		"""General handler for all drop target switches"""
+		# if self.all_down():
+		# 	self.game.set_status("ALL DOWN and %s:\n%s" % (self.all_were_down, str.join('', traceback.format_stack())))
 		self.game.lamps[sw.name].schedule(schedule=0xf0f0f0f0, cycle_seconds=1, now=True)
 		if self.all_down():
 			self.on_completed(self)
