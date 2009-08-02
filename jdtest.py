@@ -1,18 +1,20 @@
 import procgame
+import pinproc
 from procgame import *
 from threading import Thread
 import sys
 import random
 import string
 import time
-import chuckctrl
+#import chuckctrl
 import locale
 import math
 import copy
 
 locale.setlocale(locale.LC_ALL, "") # Used to put commas in the score.
 
-fonts_path = "/Users/adam/Documents/DMD/"
+#fonts_path = "/Users/adam/Documents/DMD/"
+fonts_path = "./"
 font_tiny7 = dmd.Font(fonts_path+"04B-03-7px.dmd")
 font_jazz18 = dmd.Font(fonts_path+"Jazz18-18px.dmd")
 
@@ -64,11 +66,36 @@ class Attract(game.Mode):
 	def sw_shooterR_closed_for_500ms(self, sw):
 		self.game.coils.shooterR.pulse(20)
 
+	def sw_enter_closed(self, sw):
+		self.game.set_status("Enter")
+		return True
+
+	def sw_exit_closed(self, sw):
+		self.game.set_status("Exit")
+		return True
+
+	def sw_down_closed(self, sw):
+		self.game.set_status("Volume Down")
+		return True
+
+	def sw_up_closed(self, sw):
+		self.game.set_status("Volume Up")
+		return True
+
 	def sw_startButton_closed(self, sw):
-		self.game.modes.remove(self)
-		self.game.start_game()
-		self.game.add_player()
-		self.game.start_ball()
+		#Create ball search mode
+	        self.game.modes.add(self.game.ball_search)
+		if self.game.trough_is_full():
+			if self.game.switches.trough6.is_open():
+				self.game.modes.remove(self)
+				self.game.start_game()
+				self.game.add_player()
+				self.game.start_ball()
+		else: 
+			#self.game.set_status("Ball Search!")
+			self.game.modes.remove(self)
+			self.game.ball_search.perform_search(5,self.game.reset)
+			#search.pop_coil()
 		return True
 
 
@@ -87,6 +114,12 @@ class StartOfBall(game.Mode):
 		self.game.lamps.startButton.disable()
 		if self.game.switches.trough6.is_open():
 			self.game.coils.trough.pulse(20)
+		#else: 
+			#self.game.set_status("Ball Search!")
+		#	search = procgame.modes.BallSearch(self.game, priority=8)
+		#        self.game.modes.add(search)
+		#	search.perform_search()
+			#search.pop_coil()
 		drops = procgame.modes.BasicDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE')
 		#drops = procgame.modes.ProgressiveDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE', advance_switch='subwayEnter1')
 		drops.on_advance = self.on_drops_advance
@@ -94,6 +127,8 @@ class StartOfBall(game.Mode):
 		drops.auto_reset = False
 		self.game.modes.add(drops)
 		self.drop_targets_completed_hurryup = DropTargetsCompletedHurryup(self.game, priority=self.priority+1, drop_target_mode=drops)
+                self.deadworld_search = DeadworldReleaseBall(self.game, priority=self.priority+1) 
+		self.game.modes.add(self.deadworld_search)
 	
 	def mode_stopped(self):
 		self.game.enable_flippers(enable=False)
@@ -111,9 +146,11 @@ class StartOfBall(game.Mode):
 		pass
 		
 	def on_drops_completed(self, mode):
-		self.game.sound.beep()
-		self.game.score(10000)
-		self.game.modes.add(self.drop_targets_completed_hurryup)
+# Here we protect against double-adding this mode because the drops can be a little flaky.
+		if self.drop_targets_completed_hurryup not in self.game.modes.modes:
+			self.game.sound.beep()
+			self.game.score(10000)
+			self.game.modes.add(self.drop_targets_completed_hurryup)
 	
 	def sw_trough1_open_for_500ms(self, sw):
 		in_play = self.game.is_ball_in_play()
@@ -132,7 +169,7 @@ class StartOfBall(game.Mode):
 		self.game.coils.flashersLowerLeft.schedule(0x333, cycle_seconds=1, now=False)
 		
 	def sw_popperL_open_for_500ms(self, sw): # opto!
-		self.game.coils.popperL.pulse(20)
+		self.game.coils.popperL.pulse(50)
 		self.game.score(2000)
 
 	def sw_popperR_open(self, sw):
@@ -217,6 +254,31 @@ class DropTargetsCompletedHurryup(game.Mode):
 	def delayed_removal(self):
 		self.game.modes.remove(self)
 		
+class DeadworldReleaseBall(game.Mode):
+	"""Deadworld Mode."""
+	def __init__(self, game, priority):
+		super(DeadworldReleaseBall, self).__init__(game, priority)
+		self.add_switch_handler(name='globePosition2', event_type='open', delay=None, handler=self.sw_globePosition2_closed)
+		self.add_switch_handler(name='magnetOverRing', event_type='open', delay=None, handler=self.sw_magnetOverRing_open)
+		switch_num = self.game.switches['globePosition2'].number
+		self.game.install_switch_rule(switch_num, 'closed_debounced', 'globeMotor', True)
+
+	def mode_started(self):
+		self.game.coils.globeMotor.pulse(0)
+
+	def sw_globePosition2_closed(self,sw):
+		#self.game.coils.globeMotor.disable()
+		self.game.coils.crane.pulse(0)
+
+	def sw_magnetOverRing_open(self,sw):
+		self.game.coils.craneMagnet.pulse(0)
+		self.delay(name='crane_release', event_type=None, delay=2, handler=self.crane_release)
+
+	def crane_release(self):
+		self.game.coils.crane.disable()
+		self.game.coils.craneMagnet.disable()
+		
+
 
 class GameDisplay(game.Mode):
 	"""Displays the score and other game state information on the DMD."""
@@ -289,6 +351,7 @@ class TestGame(game.GameController):
 	def setup(self):
 		"""docstring for setup"""
 		self.load_config('../libpinproc/examples/pinproctest/JD.yaml')
+		self.setup_ball_search()
 		print("Initial switch states:")
 		for sw in self.switches:
 			print("  %s:\t%s" % (sw.name, sw.state_str()))
