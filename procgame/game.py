@@ -224,10 +224,13 @@ class AttrCollection(object):
 		self.__items_by_name = {}
 		self.__items_by_number = {}
 	def __getattr__(self, attr):
-		if type(attr) == str:
-			return self.__items_by_name[attr]
-		else:
-			return self.__items_by_number[attr]
+		try:
+			if type(attr) == str:
+				return self.__items_by_name[attr]
+			else:
+				return self.__items_by_number[attr]
+		except KeyError, e:
+			raise KeyError, "Error looking up key %s" % (attr)
 	def add(self, item, value):
 		self.__items_by_name[item] = value
 		self.__items_by_number[value.number] = value
