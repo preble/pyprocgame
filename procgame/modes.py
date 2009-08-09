@@ -50,7 +50,7 @@ class BasicDropTargetBank(Mode):
 	
 	def reset_drop_target_bank(self):
 		"""Resets the drop targets to the up position and lights each of the lamps."""
-		self.game.coils.resetDropTarget.pulse()
+		self.game.coils.resetDropTarget.pulse(30)
 		for name in self.names():
 			self.game.lamps[name].enable()
 	
@@ -133,3 +133,4 @@ class ProgressiveDropTargetBank(BasicDropTargetBank):
 	def __advance_triggered(self, sw):
 		"""Switch event handler for the advance_switch configured on mode creation."""
 		self.advance()
+

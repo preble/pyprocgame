@@ -6,7 +6,7 @@ import sys
 import random
 import string
 import time
-#import chuckctrl
+from pygame import mixer
 import locale
 import math
 import copy
@@ -14,7 +14,7 @@ import copy
 locale.setlocale(locale.LC_ALL, "") # Used to put commas in the score.
 
 #fonts_path = "/Users/adam/Documents/DMD/"
-fonts_path = "./"
+fonts_path = "./dmd/"
 font_tiny7 = dmd.Font(fonts_path+"04B-03-7px.dmd")
 font_jazz18 = dmd.Font(fonts_path+"Jazz18-18px.dmd")
 
@@ -31,24 +31,30 @@ class Attract(game.Mode):
 		l = dmd.TextLayer(128/2, 32-7, font_tiny7, "center")
 		#l.set_text("Free Play")
 		self.layer.layers += [l]
-		
 
 	def mode_topmost(self):
-		self.game.lamps.gi01.schedule(schedule=0xffffffff, cycle_seconds=0, now=False)
-		self.game.lamps.gi02.disable()
 		self.game.lamps.startButton.schedule(schedule=0x00000fff, cycle_seconds=0, now=False)
+		self.game.lamps.gi01.pulse(0)
+		self.game.lamps.gi02.disable()
+		#Create ball search mode
+	        self.game.modes.add(self.game.ball_search)
+
+	def mode_started(self):
+		#self.game.lamps.startButton.schedule(schedule=0x00000fff, cycle_seconds=0, now=False)
+		#self.game.lamps.gi01.pulse(0)
+		#self.game.lamps.gi02.disable()
 		for name in ['popperL', 'popperR']:
 			if self.game.switches[name].is_open():
 				self.game.coils[name].pulse()
 		for name in ['shooterL', 'shooterR']:
 			if self.game.switches[name].is_closed():
 				self.game.coils[name].pulse()
-
-	def mode_started(self):
 		self.game.dmd.layers.insert(0, self.layer)
 
 	def mode_stopped(self):
 		self.game.dmd.layers.remove(self.layer)
+		#Remove ball search
+	        self.game.modes.remove(self.game.ball_search)
 		
 	def mode_tick(self):
 		#self.layer.layers[0].enabled = (int(1.5 * time.time()) % 2) == 0
@@ -67,24 +73,26 @@ class Attract(game.Mode):
 		self.game.coils.shooterR.pulse(20)
 
 	def sw_enter_closed(self, sw):
-		self.game.set_status("Enter")
+		self.game.modes.add(self.game.service_mode)
+		# Make sure to remove ball search after adding service mode.
+		# Otherwise ball search would get re-added in topmost
+	        self.game.modes.remove(self.game.ball_search)
 		return True
 
 	def sw_exit_closed(self, sw):
-		self.game.set_status("Exit")
 		return True
 
 	def sw_down_closed(self, sw):
-		self.game.set_status("Volume Down")
+		volume = self.game.sound.volume_down()
+		self.game.set_status("Volume Down : " + str(volume))
 		return True
 
 	def sw_up_closed(self, sw):
-		self.game.set_status("Volume Up")
+		volume = self.game.sound.volume_up()
+		self.game.set_status("Volume Up : " + str(volume))
 		return True
 
 	def sw_startButton_closed(self, sw):
-		#Create ball search mode
-	        self.game.modes.add(self.game.ball_search)
 		if self.game.trough_is_full():
 			if self.game.switches.trough6.is_open():
 				self.game.modes.remove(self)
@@ -92,10 +100,8 @@ class Attract(game.Mode):
 				self.game.add_player()
 				self.game.start_ball()
 		else: 
-			#self.game.set_status("Ball Search!")
-			self.game.modes.remove(self)
-			self.game.ball_search.perform_search(5,self.game.reset)
-			#search.pop_coil()
+			self.game.set_status("Ball Search!")
+			self.game.ball_search.perform_search(5)
 		return True
 
 
@@ -110,7 +116,8 @@ class StartOfBall(game.Mode):
 		self.game.coils.flasherPursuitR.schedule(0x00000101, cycle_seconds=1, now=False)
 		self.game.modes.add(self.game_display)
 		self.game.enable_flippers(enable=True)
-		self.game.lamps.gi02.schedule(schedule=0xffffffff, cycle_seconds=0, now=True)
+		self.game.lamps.gi02.pulse(0)
+		self.game.lamps.gi03.pulse(0)
 		self.game.lamps.startButton.disable()
 		if self.game.switches.trough6.is_open():
 			self.game.coils.trough.pulse(20)
@@ -127,13 +134,16 @@ class StartOfBall(game.Mode):
 		drops.auto_reset = False
 		self.game.modes.add(drops)
 		self.drop_targets_completed_hurryup = DropTargetsCompletedHurryup(self.game, priority=self.priority+1, drop_target_mode=drops)
-                self.deadworld_search = DeadworldReleaseBall(self.game, priority=self.priority+1) 
-		self.game.modes.add(self.deadworld_search)
+		#Create ball search mode
+	        self.game.modes.add(self.game.ball_search)
+
 	
 	def mode_stopped(self):
 		self.game.enable_flippers(enable=False)
 		self.game.modes.remove(self.game_display)
 		self.game.modes.remove(self.drop_targets_completed_hurryup) # TODO: Should track parent/child relationship for modes and remove children when parent goes away..?
+		#Remove ball search
+	        self.game.modes.remove(self.game.ball_search)
 	
 	def sw_slingL_closed(self, sw):
 		self.game.score(100)
@@ -207,10 +217,14 @@ class StartOfBall(game.Mode):
 		
 	def sw_outlaneL_closed(self, sw):
 		self.game.score(1000)
-		self.game.sound.play('outlane')
+		#self.game.sound.play('outlane')
 	def sw_outlaneR_closed(self, sw):
 		self.game.score(1000)
-		self.game.sound.play('outlane')
+		#self.game.sound.play('outlane')
+
+	def sw_enter_closed(self, sw):
+		self.game.modes.add(self.game.service_mode)
+		return True
 
 class DropTargetsCompletedHurryup(game.Mode):
 	"""docstring for AttractMode"""
@@ -258,7 +272,7 @@ class DeadworldReleaseBall(game.Mode):
 	"""Deadworld Mode."""
 	def __init__(self, game, priority):
 		super(DeadworldReleaseBall, self).__init__(game, priority)
-		self.add_switch_handler(name='globePosition2', event_type='open', delay=None, handler=self.sw_globePosition2_closed)
+		#self.add_switch_handler(name='globePosition2', event_type='open', delay=None, handler=self.sw_globePosition2_closed)
 		self.add_switch_handler(name='magnetOverRing', event_type='open', delay=None, handler=self.sw_magnetOverRing_open)
 		switch_num = self.game.switches['globePosition2'].number
 		self.game.install_switch_rule(switch_num, 'closed_debounced', 'globeMotor', True)
@@ -266,7 +280,12 @@ class DeadworldReleaseBall(game.Mode):
 	def mode_started(self):
 		self.game.coils.globeMotor.pulse(0)
 
-	def sw_globePosition2_closed(self,sw):
+	def mode_stopped(self):
+		self.game.coils.crane.disable()	
+		self.game.coils.craneMagnet.disable()
+		self.game.coils.globeMotor.disable()
+
+	def sw_globePosition2_closed_for_100ms(self,sw):
 		#self.game.coils.globeMotor.disable()
 		self.game.coils.crane.pulse(0)
 
@@ -277,7 +296,10 @@ class DeadworldReleaseBall(game.Mode):
 	def crane_release(self):
 		self.game.coils.crane.disable()
 		self.game.coils.craneMagnet.disable()
-		
+	
+	def sw_startButton_closed(self,sw):
+		# Ignore start button while this mode is active
+		return True
 
 
 class GameDisplay(game.Mode):
@@ -328,17 +350,63 @@ class SoundController(object):
 	"""docstring for TestGame"""
 	def __init__(self, delegate):
 		super(SoundController, self).__init__()
-		#self.chuck = chuckctrl.ChuckProcess(self)
+		mixer.init()
+		self.sounds = {}
+		self.music = {}
+		self.set_volume(0.5)
+                                             
+                #self.register_music('wizard',"sound/pinball_wizard.mp3")
+		#self.play_music('wizard')
+
+	def play_music(self, key):
+		self.load_music(key)
+		mixer.music.play()
+
+	def stop_music(self, key):
+		mixer.music.stop()
+
+	def load_music(self, key):
+		mixer.music.load(self.music[key])
+
+	def register_sound(self, key, sound_file):
+		self.new_sound = mixer.Sound(str(sound_file))
+                self.sounds[key] = self.new_sound
+		self.sounds[key].set_volume(self.volume)
+
+	def register_music(self, key, music_file):
+                self.music[key] = music_file
+
+	def play(self,key):
+		self.sounds[key].play()
+
+	def volume_up(self):
+		if (self.volume < 0.8):
+			self.set_volume(self.volume + 0.1)
+		return self.volume*10
+
+	def volume_down(self):
+		if (self.volume > 0.2):
+			self.set_volume(self.volume - 0.1)
+		return self.volume*10
+
+	def set_volume(self, new_volume):
+		self.volume = new_volume
+		mixer.music.set_volume (new_volume)
+		for key in self.sounds:
+			self.sounds[key].set_volume(self.volume)
+
 	def beep(self):
-		self.play('chime')
-	def play(self, name):
-		#self.chuck.add_shred('sound/'+name)
-		#self.chuck.poll()
 		pass
-	def on_add_shred(self, num, name):
-		pass
-	def on_rm_shred(self, num, name):
-		pass
+	#	self.play('chime')
+
+	#def play(self, name):
+	#	self.chuck.add_shred('sound/'+name)
+	#	self.chuck.poll()
+	#	pass
+	#def on_add_shred(self, num, name):
+	#	pass
+	#def on_rm_shred(self, num, name):
+	#	pass
 
 class TestGame(game.GameController):
 	"""docstring for TestGame"""
@@ -351,17 +419,27 @@ class TestGame(game.GameController):
 	def setup(self):
 		"""docstring for setup"""
 		self.load_config('../libpinproc/examples/pinproctest/JD.yaml')
-		self.setup_ball_search()
 		print("Initial switch states:")
 		for sw in self.switches:
 			print("  %s:\t%s" % (sw.name, sw.state_str()))
+
+                self.setup_ball_search()
+
 		self.start_of_ball_mode = StartOfBall(self)
+		self.attract_mode = Attract(self)
+
+                self.sound.register_sound('service_enter', "sound/menu_in.wav")
+                self.sound.register_sound('service_exit', "sound/menu_out.wav")
+                self.sound.register_sound('service_next', "sound/next_item.wav")
+                self.sound.register_sound('service_previous', "sound/previous_item.wav")
+                self.sound.register_sound('service_switch_edge', "sound/switch_edge.wav")
+		self.service_mode = procgame.service.ServiceMode(self,100,font_tiny7)
 		self.reset()
 		
 	def reset(self):
 		super(TestGame, self).reset()
 		self.modes.add(self.popup)
-		self.modes.add(Attract(self))
+		self.modes.add(self.attract_mode)
 		
 	def ball_starting(self):
 		super(TestGame, self).ball_starting()
@@ -374,10 +452,10 @@ class TestGame(game.GameController):
 	def game_ended(self):
 		super(TestGame, self).game_ended()
 		self.modes.remove(self.start_of_ball_mode)
+		self.modes.add(self.attract_mode)
 		# for mode in copy.copy(self.modes.modes):
 		# 	self.modes.remove(mode)
 		# self.reset()
-		self.modes.add(Attract(self))
 		self.set_status("Game Over")
 		
 	def is_ball_in_play(self):
@@ -390,6 +468,37 @@ class TestGame(game.GameController):
 	def score(self, points):
 		p = self.current_player()
 		p.score += points
+
+	def setup_ball_search(self):
+		# Set up ball search.  These hardcoded lists should be set up automatically.  The changes to do that depend on to-be-implemented YAML settings which allow switches and coils for the ball search to be identified in the YAML file.
+		search_coils = [self.coils.popperR, \
+                                self.coils.popperL, \
+                                self.coils.shooterL, \
+                                self.coils.shooterR, \
+                                self.coils.slingL, \
+                                self.coils.slingR, \
+                                self.coils.resetDropTarget]
+		search_switches = ["shooterR", "shooterL", \
+                                   "flipperLwL", "flipperLwR", \
+                                   "inlaneR", "inlaneL", \
+                                   "subwayEnter1", "subwayEnter2", \
+                                   "outlaneR", "outlaneL", \
+                                   "inlaneFarR", \
+                                   "slingR", "slingL", \
+                                   "captiveBall2", \
+                                   "dropTargetJ", "dropTargetU", "dropTargetD", \
+                                   "dropTargetG", "dropTargetE", \
+                                   "popperR", "popperL", \
+                                   "rightRampExit"] 
+		stop_switches = ["shooterR", "shooterL", \
+                                 "flipperLwL", "flipperLwR",
+                                 "startButton", "coinDoor" ]
+                deadworld_search = DeadworldReleaseBall(self, priority=99) 
+		special_handler_modes = [deadworld_search]
+		# Give ball search priority of 100.
+		# It should always be the highest priority so nothing can keep
+		# switch events from getting to it.
+		self.ball_search = procgame.ballsearch.BallSearch(self, priority=100, countdown_time=10, reset_switch_names=search_switches, disable_switch_names=stop_switches,coils=search_coils,special_handler_modes=special_handler_modes)
 		
 def main():
 	machineType = 'wpc'

@@ -199,6 +199,8 @@ class ModeQueue(object):
 				break
 		if len(self.modes) > 0:
 			self.modes[0].mode_topmost()
+		print "modes"
+		print self.modes
 
 	def handle_event(self, event):
 		modes = copy.copy(self.modes) # Make a copy so if a mode is added we don't get into a loop.
@@ -307,48 +309,6 @@ class Player(object):
 		self.score = 0
 		self.name = name
 	
-class BallSearch(Mode):
-	"""Ball Search mode."""
-	def __init__(self, game, priority, countdown_time, reset_switch_names, disable_switch_names=[], enable_switch_names=[], coils=[]):
-		self.countdown_time = countdown_time
-		self.coils = coils
-		Mode.__init__(self, game, 8)
-		for switch in reset_switch_names:
-			self.add_switch_handler(name=switch, event_type='open', delay=None, handler=self.reset)
-		for switch in disable_switch_names:
-			self.add_switch_handler(name=switch, event_type='closed', delay=None, handler=self.stop)
-		self.add_switch_handler(name='trough1', event_type='open', delay=None, handler=self.sw_trough1_closed_for_200ms)
-
-	def sw_trough1_closed_for_200ms(self, sw):
-		if self.game.trough_is_full():
-			self.stop(0)
-
-        def reset(self,sw):
-		self.cancel_delayed(name='ball_search_countdown');
-		self.delay(name='ball_search_countdown', event_type=None, delay=self.countdown_time, handler=self.perform_search, param=0)
-		#return True
-
-        def stop(self,sw):
-		self.cancel_delayed(name='ball_search_countdown');
-		#return True
-
-	def perform_search(self, completion_wait_time, completion_handler = None, completion_param = None):
-		if (completion_wait_time != 0):
-			self.game.set_status("Balls Missing") # Replace with permanent message
-		delay = .150
-		for coil in self.coils:
-			self.delay(name='ball_search_coil1', event_type=None, delay=delay, handler=self.pop_coil2, param=coil)
-			delay = delay + .150
-		if (completion_wait_time != 0):
-			self.delay(name='search_completion', event_type=None, delay=completion_wait_time, handler=completion_handler, param=completion_param)
-		else:
-			self.cancel_delayed(name='ball_search_countdown');
-			self.delay(name='ball_search_countdown', event_type=None, delay=self.countdown_time, handler=self.perform_search, param=0)
-
-	def pop_coil2(self,coil):
-		coil.pulse()
-		
-
 
 class GameController(object):
 	"""Core object comprising modes, coils, lamps, switches."""
@@ -463,27 +423,6 @@ class GameController(object):
 		for sw in self.switches:
 				sw.set_state(states[sw.number] == 1)
 
-        def setup_ball_search(self):
-		search_coils = [self.coils.popperR, \
-                                self.coils.popperL, \
-                                self.coils.shooterL, \
-                                self.coils.shooterR, \
-                                self.coils.slingL, \
-                                self.coils.slingR, \
-                                self.coils.resetDropTarget]
-		search_switches = ["shooterR", "shooterL", \
-                                   "inlaneR", "inlaneL", \
-                                   "subwayEnter1", "subwayEnter2", \
-                                   "outlaneR", "outlaneL", \
-                                   "inlaneFarR", \
-                                   "slingR", "slingL", \
-                                   "captiveBall2", \
-                                   "dropTargetJ", "dropTargetU", "dropTargetD", \
-                                   "dropTargetG", "dropTargetE", \
-                                   "popperR", "popperL", \
-                                   "rightRampExit"] 
-		self.ball_search = BallSearch(self, priority=8, countdown_time=10, reset_switch_names=search_switches, disable_switch_names=["shooterR", "shooterL"],coils=search_coils)
-	
 	def enable_flippers(self, enable):
 		"""Enables or disables the flippers AND bumpers."""
 		for flipper in self.config['PRFlippers']:
