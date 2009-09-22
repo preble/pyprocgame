@@ -13,7 +13,6 @@ import copy
 
 locale.setlocale(locale.LC_ALL, "") # Used to put commas in the score.
 
-#fonts_path = "/Users/adam/Documents/DMD/"
 fonts_path = "./dmd/"
 font_tiny7 = dmd.Font(fonts_path+"04B-03-7px.dmd")
 font_jazz18 = dmd.Font(fonts_path+"Jazz18-18px.dmd")
@@ -127,13 +126,13 @@ class StartOfBall(game.Mode):
 		#        self.game.modes.add(search)
 		#	search.perform_search()
 			#search.pop_coil()
-		drops = procgame.modes.BasicDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE')
-		#drops = procgame.modes.ProgressiveDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE', advance_switch='subwayEnter1')
-		drops.on_advance = self.on_drops_advance
-		drops.on_completed = self.on_drops_completed
-		drops.auto_reset = False
-		self.game.modes.add(drops)
-		self.drop_targets_completed_hurryup = DropTargetsCompletedHurryup(self.game, priority=self.priority+1, drop_target_mode=drops)
+		self.drops = procgame.modes.BasicDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE')
+		#self.drops = procgame.modes.ProgressiveDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE', advance_switch='subwayEnter1')
+		self.drops.on_advance = self.on_drops_advance
+		self.drops.on_completed = self.on_drops_completed
+		self.drops.auto_reset = False
+		self.game.modes.add(self.drops)
+		self.drop_targets_completed_hurryup = DropTargetsCompletedHurryup(self.game, priority=self.priority+1, drop_target_mode=self.drops)
 		#Create ball search mode
 	        self.game.modes.add(self.game.ball_search)
 
@@ -141,9 +140,10 @@ class StartOfBall(game.Mode):
 	def mode_stopped(self):
 		self.game.enable_flippers(enable=False)
 		self.game.modes.remove(self.game_display)
+		self.game.modes.remove(self.drops)
 		self.game.modes.remove(self.drop_targets_completed_hurryup) # TODO: Should track parent/child relationship for modes and remove children when parent goes away..?
 		#Remove ball search
-	        self.game.modes.remove(self.game.ball_search)
+		self.game.modes.remove(self.game.ball_search)
 	
 	def sw_slingL_closed(self, sw):
 		self.game.score(100)

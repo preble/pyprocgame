@@ -172,6 +172,8 @@ class Mode(object):
 			else:
 				handler()
 		self.__delayed = filter(lambda x: x['time'] > t, self.__delayed)
+	def __str__(self):
+		return "%s  pri=%d" % (type(self).__name__, self.priority)
 
 class ModeQueue(object):
 	"""docstring for ModeQueue"""
@@ -185,7 +187,7 @@ class ModeQueue(object):
 		self.modes += [mode]
 		# Sort by priority, descending:
 		self.modes.sort(lambda x, y: y.priority - x.priority)
-		print "Added %s, now: %s" % (str(mode), str(self))
+		print "Added %s, now:\n%s" % (str(mode), str(self))
 		mode.mode_started()
 		if mode == self.modes[0]:
 			mode.mode_topmost()
@@ -194,13 +196,11 @@ class ModeQueue(object):
 		for idx, m in enumerate(self.modes):
 			if m == mode:
 				del self.modes[idx]
-				print "Removed %s, now: %s" % (str(mode), str(self))
+				print "Removed %s, now:\n%s" % (str(mode), str(self))
 				mode.mode_stopped()
 				break
 		if len(self.modes) > 0:
 			self.modes[0].mode_topmost()
-		print "modes"
-		print self.modes
 
 	def handle_event(self, event):
 		modes = copy.copy(self.modes) # Make a copy so if a mode is added we don't get into a loop.
@@ -217,7 +217,7 @@ class ModeQueue(object):
 	def __str__(self):
 		s = ""
 		for mode in self.modes:
-			s += "#%d %s  " % (mode.priority, str(mode))
+			s += "  #%d %s\n" % (mode.priority, type(mode).__name__)
 		return s
 
 class AttrCollection(object):
@@ -308,6 +308,7 @@ class Player(object):
 		super(Player, self).__init__()
 		self.score = 0
 		self.name = name
+		self.extra_balls = 0
 	
 
 class GameController(object):
@@ -360,6 +361,11 @@ class GameController(object):
 		"""Called by the game framework when a new ball is starting."""
 		pass
 	
+	def shoot_again(self):
+		"""Called by the game framework when a new ball is starting which was the result of a stored extra ball (Player.extra_balls).  
+		   The default implementation calls ball_starting(), which is not called by the framework in this case."""
+		self.ball_starting()
+
 	def ball_ended(self):
 		"""Called by the game framework when the current ball has ended."""
 		pass
@@ -367,6 +373,10 @@ class GameController(object):
 	def end_ball(self):
 		"""Called by the implementor to notify the game that the current ball has ended."""
 		self.ball_ended()
+		if self.current_player().extra_balls > 0:
+			self.extra_balls -= 1
+			self.shoot_again()
+			return
 		if self.current_player_index + 1 == len(self.players):
 			self.ball += 1
 			self.current_player_index = 0
