@@ -6,14 +6,15 @@ import sys
 import random
 import string
 import time
-from pygame import mixer
 import locale
 import math
 import copy
 
 locale.setlocale(locale.LC_ALL, "") # Used to put commas in the score.
 
-fonts_path = "./dmd/"
+config_path = "../shared/config/JD.yaml"
+fonts_path = "../shared/dmd/"
+sound_path = "../shared/sound/"
 font_tiny7 = dmd.Font(fonts_path+"04B-03-7px.dmd")
 font_jazz18 = dmd.Font(fonts_path+"Jazz18-18px.dmd")
 
@@ -346,6 +347,9 @@ class PopupDisplay(game.Mode):
 def commatize(n):
 	return locale.format("%d", n, True)
 	
+print("Initializing sound...")
+from pygame import mixer # This call takes a while.
+
 class SoundController(object):
 	"""docstring for TestGame"""
 	def __init__(self, delegate):
@@ -418,7 +422,7 @@ class TestGame(game.GameController):
 		
 	def setup(self):
 		"""docstring for setup"""
-		self.load_config('../libpinproc/examples/pinproctest/JD.yaml')
+		self.load_config(config_path)
 		print("Initial switch states:")
 		for sw in self.switches:
 			print("  %s:\t%s" % (sw.name, sw.state_str()))
@@ -428,11 +432,11 @@ class TestGame(game.GameController):
 		self.start_of_ball_mode = StartOfBall(self)
 		self.attract_mode = Attract(self)
 
-                self.sound.register_sound('service_enter', "sound/menu_in.wav")
-                self.sound.register_sound('service_exit', "sound/menu_out.wav")
-                self.sound.register_sound('service_next', "sound/next_item.wav")
-                self.sound.register_sound('service_previous', "sound/previous_item.wav")
-                self.sound.register_sound('service_switch_edge', "sound/switch_edge.wav")
+                self.sound.register_sound('service_enter', sound_path+"menu_in.wav")
+                self.sound.register_sound('service_exit', sound_path+"menu_out.wav")
+                self.sound.register_sound('service_next', sound_path+"next_item.wav")
+                self.sound.register_sound('service_previous', sound_path+"previous_item.wav")
+                self.sound.register_sound('service_switch_edge', sound_path+"switch_edge.wav")
 		self.service_mode = procgame.service.ServiceMode(self,100,font_tiny7)
 		self.reset()
 		
