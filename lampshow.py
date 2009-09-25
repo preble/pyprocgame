@@ -28,7 +28,7 @@ class LampShowTrack(object):
 		if m == None:
 			raise ValueError, "Regexp didn't match on track line: "+line
 		self.name = m.group('name')
-		data = m.group('data')
+		data = m.group('data')+(' '*32) # Pad it with 32 spaces so that the FIXME below doesn't cause a problem.
 		bits = 0
 		bit_count = 0
 		for ch in data:
@@ -79,7 +79,7 @@ class LampShow(object):
 			self.last_seconds = seconds
 			for tr in self.tracks:
 				sch = tr.next_schedule()
-				self.game.lamps[tr.name].schedule(schedule=sch, cycle_seconds=1, now=False)
+				self.game.lamps[tr.name].schedule(schedule=sch, cycle_seconds=1, now=True)
 			print time.time()
 	
 	def is_complete(self):
@@ -102,8 +102,8 @@ def main():
 	show = LampShow(game=g)
 	show.load(filename)
 
-	while(1): #show.is_complete()):
-		time.sleep(0.1)
+	while not show.is_complete():
+		time.sleep(0.03)
 		show.tick()
 		#g.lamps.gi01.schedule(schedule=0xffffffff, cycle_seconds=1, now=False) # commented out test code
 		g.proc.watchdog_tickle()
