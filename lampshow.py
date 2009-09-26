@@ -13,6 +13,45 @@ import math
 import copy
 import re
 
+
+# Pattern functions:
+def make_pattern(m, repeats):
+	"""docstring for make_pattern"""
+	str = ''
+	for i in range(m):
+		for j in range(repeats):
+			str += ' ' + (i + 1) * '.'
+	return str
+def make_pattern_of_length(l):
+	"""docstring for make_pattern_of_length"""
+	# repeats = max(1, l / 26)
+	# return make_pattern(4, repeats)[:l] # Guarantee it ends with a .
+	s = '.  .  . . .. .. ... ... .... .... ..... .....'[:l]
+	if len(s) < l:
+		s += '.' * (l-len(s))
+	return s
+def fade_in(l):
+	return make_pattern_of_length(l)
+def fade_out(l):
+	s = fade_in(l)
+	s = s[::-1]
+	return s
+def fade_fade(l):
+	"""docstring for fade_fade"""
+	a = fade_in(l/2)
+	b = fade_out(l/2)
+	if (l % 2) == 0:
+		return a[:-1] + ' ' + b
+	else:
+		return a + ' ' + b
+def expand_line(str):
+	str = re.sub('(\[[\- ]*\])', lambda m: '.'*len(m.group(1)), str)
+	str = re.sub('(\<[\- ]*\])', lambda m: fade_in(len(m.group(1)))[:-1] + '.', str)
+	str = re.sub('(\[[\- ]*\>)', lambda m: '.'+fade_out(len(m.group(1)))[1:], str)
+	str = re.sub('(\<[\- ]*\>)', lambda m: fade_fade(len(m.group(1))), str)
+	return str
+# End of Pattern functions
+
 class LampShowTrack(object):
 	"""docstring for LampShowTrack"""
 	def __init__(self, line):
@@ -29,6 +68,7 @@ class LampShowTrack(object):
 			raise ValueError, "Regexp didn't match on track line: "+line
 		self.name = m.group('name')
 		data = m.group('data')+(' '*32) # Pad it with 32 spaces so that the FIXME below doesn't cause a problem.
+		data = expand_line(data)
 		bits = 0
 		bit_count = 0
 		for ch in data:
@@ -42,9 +82,11 @@ class LampShowTrack(object):
 				bit_count = 0
 		# FIXME: This lops off the last up to 31 bits of track data!
 		# Print out all of the data for debugging purposes:
-		print "Loaded %d schedules for %s:" % (len(self.schedules), self.name)
-		for sch in self.schedules:
-			print " - % 8x" % (sch)
+		# print "Loaded %d schedules for %s:" % (len(self.schedules), self.name)
+		# for sch in self.schedules:
+		# 	print " - % 8x" % (sch)
+		print "%s | %s" % (self.name, m.group('data'))
+		print "%s | %s" % (self.name, data)
 	
 	def next_schedule(self):
 		if self.is_complete():
