@@ -28,6 +28,7 @@ class BallSearch(Mode):
 		self.enabled = 1;
 
 	def disable(self):
+		self.stop(None)
 		self.enabled = 0;
 
 
