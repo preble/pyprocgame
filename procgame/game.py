@@ -464,7 +464,7 @@ class GameController(object):
 
 				drivers = []
 				if enable:
-					drivers += [pinproc.driver_state_patter(main_coil.state(), 3, 22, 30)]
+					drivers += [pinproc.driver_state_patter(main_coil.state(), 3, 22, 34)]
 	
 				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False}, drivers)
 			
