@@ -9,6 +9,7 @@ import random
 import string
 import time
 import locale
+import yaml
 import math
 import copy
 import re
@@ -137,8 +138,16 @@ def main():
 
 	filename = sys.argv[1]
 	yamlpath = sys.argv[2]
+
+        # Parse YAML file just to get the machine type so we know what type of GameController
+        # to create.
+         
+        config = yaml.load(open(yamlpath, 'r'))
+        sect_dict = config['PRGame']
+        machineType = sect_dict['machineType']
+        print("Machine type is %s"%(machineType))
 	
-	g = game.GameController('wpc')
+	g = game.GameController(str(machineType))
 	g.load_config(yamlpath)
 	
 	show = LampShow(game=g)
@@ -147,7 +156,7 @@ def main():
 	while not show.is_complete():
 		time.sleep(0.03)
 		show.tick()
-		#g.lamps.gi01.schedule(schedule=0xffffffff, cycle_seconds=1, now=False) # commented out test code
+		#g.lamps.gi01.schedule(schedule=0xffffffff, cycle_seconds=1, now=True) # commented out test code
 		g.proc.watchdog_tickle()
 
 if __name__ == "__main__":
