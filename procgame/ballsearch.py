@@ -4,6 +4,7 @@ from dmd import *
 class BallSearch(Mode):
 	"""Ball Search mode."""
 	def __init__(self, game, priority, countdown_time, reset_switch_names, disable_switch_names=[], enable_switch_names=[], coils=[], special_handler_modes=[]):
+		self.disable_switch_names = disable_switch_names
 		self.countdown_time = countdown_time
 		self.coils = coils
 		self.special_handler_modes = special_handler_modes
@@ -16,16 +17,21 @@ class BallSearch(Mode):
 		for switch in disable_switch_names:
 			self.add_switch_handler(name=switch, event_type='closed', delay=None, handler=self.stop)
 
-	def sw_trough1_open_for_200ms(self, sw):
-		if self.game.trough_is_full():
-			for special_handler_mode in self.special_handler_modes:
-				special_handler_mode.mode_stopped()
-			self.stop(0)
+	#def sw_trough1_open_for_200ms(self, sw):
+	#	if self.game.is_trough_full():
+	#		for special_handler_mode in self.special_handler_modes:
+	#			special_handler_mode.mode_stopped()
+	#		self.stop(0)
 
         def reset(self,sw):
-		self.cancel_delayed(name='ball_search_countdown');
-		self.delay(name='ball_search_countdown', event_type=None, delay=self.countdown_time, handler=self.perform_search, param=0)
-		#return True
+		schedule_search = 1
+		for switch in self.disable_switch_names:
+			if self.game.switches[switch].is_closed():
+				schedule_search = 0
+
+		if schedule_search:
+			self.cancel_delayed(name='ball_search_countdown');
+			self.delay(name='ball_search_countdown', event_type=None, delay=self.countdown_time, handler=self.perform_search, param=0)
 
         def stop(self,sw):
 		self.cancel_delayed(name='ball_search_countdown');
@@ -48,7 +54,7 @@ class BallSearch(Mode):
 		else:
 			self.cancel_delayed(name='ball_search_countdown');
 			self.delay(name='ball_search_countdown', event_type=None, delay=self.countdown_time, handler=self.perform_search, param=0)
-
+	
 	def pop_coil(self,coil):
 		coil.pulse()
 
