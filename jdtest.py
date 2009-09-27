@@ -86,7 +86,7 @@ class Attract(game.Mode):
 		return True
 
 	def sw_startButton_closed(self, sw):
-		if self.game.trough_is_full():
+		if self.game.is_trough_full():
 			if self.game.switches.trough6.is_open():
 				self.game.modes.remove(self)
 				self.game.start_game()
@@ -103,7 +103,7 @@ class StartOfBall(game.Mode):
 	def __init__(self, game):
 		super(StartOfBall, self).__init__(game, 2)
 		self.game_display = GameDisplay(self.game)
-                self.ball_save = BallSave(self.game, self.game.lamps.drainShield)
+                self.ball_save = procgame.ballsave.BallSave(self.game, self.game.lamps.drainShield)
 
 	def mode_started(self):
 		self.game.coils.flasherPursuitL.schedule(0x00001010, cycle_seconds=1, now=False)
@@ -228,52 +228,6 @@ class StartOfBall(game.Mode):
 		if (self.auto_plunge):
 			self.game.coils.shooterR.pulse(50)
 
-
-class BallSave(game.Mode):
-	"""Keeps track of ball save timer."""
-	def __init__(self, game, lamp):
-		super(BallSave, self).__init__(game, 3)
-		self.lamp = lamp
-
-	def mode_started(self):
-		self.mode_begin = 1
-		self.lamp.schedule(schedule=0xFF00FF00, cycle_seconds=0, now=True)
-
-	def mode_ended(self):
-		if (self.timer):
-			self.cancel_delayed['ball_save_timer']
-			self.lamp.disable()
-
-	def timer_countdown(self):
-		self.timer -= 1
-		if (self.timer):
-			self.delay(name='ball_save_timer', event_type=None, delay=1, handler=self.timer_countdown)
-
-		if (self.timer == 4):
-			self.lamp.disable()
-		elif (self.timer == 7):
-			self.lamp.schedule(schedule=0x55555555, cycle_seconds=0, now=True)
-
-	def sw_trough1_open(self, sw):
-                if self.timer:
-			if self.game.switches.trough6.is_open():
-				self.game.coils.trough.pulse(20)
-			else:
-				self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
-			return True
-
-	def eject(self):
-		if self.game.switches.trough6.is_open():
-			self.game.coils.trough.pulse(20)
-		else:
-			self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
-
-	def sw_shooterR_open_for_1s(self, sw):
-		if self.mode_begin:
-			self.mode_begin = 0
-			self.timer = 15
-			self.lamp.schedule(schedule=0xFF00FF00, cycle_seconds=0, now=True)
-			self.delay(name='ball_save_timer', event_type=None, delay=1, handler=self.timer_countdown)
 
 
 class DropTargetsCompletedHurryup(game.Mode):
@@ -546,7 +500,7 @@ class TestGame(game.GameController):
                                    "rightRampExit"] 
 		stop_switches = ["shooterR", "shooterL", \
                                  "flipperLwL", "flipperLwR",
-                                 "startButton", "coinDoor" ]
+                                 "startButton" ]
                 deadworld_search = DeadworldReleaseBall(self, priority=99) 
 		special_handler_modes = [deadworld_search]
 		# Give ball search priority of 100.
