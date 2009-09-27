@@ -435,25 +435,44 @@ class GameController(object):
 
 	def enable_flippers(self, enable):
 		"""Enables or disables the flippers AND bumpers."""
-		for flipper in self.config['PRFlippers']:
-			print("  programming flipper %s" % (flipper))
-			main_coil = self.coils[flipper+'Main']
-			hold_coil = self.coils[flipper+'Hold']
-			switch_num = self.switches[flipper].number
+                if self.machineType == 'wpc':
+			for flipper in self.config['PRFlippers']:
+				print("  programming flipper %s" % (flipper))
+				main_coil = self.coils[flipper+'Main']
+				hold_coil = self.coils[flipper+'Hold']
+				switch_num = self.switches[flipper].number
 
-			drivers = []
-			if enable:
-				drivers += [pinproc.driver_state_pulse(main_coil.state(), 34)]
-				drivers += [pinproc.driver_state_pulse(hold_coil.state(), 0)]
+				drivers = []
+				if enable:
+					drivers += [pinproc.driver_state_pulse(main_coil.state(), 34)]
+					drivers += [pinproc.driver_state_pulse(hold_coil.state(), 0)]
+	
+				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False}, drivers)
+			
+				drivers = []
+				if enable:
+					drivers += [pinproc.driver_state_disable(main_coil.state())]
+					drivers += [pinproc.driver_state_disable(hold_coil.state())]
+	
+				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False}, drivers)
+                elif self.machineType == 'stern':
+			for flipper in self.config['PRFlippers']:
+				print("  programming flipper %s" % (flipper))
+				main_coil = self.coils[flipper+'Main']
+				#switch_num = self.switches[flipper].number
+				switch_num = pinproc.decode(self.machineType, str(self.switches[flipper].number))
 
-			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False}, drivers)
-		
-			drivers = []
-			if enable:
-				drivers += [pinproc.driver_state_disable(main_coil.state())]
-				drivers += [pinproc.driver_state_disable(hold_coil.state())]
-
-			self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False}, drivers)
+				drivers = []
+				if enable:
+					drivers += [pinproc.driver_state_patter(main_coil.state(), 3, 22, 30)]
+	
+				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False}, drivers)
+			
+				drivers = []
+				if enable:
+					drivers += [pinproc.driver_state_disable(main_coil.state())]
+	
+				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False}, drivers)
 	
 		for bumper in self.config['PRBumpers']:
 			switch_num = self.switches[bumper].number
@@ -472,15 +491,24 @@ class GameController(object):
 		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host}, drivers)
 
 	def trough_is_full(self):
-		if self.switches.trough6.is_open() and \
-		   self.switches.trough5.is_open() and \
-		   self.switches.trough4.is_open() and \
-		   self.switches.trough3.is_open() and \
-		   self.switches.trough2.is_open() and \
-		   self.switches.trough1.is_open():
-			return True
+                if self.machineType == 'wpc':
+			if self.switches.trough6.is_open() and \
+			   self.switches.trough5.is_open() and \
+			   self.switches.trough4.is_open() and \
+			   self.switches.trough3.is_open() and \
+			   self.switches.trough2.is_open() and \
+			   self.switches.trough1.is_open():
+				return True
+			else:
+				return False
 		else:
-			return False
+			if self.switches.trough4.is_closed() and \
+			   self.switches.trough3.is_closed() and \
+			   self.switches.trough2.is_closed() and \
+			   self.switches.trough1.is_closed():
+				return True
+			else:
+				return False
                   
 
 
