@@ -130,6 +130,7 @@ class StartOfBall(game.Mode):
 		self.drop_targets_completed_hurryup = DropTargetsCompletedHurryup(self.game, priority=self.priority+1, drop_target_mode=self.drops)
 		self.auto_plunge = 0
 		self.game.modes.add(self.ball_save)
+		self.game.ball_search.enable()
 
 	
 	def mode_stopped(self):
@@ -139,6 +140,7 @@ class StartOfBall(game.Mode):
 		self.game.modes.remove(self.drop_targets_completed_hurryup) # TODO: Should track parent/child relationship for modes and remove children when parent goes away..?
 		#Remove ball search
 		self.game.modes.remove(self.ball_save)
+		self.game.ball_search.disable()
 	
 	def sw_slingL_closed(self, sw):
 		self.game.score(100)
