@@ -36,8 +36,6 @@ class Attract(game.Mode):
 		self.game.lamps.startButton.schedule(schedule=0x00000fff, cycle_seconds=0, now=False)
 		self.game.lamps.gi01.pulse(0)
 		self.game.lamps.gi02.disable()
-		#Create ball search mode
-	        self.game.modes.add(self.game.ball_search)
 
 	def mode_started(self):
 		#self.game.lamps.startButton.schedule(schedule=0x00000fff, cycle_seconds=0, now=False)
@@ -53,8 +51,6 @@ class Attract(game.Mode):
 
 	def mode_stopped(self):
 		self.game.dmd.layers.remove(self.layer)
-		#Remove ball search
-	        self.game.modes.remove(self.game.ball_search)
 		
 	def mode_tick(self):
 		#self.layer.layers[0].enabled = (int(1.5 * time.time()) % 2) == 0
@@ -74,9 +70,6 @@ class Attract(game.Mode):
 
 	def sw_enter_closed(self, sw):
 		self.game.modes.add(self.game.service_mode)
-		# Make sure to remove ball search after adding service mode.
-		# Otherwise ball search would get re-added in topmost
-	        self.game.modes.remove(self.game.ball_search)
 		return True
 
 	def sw_exit_closed(self, sw):
@@ -135,8 +128,6 @@ class StartOfBall(game.Mode):
 		self.drops.auto_reset = False
 		self.game.modes.add(self.drops)
 		self.drop_targets_completed_hurryup = DropTargetsCompletedHurryup(self.game, priority=self.priority+1, drop_target_mode=self.drops)
-		#Create ball search mode
-	        self.game.modes.add(self.game.ball_search)
 		self.auto_plunge = 0
 		self.game.modes.add(self.ball_save)
 
@@ -147,7 +138,6 @@ class StartOfBall(game.Mode):
 		self.game.modes.remove(self.drops)
 		self.game.modes.remove(self.drop_targets_completed_hurryup) # TODO: Should track parent/child relationship for modes and remove children when parent goes away..?
 		#Remove ball search
-		self.game.modes.remove(self.game.ball_search)
 		self.game.modes.remove(self.ball_save)
 	
 	def sw_slingL_closed(self, sw):
@@ -503,6 +493,7 @@ class TestGame(game.GameController):
 		super(TestGame, self).reset()
 		self.modes.add(self.popup)
 		self.modes.add(self.attract_mode)
+	        self.modes.add(self.ball_search)
 		
 	def ball_starting(self):
 		super(TestGame, self).ball_starting()
