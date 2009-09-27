@@ -433,6 +433,9 @@ class GameController(object):
 		for sw in self.switches:
 				sw.set_state(states[sw.number] == 1)
 
+		sect_dict = self.config['PRGame']
+		self.num_balls_total = sect_dict['numBalls']
+
 	def enable_flippers(self, enable):
 		"""Enables or disables the flippers AND bumpers."""
                 if self.machineType == 'wpc':
@@ -490,26 +493,26 @@ class GameController(object):
 		drivers += [pinproc.driver_state_disable(coil.state())]
 		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host}, drivers)
 
-	def trough_is_full(self):
+	def is_trough_full(self, num_balls=0):
+		if num_balls == 0:
+			num_balls = self.num_balls_total
                 if self.machineType == 'wpc':
-			if self.switches.trough6.is_open() and \
-			   self.switches.trough5.is_open() and \
-			   self.switches.trough4.is_open() and \
-			   self.switches.trough3.is_open() and \
-			   self.switches.trough2.is_open() and \
-			   self.switches.trough1.is_open():
-				return True
-			else:
-				return False
+			end_number = 6 - num_balls
+			for i in range(6, end_number, -1):
+				swName = 'trough' + str(i) 
+				if self.switches[swName].is_closed():
+					return False
+
+			return True
+					
 		else:
-			if self.switches.trough4.is_closed() and \
-			   self.switches.trough3.is_closed() and \
-			   self.switches.trough2.is_closed() and \
-			   self.switches.trough1.is_closed():
-				return True
-			else:
-				return False
-                  
+			end_number = 1 + num_balls
+			for i in range(1, end_number):
+				swName = 'trough' + str(i) 
+				if self.switches[swName].is_open():
+					return False
+
+			return True
 
 
 	def run_loop(self):
