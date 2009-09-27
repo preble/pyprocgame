@@ -8,6 +8,7 @@ class BallSearch(Mode):
 		self.countdown_time = countdown_time
 		self.coils = coils
 		self.special_handler_modes = special_handler_modes
+		self.enabled = 0;
 		Mode.__init__(self, game, 8)
 		for switch in reset_switch_names:
 			self.add_switch_handler(name=switch, event_type='open', delay=None, handler=self.reset)
@@ -23,15 +24,23 @@ class BallSearch(Mode):
 	#			special_handler_mode.mode_stopped()
 	#		self.stop(0)
 
-        def reset(self,sw):
-		schedule_search = 1
-		for switch in self.disable_switch_names:
-			if self.game.switches[switch].is_closed():
-				schedule_search = 0
+	def enable(self):
+		self.enabled = 1;
 
-		if schedule_search:
-			self.cancel_delayed(name='ball_search_countdown');
-			self.delay(name='ball_search_countdown', event_type=None, delay=self.countdown_time, handler=self.perform_search, param=0)
+	def disable(self):
+		self.enabled = 0;
+
+
+        def reset(self,sw):
+		if self.enabled:
+			schedule_search = 1
+			for switch in self.disable_switch_names:
+				if self.game.switches[switch].is_closed():
+					schedule_search = 0
+
+			if schedule_search:
+				self.cancel_delayed(name='ball_search_countdown');
+				self.delay(name='ball_search_countdown', event_type=None, delay=self.countdown_time, handler=self.perform_search, param=0)
 
         def stop(self,sw):
 		self.cancel_delayed(name='ball_search_countdown');
