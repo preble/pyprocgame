@@ -89,6 +89,9 @@ class Attract(game.Mode):
 				self.game.start_game()
 				self.game.add_player()
 				self.game.start_ball()
+		else: 
+			self.game.set_status("Ball Search!")
+			self.game.ball_search.perform_search(5)
 		return True
 
 
@@ -106,13 +109,16 @@ class StartOfBall(game.Mode):
 		self.auto_plunge = 0
 		if self.game.switches.trough1.is_closed():
 			self.game.coils.trough.pulse(20)
+		self.game.ball_search.enable()
+		self.plunder = PlunderDiskMode(self.game, priority=8)
+		self.game.modes.add(self.plunder)
 
 	def mode_stopped(self):
 		self.game.enable_flippers(enable=False)
 		self.game.modes.remove(self.game_display)
 		self.game.modes.remove(self.ball_save)
-		#Remove ball search
-		#self.game.modes.remove(self.game.ball_search)
+		self.game.ball_search.disable()
+		self.game.modes.remove(self.plunder)
 	
 
 	def sw_startButton_closed(self, sw):
@@ -169,6 +175,63 @@ class StartOfBall(game.Mode):
 		if (self.auto_plunge):
 			self.game.coils.shooterR.pulse(30)
 
+class PlunderDiskMode(game.Mode):
+	"""docstring for AttractMode"""
+	def __init__(self, game, priority):
+		super(PlunderDiskMode, self).__init__(game, priority)
+		#self.drop_target_mode = drop_target_mode
+		#self.countdown_layer = dmd.TextLayer(128/2, 7, font_jazz18, "center")
+		#self.banner_layer = dmd.TextLayer(128/2, 7, font_jazz18, "center")
+		#self.layer = dmd.GroupedLayer(128, 32, [self.countdown_layer, self.banner_layer])
+		for i in range(1,7):
+			switchName = 'plunder' + str(i)
+			self.add_switch_handler(name=switchName, event_type='closed', delay=None, handler=self.targetHit)
+	
+	def mode_started(self):
+		self.state = 1;	
+		self.update_lamps
+		self.game.lamps.backpanel1.pulse(0)
+		for i in range(2,8):
+			lampName = 'backpanel' + str(i)
+			self.game.lamps[lampName].disable()
+
+	def mode_stopped(self):
+		#self.game.dmd.layers.remove(self.layer)
+		#self.drop_target_mode.animated_reset(1.0)
+		#self.game.lamps.multiballJackpot.disable()
+		pass
+
+	def update_lamps(self,on):
+		lampName = 'backpanel' + str(self.state)
+		if on:
+			self.game.lamps[lampName].pulse(0)
+		else:
+			self.game.lamps[lampName].disable()
+
+	def targetHit(self,sw):
+		self.update_lamps(0)
+		if (self.state == 7):
+			self.state = 1
+		else:
+			self.state += 1
+		self.update_lamps(1)
+		self.game.score(1000)
+	
+	def sw_leftRampEnter_closed(self, sw):
+		self.game.coils.plunderDiskMotor.pulse(0)
+		self.game.coils.plunderPin.pulse(0)
+		# Cancel first just in case the delay functions were already set up.
+		self.cancel_delayed(name='plunder_falsestart')
+		self.cancel_delayed(name='plunder_complete')
+		self.delay(name='plunder_falsestart', event_type=None, delay=2.0, handler=self.plunder_stop)
+		self.delay(name='plunder_complete', event_type=None, delay=7.0, handler=self.plunder_stop)
+
+	def sw_plunderEnter_open(self, sw):
+		self.cancel_delayed(name='plunder_falsestart')
+	
+	def plunder_stop(self):
+		self.game.coils.plunderDiskMotor.disable()
+		self.game.coils.plunderPin.disable()
 	
 
 class GameDisplay(game.Mode):
@@ -295,6 +358,8 @@ class TestGame(game.GameController):
 		for sw in self.switches:
 			print("  %s:\t%s" % (sw.name, sw.state_str()))
 
+                self.setup_ball_search()
+
 		self.start_of_ball_mode = StartOfBall(self)
 		self.attract_mode = Attract(self)
 
@@ -310,6 +375,7 @@ class TestGame(game.GameController):
 		super(TestGame, self).reset()
 		self.modes.add(self.popup)
 		self.modes.add(self.attract_mode)
+	        self.modes.add(self.ball_search)
 		
 	def ball_starting(self):
 		super(TestGame, self).ball_starting()
@@ -338,6 +404,48 @@ class TestGame(game.GameController):
 	def score(self, points):
 		p = self.current_player()
 		p.score += points
+
+	def setup_ball_search(self):
+		# Set up ball search.  These hardcoded lists should be set up automatically.  The changes to do that depend on to-be-implemented YAML settings which allow switches and coils for the ball search to be identified in the YAML file.
+		search_coils = [self.coils.topCenterVUK, \
+                                self.coils.chestLid, \
+                                self.coils.raiseSails, \
+                                self.coils.shooterR, \
+                                self.coils.popL, \
+                                self.coils.popR, \
+                                self.coils.popB, \
+                                self.coils.popEject, \
+                                self.coils.chestLock, \
+                                self.coils.slingL, \
+                                self.coils.slingR, \
+				self.coils.plunderPin, \
+				self.coils.shipPost]
+		search_switches = ["shooterR", \
+                                   "flipperLwL", "flipperLwR", \
+                                   "leftLane", "rightLane", \
+                                   "hitChest", "plunderExit", "plunderEnter", \
+                                   "leftOrbit", "leftRampEnter", \
+                                   "leftTopLane", "middleTopLane", "rightTopLane", \
+                                   "slingR", "slingL", \
+                                   "outlaneL", "inlaneL", \
+                                   "outlaneR", "inlaneR", \
+                                   "popR", "popL", "popB", \
+                                   "bonusTreasureL", "bonusTreasureR", \
+                                   "plunder1", "plunder2", \
+                                   "plunder3", "plunder4", \
+                                   "plunder5", "plunder6", \
+                                   "pirate1", "pirate2", \
+                                   "pirate3", "pirate4", \
+                                   "pirate5", "pirate6", \
+                                   "shipMade"] 
+		stop_switches = ["shooterR", \
+                                 "flipperLwL", "flipperLwR",
+                                 "startButton" ]
+		special_handler_modes = []
+		# Give ball search priority of 100.
+		# It should always be the highest priority so nothing can keep
+		# switch events from getting to it.
+		self.ball_search = procgame.ballsearch.BallSearch(self, priority=100, countdown_time=10, reset_switch_names=search_switches, disable_switch_names=stop_switches,coils=search_coils,special_handler_modes=special_handler_modes)
 
 def main():
 	machineType = 'stern'
