@@ -138,7 +138,6 @@ class StartOfBall(game.Mode):
 		self.game.modes.remove(self.game_display)
 		self.game.modes.remove(self.drops)
 		self.game.modes.remove(self.drop_targets_completed_hurryup) # TODO: Should track parent/child relationship for modes and remove children when parent goes away..?
-		#Remove ball search
 		self.game.modes.remove(self.ball_save)
 		self.game.ball_search.disable()
 	
@@ -173,19 +172,25 @@ class StartOfBall(game.Mode):
 	
 	def sw_popperL_open(self, sw):
 		self.game.set_status("Left popper!")
-		self.game.coils.flashersLowerLeft.schedule(0x333, cycle_seconds=1, now=False)
 		
-	def sw_popperL_open_for_500ms(self, sw): # opto!
-		self.game.coils.popperL.pulse(50)
-		self.game.score(2000)
+	def sw_popperL_open_for_200ms(self, sw):
+		if self.game.disable_popperL != 1:
+			self.flash_then_pop('flashersLowerLeft', 'popperL', 50)
+			#self.game.coils.flashersLowerLeft.schedule(0x33333, cycle_seconds=1, now=True)
+
+	#def sw_popperL_open_for_500ms(self, sw): # opto!
+	#	if self.game.disable_popperL != 1:
+	#		self.game.coils.popperL.pulse(50)
+	#		self.game.score(2000)
 
 	def sw_popperR_open(self, sw):
 		self.game.set_status("Right popper!")
-		self.game.coils.flashersRtRamp.schedule(0x333, cycle_seconds=1, now=False)
 
-	def sw_popperR_open_for_500ms(self, sw): # opto!
-		self.game.coils.popperR.pulse(20)
-		self.game.score(2000)
+	def sw_popperR_open_for_200ms(self, sw): # opto!
+		self.flash_then_pop('flashersRtRamp', 'popperR', 20)
+		#self.game.coils.flashersRtRamp.schedule(0x333, cycle_seconds=1, now=True)
+		#self.game.coils.popperR.pulse(20)
+		#self.game.score(2000)
 	
 	def sw_rightRampExit_closed(self, sw):
 		self.game.set_status("Right ramp!")
@@ -230,6 +235,13 @@ class StartOfBall(game.Mode):
 		if (self.auto_plunge):
 			self.game.coils.shooterR.pulse(50)
 
+	def flash_then_pop(self, flasher, coil, pulse):
+		self.game.coils[flasher].schedule(0x00555555, cycle_seconds=1, now=True)
+		self.delay(name='delayed_pop', event_type=None, delay=1.0, handler=self.delayed_pop, param=[coil, pulse])
+
+	def delayed_pop(self, coil_pulse):
+		self.game.coils[coil_pulse[0]].pulse(coil_pulse[1])	
+
 
 
 class DropTargetsCompletedHurryup(game.Mode):
@@ -252,13 +264,19 @@ class DropTargetsCompletedHurryup(game.Mode):
 		self.game.dmd.layers.remove(self.layer)
 		self.drop_target_mode.animated_reset(1.0)
 		self.game.lamps.multiballJackpot.disable()
+		self.game.disable_popperL = 0
+		if self.game.switches.popperL.is_open():
+			self.game.coils.popperL.pulse(40)
 	
 	def sw_subwayEnter1_closed(self, sw):
 		self.game.score(1000*1000)
-		self.banner_layer.set_text("1 MILLION!", 2)
+		# Set award message.  Keep it on the DMD long enough to reset the mode (to avoid seeing the countdown layer now that it's irrelevant.
+		self.banner_layer.set_text("1 MILLION!", 5)
 		self.game.coils.flasherGlobe.pulse(50)
 		self.cancel_delayed(['grace', 'countdown'])
 		self.delay(name='end_of_mode', event_type=None, delay=3.0, handler=self.delayed_removal)
+		#Don't allow the popper to kick the ball back out until the mode is reset.
+		self.game.disable_popperL = 1
 	
 	def update_and_delay(self):
 		self.countdown_layer.set_text("%d seconds" % (self.seconds_remaining))
@@ -444,6 +462,7 @@ class TestGame(game.GameController):
                 self.sound.register_sound('service_switch_edge', sound_path+"switch_edge.wav")
 		self.service_mode = procgame.service.ServiceMode(self,100,font_tiny7)
 		self.reset()
+		self.disable_popperL = 0
 		
 	def reset(self):
 		super(TestGame, self).reset()
