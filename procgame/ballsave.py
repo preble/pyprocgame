@@ -33,37 +33,46 @@ class BallSave(Mode):
 			self.lamp.schedule(schedule=0x55555555, cycle_seconds=0, now=True)
 
 	# Use this to keep trough4 switch from propogating to other modes
-	def sw_trough4_closed(self, sw):
-		if self.game.machineType == 'sternWhitestar' or self.game.machineType == 'sternSAM':
-                	if self.timer:
-				return True
-
-	def sw_trough4_closed_for_200ms(self, sw):
-		if self.game.machineType == 'sternWhitestar' or self.game.machineType == 'sternSAM':
-               		if self.timer:
-				if self.allow_multiple_saves == 0:
-					self.timer = 2
-					self.lamp.disable()
-				if self.game.switches.trough1.is_closed():
-					self.game.coils.trough.pulse(20)
-				else:
-					self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
+#	def sw_trough4_closed(self, sw):
+#		if self.game.machineType == 'sternWhitestar' or self.game.machineType == 'sternSAM':
+#                	if self.timer:
+#				return True
+#
+#	def sw_trough4_closed_for_200ms(self, sw):
+#		if self.game.machineType == 'sternWhitestar' or self.game.machineType == 'sternSAM':
+#               		if self.timer:
+#				if self.allow_multiple_saves == 0:
+#					self.timer = 2
+#					self.lamp.disable()
+#				if self.game.switches.trough1.is_closed():
+#					self.game.coils.trough.pulse(20)
+#				else:
+#					self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
 	# Use this to keep trough1 switch from propogating to other modes
-	def sw_trough1_open(self, sw):
-		if self.game.machineType == 'wpc':
-                	if self.timer:
-				return True
+#	def sw_trough1_open(self, sw):
+#		if self.game.machineType == 'wpc':
+#                	if self.timer:
+#				return True
 
-	def sw_trough1_open_for_200ms(self, sw):
-		if self.game.machineType == 'wpc':
-               		if self.timer:
-				if self.allow_multiple_saves == 0:
-					self.timer = 1
-					self.lamp.disable()
-				if self.game.switches.trough6.is_open():
-					self.game.coils.trough.pulse(20)
-				else:
-					self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
+#	def sw_trough1_open_for_200ms(self, sw):
+#		if self.game.machineType == 'wpc':
+#               		if self.timer:
+#				if self.allow_multiple_saves == 0:
+#					self.timer = 1
+#					self.lamp.disable()
+#				if self.game.switches.trough6.is_open():
+#					self.game.coils.trough.pulse(20)
+#				else:
+#					self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
+
+	def is_active(self):
+		return self.timer > 0
+
+	def saving_ball(self):
+		if self.allow_multiple_saves == 0:
+			self.timer = 1
+			self.lamp.disable()
+
 
 	def eject(self):
 		if self.game.machineType == 'wpc':
