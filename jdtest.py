@@ -159,15 +159,19 @@ class StartOfBall(game.Mode):
 			self.game.modes.add(self.drop_targets_completed_hurryup)
 	
 	def sw_trough1_open_for_500ms(self, sw):
-		in_play = self.game.is_ball_in_play()
-		if not in_play:
-			self.game.end_ball()
-			trough6_closed = self.game.switches.trough6.is_open()
-			shooterR_closed = self.game.switches.shooterR.is_closed()
-			if trough6_closed and not shooterR_closed and self.game.ball != 0:
-				self.game.coils.trough.pulse(20)
-		# TODO: What if the ball doesn't make it into the shooter lane?
-		#       We should check for it on a later mode_tick() and possibly re-pulse.
+		if (self.ball_save.is_active()):
+			self.ball_save.saving_ball()
+			self.game.coils.trough.pulse(20)	
+		else:
+			in_play = self.game.is_ball_in_play()
+			if not in_play:
+				self.game.end_ball()
+				trough6_closed = self.game.switches.trough6.is_open()
+				shooterR_closed = self.game.switches.shooterR.is_closed()
+				if trough6_closed and not shooterR_closed and self.game.ball != 0:
+					self.game.coils.trough.pulse(20)
+			# TODO: What if the ball doesn't make it into the shooter lane?
+			#       We should check for it on a later mode_tick() and possibly re-pulse.
 		return True
 	
 	def sw_popperL_open(self, sw):
