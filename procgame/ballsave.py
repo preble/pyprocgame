@@ -34,12 +34,12 @@ class BallSave(Mode):
 
 	# Use this to keep trough4 switch from propogating to other modes
 	def sw_trough4_closed(self, sw):
-		if self.game.machineType == 'stern':
+		if self.game.machineType == 'sternWhitestar' or self.game.machineType == 'sternSAM':
                 	if self.timer:
 				return True
 
 	def sw_trough4_closed_for_200ms(self, sw):
-		if self.game.machineType == 'stern':
+		if self.game.machineType == 'sternWhitestar' or self.game.machineType == 'sternSAM':
                		if self.timer:
 				if self.allow_multiple_saves == 0:
 					self.timer = 2
@@ -71,7 +71,7 @@ class BallSave(Mode):
 				self.game.coils.trough.pulse(20)
 			else:
 				self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
-		elif self.game.machineType == 'stern':
+		elif self.game.machineType == 'sternWhitestar' or self.game.machineType == 'sternSAM':
 			if self.game.switches.trough1.is_open():
 				self.game.coils.trough.pulse(20)
 			else:
