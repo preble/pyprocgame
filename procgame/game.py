@@ -458,7 +458,7 @@ class GameController(object):
 					drivers += [pinproc.driver_state_disable(hold_coil.state())]
 	
 				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False}, drivers)
-                elif self.machineType == 'stern':
+                elif self.machineType == 'sternWhitestar' or self.machineType == 'sternSAM':
 			for flipper in self.config['PRFlippers']:
 				print("  programming flipper %s" % (flipper))
 				main_coil = self.coils[flipper+'Main']
