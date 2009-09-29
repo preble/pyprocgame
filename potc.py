@@ -448,7 +448,7 @@ class TestGame(game.GameController):
 		self.ball_search = procgame.ballsearch.BallSearch(self, priority=100, countdown_time=10, reset_switch_names=search_switches, disable_switch_names=stop_switches,coils=search_coils,special_handler_modes=special_handler_modes)
 
 def main():
-	machineType = 'stern'
+	machineType = 'sternSAM'
 	game = None
 	try:
 	 	game = TestGame(machineType)
