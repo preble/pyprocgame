@@ -123,6 +123,8 @@ class StartOfBall(game.Mode):
 		super(StartOfBall, self).__init__(game, 2)
 		self.game_display = GameDisplay(self.game)
                 self.ball_save = procgame.ballsave.BallSave(self.game, self.game.lamps.drainShield)
+		self.tilt_layer = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("TILT!")
+		self.layer = dmd.GroupedLayer(128, 32, [self.tilt_layer])
 
 	def mode_started(self):
 		self.game.coils.flasherPursuitL.schedule(0x00001010, cycle_seconds=1, now=False)
@@ -150,6 +152,8 @@ class StartOfBall(game.Mode):
 		self.auto_plunge = 0
 		self.game.modes.add(self.ball_save)
 		self.game.ball_search.enable()
+		self.times_warned = 0;
+		self.tilt_status = 0
 
 	
 	def mode_stopped(self):
@@ -190,6 +194,8 @@ class StartOfBall(game.Mode):
 		else:
 			in_play = self.game.is_ball_in_play()
 			if not in_play:
+				if self.tilt_status:
+					self.game.dmd.layers.remove(self.layer)
 				self.game.end_ball()
 				trough6_closed = self.game.switches.trough6.is_open()
 				shooterR_closed = self.game.switches.shooterR.is_closed()
@@ -271,13 +277,41 @@ class StartOfBall(game.Mode):
 		if (self.auto_plunge):
 			self.game.coils.shooterR.pulse(50)
 
+	def sw_tilt_active(self, sw):
+		if self.times_warned == 2:
+			self.tilt()
+		else:
+			self.times_warned += 1
+			#play sound
+			#add a display layer and add a delayed removal of it.
+			self.game.set_status("Warning " + str(self.times_warned) + "!")
+			
+	def tilt(self):
+		if self.tilt_status == 0:
+			self.game.dmd.layers.append(self.layer)
+			self.game.modes.remove(self.drops)
+			self.game.modes.remove(self.drop_targets_completed_hurryup)
+			self.ball_save.disable()
+			self.game.modes.remove(self.ball_save)
+			self.game.ball_search.disable()
+			self.game.enable_flippers(enable=False)
+			for lamp in self.game.lamps:
+				lamp.disable()
+			if self.game.switches.shooterR.is_active():
+				self.game.coils.shooterR.pulse(50)
+			if self.game.switches.shooterL.is_active():
+				self.game.coils.shooterL.pulse(20)
+			self.tilt_status = 1
+			#play sound
+			#play video
+
+
 	def flash_then_pop(self, flasher, coil, pulse):
 		self.game.coils[flasher].schedule(0x00555555, cycle_seconds=1, now=True)
 		self.delay(name='delayed_pop', event_type=None, delay=1.0, handler=self.delayed_pop, param=[coil, pulse])
 
 	def delayed_pop(self, coil_pulse):
 		self.game.coils[coil_pulse[0]].pulse(coil_pulse[1])	
-
 
 
 class DropTargetsCompletedHurryup(game.Mode):
