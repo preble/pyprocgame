@@ -10,11 +10,13 @@ class BasicDropTargetBank(Mode):
 		self.auto_reset = True
 		self.on_completed = None
 		self.on_advance = None
+		self.state = {}
 		# Ordinarily a mode would have sw_switchName_open() handlers, 
 		# but because this is a generic Mode we will configure them
 		# programatically to all call the dropped() method:
 		for name in self.names():
 			self.add_switch_handler(name=name, event_type='open', delay=None, handler=self.dropped)
+			self.state[name] = 'down'
 
 	def mode_started(self):
 		self.animated_reset(seconds=1.0)
@@ -23,13 +25,15 @@ class BasicDropTargetBank(Mode):
 		"""General handler for all drop target switches"""
 		# if self.all_down():
 		# 	self.game.set_status("ALL DOWN and %s:\n%s" % (self.all_were_down, str.join('', traceback.format_stack())))
-		self.game.lamps[sw.name].schedule(schedule=0xf0f0f0f0, cycle_seconds=1, now=True)
-		if self.all_down():
-			self.on_completed(self)
-			if self.auto_reset:
-				self.animated_reset(seconds=2.0)
-		else:
-			self.on_advance(self)
+		if self.state[sw.name] == 'up':
+			self.game.lamps[sw.name].schedule(schedule=0xf0f0f0f0, cycle_seconds=1, now=True)
+			self.state[sw.name] = 'down'
+			if self.all_down():
+				self.on_completed(self)
+				if self.auto_reset:
+					self.animated_reset(seconds=2.0)
+			else:
+				self.on_advance(self)
 	
 	def chase_lamps(self):
 		"""Perform an animation using the lamps."""
@@ -53,12 +57,15 @@ class BasicDropTargetBank(Mode):
 		self.game.coils.resetDropTarget.pulse(30)
 		for name in self.names():
 			self.game.lamps[name].enable()
+			self.state[name] = 'up'
 	
 	def all_down(self):
 		"""Returns True if all of the drop targets are down."""
 		for name in self.names():
-			if self.game.switches[name].is_closed():
+			if self.state[name] == 'up':
 				return False
+			#if self.game.switches[name].is_closed():
+			#	return False
 		return True
 	
 	def names(self):
