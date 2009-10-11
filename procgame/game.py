@@ -501,6 +501,9 @@ class GameController(object):
 					drivers += [pinproc.driver_state_disable(hold_coil.state())]
 	
 				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False}, drivers)
+				# Send a disable signal to make sure flipper hold is off.
+				# Otherwise could be stuck on if rules disabled while hold is active.
+				self.coils[flipper+'Hold'].disable()
                 elif self.machineType == 'sternWhitestar' or self.machineType == 'sternSAM':
 			for flipper in self.config['PRFlippers']:
 				print("  programming flipper %s" % (flipper))
@@ -519,6 +522,9 @@ class GameController(object):
 					drivers += [pinproc.driver_state_disable(main_coil.state())]
 	
 				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False}, drivers)
+				# Send a disable signal to make sure flipper is off.
+				# Otherwise could be stuck on if rules disabled while flipper is pattering.
+				self.coils[flipper+'Main'].disable()
 	
 		for bumper in self.config['PRBumpers']:
 			switch_num = self.switches[bumper].number
@@ -526,7 +532,7 @@ class GameController(object):
 
 			drivers = []
 			if enable:
-				drivers += [pinproc.driver_state_pulse(coil.state(), 34)]
+				drivers += [pinproc.driver_state_pulse(coil.state(), 20)]
 
 			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False}, drivers)
 
