@@ -9,6 +9,24 @@ import time
 import locale
 import math
 import copy
+import pygame
+from pygame.locals import *
+
+pygame.init()
+screen = pygame.display.set_mode((300, 20))
+pygame.display.set_caption('JDTEST - Press CTRL-C to exit')
+#font = pygame.font.Font('./freesansbold.ttf', 17)
+#text = font.render('Press ESC to exit', True, (15, 255, 105))
+#pygame.mouse.set_visible(0)
+# Create a rectangle
+#textRect = text.get_rect()
+
+# Center the rectangle
+#textRect.centerx = screen.get_rect().centerx
+#textRect.centery = screen.get_rect().centery
+# Blit the text
+#screen.blit(text, textRect)
+
 
 locale.setlocale(locale.LC_ALL, "") # Used to put commas in the score.
 
@@ -33,7 +51,7 @@ class Attract(game.Mode):
 		self.layer.layers += [l]
 
 	def mode_topmost(self):
-		self.game.lamps.startButton.schedule(schedule=0x00000fff, cycle_seconds=0, now=False)
+		self.game.lamps.startButton.schedule(schedule=0x00ff00ff, cycle_seconds=0, now=False)
 		self.game.lamps.gi01.pulse(0)
 		self.game.lamps.gi02.disable()
 
@@ -48,6 +66,7 @@ class Attract(game.Mode):
 			if self.game.switches[name].is_closed():
 				self.game.coils[name].pulse()
 		self.game.dmd.layers.insert(0, self.layer)
+
 
 	def mode_stopped(self):
 		self.game.dmd.layers.remove(self.layer)
@@ -145,6 +164,11 @@ class StartOfBall(game.Mode):
 		self.game.score(100)
 	def sw_slingR_closed(self, sw):
 		self.game.score(100)
+
+	# Test of is_active()
+	#def sw_threeBankTargets_closed(self, sw):
+	#	if self.game.switches.shooterR.is_active():
+	#		self.game.score(100)
 	
 	def on_drops_advance(self, mode):
 		self.game.sound.beep()
@@ -162,6 +186,7 @@ class StartOfBall(game.Mode):
 		if (self.ball_save.is_active()):
 			self.ball_save.saving_ball()
 			self.game.coils.trough.pulse(20)	
+			self.game.set_status("Ball Saved!")
 		else:
 			in_play = self.game.is_ball_in_play()
 			if not in_play:
@@ -231,6 +256,13 @@ class StartOfBall(game.Mode):
 	def sw_enter_closed(self, sw):
 		self.game.modes.add(self.game.service_mode)
 		return True
+
+	# Test code for active/inactive
+	#def sw_shooterR_active_for_1s(self,sw):
+	#	self.game.set_status('Yippee')
+
+	#def sw_shooterR_inactive_for_3s(self,sw):
+	#	self.game.set_status('Double Yippee')
 
 	def sw_shooterR_open_for_2s(self,sw):
 		self.auto_plunge = 1
@@ -328,6 +360,29 @@ class DeadworldReleaseBall(game.Mode):
 	def sw_startButton_closed(self,sw):
 		# Ignore start button while this mode is active
 		return True
+
+class ExitMode(game.Mode):
+	"""docstring for AttractMode"""
+	def __init__(self, game, priority):
+		super(ExitMode, self).__init__(game, priority)
+		self.delay(name='keyboard_events', event_type=None, delay=.250, handler=self.keyboard_events)
+		self.ctrl = 0
+
+	def keyboard_events(self):
+		self.delay(name='keyboard_events', event_type=None, delay=.250, handler=self.keyboard_events)
+		for event in pygame.event.get():
+			if event.type == KEYDOWN:
+				if event.key == K_RCTRL or event.key == K_LCTRL:
+					self.ctrl = 1
+				if event.key == K_c:
+					if self.ctrl == 1:
+						self.game.end_run_loop()
+				if (event.key == K_ESCAPE):
+					self.game.end_run_loop()
+			if event.type == KEYUP:
+				if event.key == K_RCTRL or event.key == K_LCTRL:
+					self.ctrl = 0
+		
 
 
 class GameDisplay(game.Mode):
@@ -446,6 +501,8 @@ class TestGame(game.GameController):
 		self.sound = SoundController(self)
 		self.dmd = dmd.DisplayController(self.proc, width=128, height=32)
 		self.popup = PopupDisplay(self)
+		self.exit_mode = ExitMode(self, 1)
+		self.modes.add(self.exit_mode)
 		
 	def setup(self):
 		"""docstring for setup"""
@@ -473,6 +530,9 @@ class TestGame(game.GameController):
 		self.modes.add(self.popup)
 		self.modes.add(self.attract_mode)
 	        self.modes.add(self.ball_search)
+		self.modes.add(self.exit_mode)
+		# Make sure flippers are off, especially for user initiated resets.
+		self.enable_flippers(enable=False)
 		
 	def ball_starting(self):
 		super(TestGame, self).ball_starting()
@@ -503,35 +563,12 @@ class TestGame(game.GameController):
 		p.score += points
 
 	def setup_ball_search(self):
-		# Set up ball search.  These hardcoded lists should be set up automatically.  The changes to do that depend on to-be-implemented YAML settings which allow switches and coils for the ball search to be identified in the YAML file.
-		search_coils = [self.coils.popperR, \
-                                self.coils.popperL, \
-                                self.coils.shooterL, \
-                                self.coils.shooterR, \
-                                self.coils.slingL, \
-                                self.coils.slingR, \
-                                self.coils.resetDropTarget]
-		search_switches = ["shooterR", "shooterL", \
-                                   "flipperLwL", "flipperLwR", \
-                                   "inlaneR", "inlaneL", \
-                                   "subwayEnter1", "subwayEnter2", \
-                                   "outlaneR", "outlaneL", \
-                                   "inlaneFarR", \
-                                   "slingR", "slingL", \
-                                   "captiveBall2", \
-                                   "dropTargetJ", "dropTargetU", "dropTargetD", \
-                                   "dropTargetG", "dropTargetE", \
-                                   "popperR", "popperL", \
-                                   "rightRampExit"] 
-		stop_switches = ["shooterR", "shooterL", \
-                                 "flipperLwL", "flipperLwR",
-                                 "startButton" ]
                 deadworld_search = DeadworldReleaseBall(self, priority=99) 
 		special_handler_modes = [deadworld_search]
 		# Give ball search priority of 100.
 		# It should always be the highest priority so nothing can keep
 		# switch events from getting to it.
-		self.ball_search = procgame.ballsearch.BallSearch(self, priority=100, countdown_time=10, reset_switch_names=search_switches, disable_switch_names=stop_switches,coils=search_coils,special_handler_modes=special_handler_modes)
+		self.ball_search = procgame.ballsearch.BallSearch(self, priority=100, countdown_time=10, coils=self.ballsearch_coils, reset_switches=self.ballsearch_resetSwitches, stop_switches=self.ballsearch_stopSwitches,special_handler_modes=special_handler_modes)
 		
 def main():
 	machineType = 'wpc'
