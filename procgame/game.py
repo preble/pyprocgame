@@ -5,6 +5,15 @@ import time
 import copy
 import re
 
+import pygame
+from pygame.locals import *
+
+pygame.init()
+screen = pygame.display.set_mode((640, 480))
+pygame.display.set_caption('Pygame Caption')
+pygame.mouse.set_visible(0)
+
+
 class const:
 	"""From http://code.activestate.com/recipes/65207/"""
 	def __setattr__(self, attr, value):
@@ -50,7 +59,7 @@ class Mode(object):
 	
 	def __scan_switch_handlers(self):
 		# Format: sw_popperL_open_for_200ms(self, sw):
-		handler_func_re = re.compile('sw_(?P<name>[a-zA-Z0-9]+)_(?P<state>open|closed)(?P<after>_for_(?P<time>[0-9]+)(?P<units>ms|s))?')
+		handler_func_re = re.compile('sw_(?P<name>[a-zA-Z0-9]+)_(?P<state>open|closed|active|inactive)(?P<after>_for_(?P<time>[0-9]+)(?P<units>ms|s))?')
 		for item in dir(self):
 			m = handler_func_re.match(item)
 			if m == None:
@@ -70,13 +79,27 @@ class Mode(object):
 		
 		Keyword arguments:
 		name       -- valid switch name
-		event_type -- 'open' or 'closed'
+		event_type -- 'open','closed','active', or 'inactive'
 		delay      -- float number of seconds that the state should be held 
 		              before invoking the handler, or None if it should be
 		              invoked immediately.
 		handler    -- method to call with signature handler(self, switch)
 		"""
-		et = {'closed':1, 'open':2}[event_type]
+
+                # Convert active/inactive to open/closed based on switch's type
+		if event_type == 'active':
+			if self.game.switches[name].type == 'NO':
+				adjusted_event_type = 'closed'
+			else:
+				adjusted_event_type = 'open'
+		elif event_type == 'inactive':
+			if self.game.switches[name].type == 'NO':
+				adjusted_event_type = 'open'
+			else:
+				adjusted_event_type = 'closed'
+		else:
+			adjusted_event_type = event_type
+		et = {'closed':1, 'open':2}[adjusted_event_type]
 		sw = None
 		try:
 			sw = self.game.switches[name]
@@ -270,10 +293,11 @@ class Driver(GameItem):
 		return self.game.proc.driver_get_state(self.number)
 
 class Switch(GameItem):
-	def __init__(self, game, name, number):
+	def __init__(self, game, name, number, type='NO'):
 		GameItem.__init__(self, game, name, number)
 		self.state = False
 		self.last_changed = None
+		self.type = type
 	def set_state(self, state):
 		self.state = state
 		self.reset_timer()
@@ -285,6 +309,16 @@ class Switch(GameItem):
 				return True
 		else:
 			return False
+	def is_active(self, seconds = None):
+		if self.type == 'NO':
+			return self.is_state(state=True, seconds=seconds)
+		else:
+			return self.is_state(state=False, seconds=seconds)
+	def is_inactive(self, seconds = None):
+		if self.type == 'NC':
+			return self.is_state(state=True, seconds=seconds)
+		else:
+			return self.is_state(state=False, seconds=seconds)
 	def is_open(self, seconds = None):
 		return self.is_state(state=False, seconds=seconds)
 	def is_closed(self, seconds = None):
@@ -420,8 +454,17 @@ class GameController(object):
 			for name in sect_dict:
 				item = sect_dict[name]
 				number = pinproc.decode(self.machineType, str(item['number']))
-				collection.add(name, klass(self, name, number))
-		
+				if 'type' in item:
+					collection.add(name, klass(self, name, number, type = item['type']))
+				else:
+					collection.add(name, klass(self, name, number))
+
+	        sect_dict = self.config['PRBallSave']
+		self.ballsearch_coils = sect_dict['pulseCoils']
+		self.ballsearch_stopSwitches = sect_dict['stopSwitches']
+		self.ballsearch_resetSwitches = sect_dict['resetSwitches']
+                
+			
 		# We want to receive events for all of the defined switches:
 		for switch in self.switches:
 			print("  programming rule for %s" % (switch.name))
@@ -514,12 +557,17 @@ class GameController(object):
 
 			return True
 
+        def end_run_loop(self):
+		"""Called by the programmer when he wants the run_loop to end"""
+		self.done = True
 
 	def run_loop(self):
 		"""Called by the programmer to read and process switch events until interrupted."""
 		loops = 0
+		self.done = False
 		try:
-			while True:
+			while self.done == False:
+
 				loops += 1
 				for event in self.proc.get_events():
 					event_type = event['type']
