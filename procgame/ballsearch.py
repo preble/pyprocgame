@@ -3,20 +3,20 @@ from dmd import *
 
 class BallSearch(Mode):
 	"""Ball Search mode."""
-	def __init__(self, game, priority, countdown_time, reset_switch_names, disable_switch_names=[], enable_switch_names=[], coils=[], special_handler_modes=[]):
-		self.disable_switch_names = disable_switch_names
+	def __init__(self, game, priority, countdown_time, coils=[], reset_switches=[], stop_switches=[], enable_switch_names=[], special_handler_modes=[]):
+		self.stop_switches = stop_switches
 		self.countdown_time = countdown_time
 		self.coils = coils
 		self.special_handler_modes = special_handler_modes
 		self.enabled = 0;
 		Mode.__init__(self, game, 8)
-		for switch in reset_switch_names:
-			self.add_switch_handler(name=switch, event_type='open', delay=None, handler=self.reset)
+		for switch in reset_switches:
+			self.add_switch_handler(name=str(switch), event_type=str(reset_switches[switch]), delay=None, handler=self.reset)
 		# The disable_switch_names identify the switches that, when closed, 
 		# keep the ball search from occuring.  This is typically done, 
 		# for instance, when a ball is in the shooter lane or held on a flipper.
-		for switch in disable_switch_names:
-			self.add_switch_handler(name=switch, event_type='closed', delay=None, handler=self.stop)
+		for switch in stop_switches:
+			self.add_switch_handler(name=str(switch), event_type=str(stop_switches[switch]), delay=None, handler=self.stop)
 
 	#def sw_trough1_open_for_200ms(self, sw):
 	#	if self.game.is_trough_full():
@@ -35,8 +35,8 @@ class BallSearch(Mode):
         def reset(self,sw):
 		if self.enabled:
 			schedule_search = 1
-			for switch in self.disable_switch_names:
-				if self.game.switches[switch].is_closed():
+			for switch in self.stop_switches:
+				if self.game.switches[str(switch)].is_closed():
 					schedule_search = 0
 
 			if schedule_search:
@@ -51,7 +51,8 @@ class BallSearch(Mode):
 			self.game.set_status("Balls Missing") # Replace with permanent message
 		delay = .150
 		for coil in self.coils:
-			self.delay(name='ball_search_coil1', event_type=None, delay=delay, handler=self.pop_coil, param=coil)
+			#self.delay(name='ball_search_coil1', event_type=None, delay=delay, handler=self.pop_coil, param=[str(coil), self.coils[str(coil)]])
+			self.delay(name='ball_search_coil1', event_type=None, delay=delay, handler=self.pop_coil, param=str(coil))
 			delay = delay + .150
 		for special_handler_mode in self.special_handler_modes:
 			self.game.modes.add(special_handler_mode)
@@ -66,7 +67,7 @@ class BallSearch(Mode):
 			self.delay(name='ball_search_countdown', event_type=None, delay=self.countdown_time, handler=self.perform_search, param=0)
 	
 	def pop_coil(self,coil):
-		coil.pulse()
+		self.game.coils[coil].pulse()
 
 	def remove_special_handler_mode(self,special_handler_mode):
 		self.game.modes.remove(special_handler_mode)
