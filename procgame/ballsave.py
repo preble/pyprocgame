@@ -12,10 +12,15 @@ class BallSave(Mode):
 		self.mode_begin = 1
 		self.lamp.schedule(schedule=0xFF00FF00, cycle_seconds=0, now=True)
 
-	def mode_ended(self):
+	def mode_stopped(self):
 		if (self.timer):
-			self.cancel_delayed['ball_save_timer']
-			self.lamp.disable()
+			#self.cancel_delayed['ball_save_timer']
+			self.timer = 0
+		self.lamp.disable()
+
+	def disable(self):
+		self.timer = 0
+		self.lamp.disable()
 
 	def restart(self, allow_multiple_saves=0):
 		self.allow_multiple_saves = allow_multiple_saves
