@@ -343,6 +343,7 @@ class Player(object):
 		self.score = 0
 		self.name = name
 		self.extra_balls = 0
+		self.info_record = {}
 	
 
 class GameController(object):
@@ -478,6 +479,7 @@ class GameController(object):
 
 		sect_dict = self.config['PRGame']
 		self.num_balls_total = sect_dict['numBalls']
+		self.deadworld_mod_installed = sect_dict['deadworld_mod_installed']
 
 	def enable_flippers(self, enable):
 		"""Enables or disables the flippers AND bumpers."""
@@ -536,15 +538,25 @@ class GameController(object):
 
 			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False}, drivers)
 
-	def install_switch_rule(self, switch_num, switch_state, coil_name, notify_host):
+	def install_switch_rule_coil_disable(self, switch_num, switch_state, coil_name, notify_host, enable):
 		coil = self.coils[coil_name];
 		drivers = []
-		drivers += [pinproc.driver_state_disable(coil.state())]
+		if enable:
+			drivers += [pinproc.driver_state_disable(coil.state())]
+		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host}, drivers)
+
+	def install_switch_rule_coil_pulse(self, switch_num, switch_state, coil_name, pulse_duration, notify_host, enable):
+		coil = self.coils[coil_name];
+		drivers = []
+		if enable:
+			drivers += [pinproc.driver_state_pulse(coil.state(),pulse_duration)]
 		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host}, drivers)
 
 	def is_trough_full(self, num_balls=0):
 		if num_balls == 0:
 			num_balls = self.num_balls_total
+		print "Checking for trough balls:"
+		print num_balls
                 if self.machineType == 'wpc':
 			end_number = 6 - num_balls
 			for i in range(6, end_number, -1):
@@ -578,14 +590,15 @@ class GameController(object):
 				for event in self.proc.get_events():
 					event_type = event['type']
 					event_value = event['value']
-					sw = self.switches[event_value]
-					recvd_state = event_type == 1
-					if sw.state != recvd_state:
-						sw.set_state(recvd_state)
-						print "% 10.3f %s:\t%s" % (time.time()-self.t0, sw.name, sw.state_str())
-						self.modes.handle_event(event)
-					else:
-						print "% 10.3f DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s" % (time.time()-self.t0, sw.name, sw.state_str())
+					if (event_type != 5): # DMD events
+						sw = self.switches[event_value]
+						recvd_state = event_type == 1
+						if sw.state != recvd_state:
+							sw.set_state(recvd_state)
+							print "% 10.3f %s:\t%s" % (time.time()-self.t0, sw.name, sw.state_str())
+							self.modes.handle_event(event)
+						else:
+							print "% 10.3f DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s" % (time.time()-self.t0, sw.name, sw.state_str())
 				self.modes.tick()
 				self.proc.watchdog_tickle()
 		finally:
