@@ -1,5 +1,6 @@
 import procgame
 import pinproc
+from deadworld import *
 from procgame import *
 from threading import Thread
 import sys
@@ -114,6 +115,7 @@ class Attract(game.Mode):
 		else: 
 			self.game.set_status("Ball Search!")
 			self.game.ball_search.perform_search(5)
+			self.game.deadworld.perform_ball_search()
 		return True
 
 
@@ -134,8 +136,8 @@ class StartOfBall(game.Mode):
 		self.game.lamps.gi02.pulse(0)
 		self.game.lamps.gi03.pulse(0)
 		self.game.lamps.startButton.disable()
-		if self.game.switches.trough6.is_open():
-			self.game.coils.trough.pulse(20)
+		self.game.coils.trough.pulse(20)
+			
 		#else: 
 			#self.game.set_status("Ball Search!")
 		#	search = procgame.modes.BallSearch(self.game, priority=8)
@@ -143,11 +145,14 @@ class StartOfBall(game.Mode):
 		#	search.perform_search()
 			#search.pop_coil()
 		self.drops = procgame.modes.BasicDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE')
+		self.multiball = Multiball(self.game, 8, self.game.deadworld_mod_installed)
 		#self.drops = procgame.modes.ProgressiveDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE', advance_switch='subwayEnter1')
 		self.drops.on_advance = self.on_drops_advance
 		self.drops.on_completed = self.on_drops_completed
 		self.drops.auto_reset = False
 		self.game.modes.add(self.drops)
+		self.game.modes.add(self.multiball)
+		self.multiball.update_info_record(self.game.get_player_record('MB'))
 		self.drop_targets_completed_hurryup = DropTargetsCompletedHurryup(self.game, priority=self.priority+1, drop_target_mode=self.drops)
 		self.auto_plunge = 0
 		self.game.modes.add(self.ball_save)
@@ -160,6 +165,7 @@ class StartOfBall(game.Mode):
 		self.game.enable_flippers(enable=False)
 		self.game.modes.remove(self.game_display)
 		self.game.modes.remove(self.drops)
+		self.game.modes.remove(self.multiball)
 		self.game.modes.remove(self.drop_targets_completed_hurryup) # TODO: Should track parent/child relationship for modes and remove children when parent goes away..?
 		self.game.modes.remove(self.ball_save)
 		self.game.ball_search.disable()
@@ -187,15 +193,33 @@ class StartOfBall(game.Mode):
 			self.game.modes.add(self.drop_targets_completed_hurryup)
 	
 	def sw_trough1_open_for_500ms(self, sw):
+		self.trough_check();
+
+	def sw_trough2_open_for_500ms(self, sw):
+		self.trough_check();
+
+	def sw_trough3_open_for_500ms(self, sw):
+		self.trough_check();
+
+	def sw_trough4_open_for_500ms(self, sw):
+		self.trough_check();
+
+	def sw_trough5_open_for_500ms(self, sw):
+		self.trough_check();
+		
+	def trough_check(self):
 		if (self.ball_save.is_active()):
-			self.ball_save.saving_ball()
-			self.game.coils.trough.pulse(20)	
-			self.game.set_status("Ball Saved!")
+			if self.game.is_trough_full(self.game.num_balls_total-self.game.deadworld.num_balls_locked):
+				self.ball_save.saving_ball()
+				self.game.coils.trough.pulse(20)	
+				self.game.set_status("Ball Saved!")
 		else:
-			in_play = self.game.is_ball_in_play()
-			if not in_play:
+			#in_play = self.game.is_ball_in_play()
+			if self.game.is_trough_full(self.game.num_balls_total-self.game.deadworld.get_num_balls_locked()):
 				if self.tilt_status:
 					self.game.dmd.layers.remove(self.layer)
+				mb_info_record = self.multiball.get_info_record()
+				self.game.update_player_record('MB', mb_info_record)
 				self.game.end_ball()
 				trough6_closed = self.game.switches.trough6.is_open()
 				shooterR_closed = self.game.switches.shooterR.is_closed()
@@ -273,7 +297,7 @@ class StartOfBall(game.Mode):
 	def sw_shooterR_open_for_2s(self,sw):
 		self.auto_plunge = 1
 
-	def sw_shooterR_closed_for_2s(self,sw):
+	def sw_shooterR_closed_for_300ms(self,sw):
 		if (self.auto_plunge):
 			self.game.coils.shooterR.pulse(50)
 
@@ -285,7 +309,7 @@ class StartOfBall(game.Mode):
 			#play sound
 			#add a display layer and add a delayed removal of it.
 			self.game.set_status("Warning " + str(self.times_warned) + "!")
-			
+
 	def tilt(self):
 		if self.tilt_status == 0:
 			self.game.dmd.layers.append(self.layer)
@@ -314,6 +338,198 @@ class StartOfBall(game.Mode):
 		self.game.coils[coil_pulse[0]].pulse(coil_pulse[1])	
 
 
+class Multiball(game.Mode):
+	"""docstring for AttractMode"""
+	def __init__(self, game, priority, deadworld_mod_installed):
+		super(Multiball, self).__init__(game, priority)
+		self.deadworld_mod_installed = deadworld_mod_installed
+		self.lock_enabled = 0
+		self.num_balls_locked = 0
+		self.num_balls_to_eject = 0
+		self.num_left_ramp_shots = 0
+		self.virtual_locks_needed = 0
+		self.banner_layer = dmd.TextLayer(128/2, 7, font_jazz18, "center")
+		self.layer = dmd.GroupedLayer(128, 32, [self.banner_layer])
+		self.state = 'load'
+		self.displaying_text = 0
+	
+	def mode_started(self):
+		self.game.coils.globeMotor.disable()
+		self.lock_lamps()
+		self.game.deadworld.initialize()
+		switch_num = self.game.switches['leftRampEnter'].number
+		self.game.install_switch_rule_coil_pulse(switch_num, 'closed_debounced', 'diverter', 250, True, False)
+
+	def mode_stopped(self):
+		self.game.coils.flasherGlobe.disable()
+		self.game.lamps.gi04.disable()
+		if self.displaying_text:
+			self.game.dmd.layers.remove(self.layer)
+			self.cancel_delayed(['remove_dmd_layer'])
+
+	def display_text(self, text):
+		# use a varable to protect against adding the layer twice
+		if self.displaying_text:
+			self.game.dmd.layers.remove(self.layer)
+			self.cancel_delayed(['remove_dmd_layer'])
+		self.displaying_text = 1
+		self.banner_layer.set_text(text,3)
+		self.game.dmd.layers.append(self.layer)
+		self.delay(name='remove_dmd_layer', event_type=None, delay=2.5, handler=self.remove_dmd_layer)
+
+	def remove_dmd_layer(self):
+		self.game.dmd.layers.remove(self.layer)
+		self.displaying_text = 0
+
+	def update_info_record(self, info_record):
+		if len(info_record) > 0:
+			self.state = info_record[0]
+			self.num_balls_locked = info_record[1]
+
+		# Virtual locks are needed when there are more balls physically locked 
+		# than the player has locked through play.  This happens when
+		# another player locks more balls than the current player.  Use
+		# Virtual locks > 0 for this case.
+		# Use Virtual locks < 0 when the player has locked more balls than are
+		# physically locked.  This could happen when another player plays
+		# multiball and empties the locked balls.
+		if self.deadworld_mod_installed:
+			self.virtual_locks_needed = self.game.deadworld.num_balls_locked - self.num_balls_locked
+
+		if self.virtual_locks_needed < 0:
+			# enable the lock the player can quickly re-lock
+			self.enable_lock()
+			self.num_balls_locked = self.game.deadworld.num_balls_locked
+			# pre-set the ramp shots to get the lock light blinking appropriately
+			self.num_left_ramp_shots = 3
+		self.lock_lamps()
+
+	def get_info_record(self):
+		info_record = [self.state, self.num_balls_locked]
+		return info_record
+
+	def disable_lock(self):
+		self.game.deadworld.disable_lock()
+		self.lock_enabled = 0
+		switch_num = self.game.switches['leftRampEnter'].number
+		self.game.install_switch_rule_coil_pulse(switch_num, 'closed_debounced', 'diverter', 250, True, False)
+
+	def enable_lock(self):
+		self.display_text("Lock is Lit!")
+		self.game.deadworld.enable_lock()
+		self.game.coils.flasherGlobe.schedule(schedule=0x0000AAAA, cycle_seconds=2, now=True)
+		self.lock_enabled = 1
+		switch_num = self.game.switches['leftRampEnter'].number
+		self.game.install_switch_rule_coil_pulse(switch_num, 'closed_debounced', 'diverter', 250, True, True)
+		
+
+	def sw_leftRampToLock_active(self, sw):
+		if self.lock_enabled:
+			self.game.coils.flasherGlobe.schedule(schedule=0xAAAAAAAA, cycle_seconds=2, now=True)
+			self.num_balls_locked += 1
+			self.display_text("Ball " + str(self.num_balls_locked) + " Locked!")
+			# Player needs to re-fill the locks
+			if self.virtual_locks_needed < 0:
+				# Increment back towards 0
+				self.virtual_locks_needed += 1
+				# Launch a new ball since the current one is locked.
+				self.launch_ball(1)
+				# See if finished re-locking
+				if self.virtual_locks_needed == 0:
+					self.disable_lock()
+			else:	
+				# Start multiball with the 4th lock
+				if self.num_balls_locked == 4:
+					if self.deadworld_mod_installed:
+						self.game.deadworld.eject_balls(4)
+					else:
+						self.launch_ball(3)
+						self.delay(name='stop_globe', event_type=None, delay=7.0, handler=self.stop_globe)
+					self.num_balls_locked = 0
+					self.state = 'multiball'
+					self.game.lamps.gi04.schedule(schedule=0x00FF00FF, cycle_seconds=0, now=True)
+					self.display_text("Multiball!")
+				# When not yet multiball, launch a new ball each time
+				# one is locked.
+				elif self.deadworld_mod_installed:
+					self.launch_ball(1)
+				self.disable_lock()	
+				# Reset the ramp count
+				self.num_left_ramp_shots = 0
+		else:
+			if self.deadworld_mod_installed:
+				self.game.deadworld.eject_balls(1)
+		self.lock_lamps()
+
+	def sw_leftRampExit_active(self,sw):
+		#ignore slow moving balls that made it by the diverter
+		if self.state == 'load':
+			if not self.lock_enabled:
+				# Prepare to lock
+				if self.num_left_ramp_shots == 2:
+					# Don't enable locks if doing virtual locks.
+					if self.virtual_locks_needed == 0:
+						self.enable_lock()
+					self.num_left_ramp_shots += 1
+
+				# Should only get here if doing virtual locks,
+				# but check anyway.
+				elif self.num_left_ramp_shots == 3:
+					if self.virtual_locks_needed > 0:
+						self.num_balls_locked += 1
+						self.virtual_locks_needed -= 1
+						self.num_left_ramp_shots = 0
+				else:
+					self.num_left_ramp_shots += 1
+
+			self.lock_lamps()
+
+	def lock_lamps(self):
+		if self.state == 'load':
+			if self.num_left_ramp_shots == 0:
+				schedule = 0x0000ffff
+			elif self.num_left_ramp_shots == 1:
+				schedule = 0x00ff00ff
+			elif self.num_left_ramp_shots == 2:
+				schedule = 0xf0f0f0f0
+			else:
+				schedule = 0xaaaaaaaa
+			if self.num_balls_locked == 0:
+				self.game.lamps.lock1.schedule(schedule=schedule, cycle_seconds=0, now=True)
+				self.game.lamps.lock2.disable()
+				self.game.lamps.lock3.disable()
+			elif self.num_balls_locked == 1:
+				self.game.lamps.lock1.schedule(schedule=0xffffffff, cycle_seconds=0, now=True)
+				self.game.lamps.lock2.schedule(schedule=schedule, cycle_seconds=0, now=True)
+				self.game.lamps.lock3.disable()
+			elif self.num_balls_locked == 2:
+				self.game.lamps.lock1.schedule(schedule=0xffffffff, cycle_seconds=0, now=True)
+				self.game.lamps.lock2.schedule(schedule=0xffffffff, cycle_seconds=0, now=True)
+				self.game.lamps.lock3.schedule(schedule=schedule, cycle_seconds=0, now=True)
+			elif self.num_balls_locked == 3:
+				self.game.lamps.lock1.schedule(schedule=schedule, cycle_seconds=0, now=True)
+				self.game.lamps.lock2.schedule(schedule=schedule, cycle_seconds=0, now=True)
+				self.game.lamps.lock3.schedule(schedule=schedule, cycle_seconds=0, now=True)
+		else:
+			self.game.lamps.lock1.disable()
+			self.game.lamps.lock2.disable()
+			self.game.lamps.lock3.disable()
+
+	def launch_ball(self, num):
+		print "Launching Ball"
+		self.game.coils.trough.pulse(20)
+		num -= 1
+		if num > 0:
+			self.delay(name='launch', event_type=None, delay=2.0, handler=self.launch_ball, param=num)
+			
+
+	def how_many_balls_locked(self):
+		return self.num_balls_locked
+
+	def stop_globe(self):
+		self.game.deadworld.mode_stopped()
+		
+	
 class DropTargetsCompletedHurryup(game.Mode):
 	"""docstring for AttractMode"""
 	def __init__(self, game, priority, drop_target_mode):
@@ -361,15 +577,15 @@ class DropTargetsCompletedHurryup(game.Mode):
 			
 	def delayed_removal(self):
 		self.game.modes.remove(self)
+
 		
 class DeadworldReleaseBall(game.Mode):
 	"""Deadworld Mode."""
 	def __init__(self, game, priority):
 		super(DeadworldReleaseBall, self).__init__(game, priority)
-		#self.add_switch_handler(name='globePosition2', event_type='open', delay=None, handler=self.sw_globePosition2_closed)
-		self.add_switch_handler(name='magnetOverRing', event_type='open', delay=None, handler=self.sw_magnetOverRing_open)
+		#self.add_switch_handler(name='magnetOverRing', event_type='open', delay=None, handler=self.sw_magnetOverRing_open)
 		switch_num = self.game.switches['globePosition2'].number
-		self.game.install_switch_rule(switch_num, 'closed_debounced', 'globeMotor', True)
+		self.game.install_switch_rule_coil_disable(switch_num, 'closed_debounced', 'globeMotor', True)
 
 	def mode_started(self):
 		self.game.coils.globeMotor.pulse(0)
@@ -380,7 +596,7 @@ class DeadworldReleaseBall(game.Mode):
 		self.game.coils.globeMotor.disable()
 
 	def sw_globePosition2_closed_for_100ms(self,sw):
-		#self.game.coils.globeMotor.disable()
+		self.game.coils.globeMotor.disable()
 		self.game.coils.crane.pulse(0)
 
 	def sw_magnetOverRing_open(self,sw):
@@ -549,6 +765,7 @@ class TestGame(game.GameController):
 
 		self.start_of_ball_mode = StartOfBall(self)
 		self.attract_mode = Attract(self)
+		self.deadworld = Deadworld(self, 20, self.deadworld_mod_installed)
 
                 self.sound.register_sound('service_enter', sound_path+"menu_in.wav")
                 self.sound.register_sound('service_exit', sound_path+"menu_out.wav")
@@ -565,6 +782,7 @@ class TestGame(game.GameController):
 		self.modes.add(self.attract_mode)
 	        self.modes.add(self.ball_search)
 		self.modes.add(self.exit_mode)
+		self.modes.add(self.deadworld)
 		# Make sure flippers are off, especially for user initiated resets.
 		self.enable_flippers(enable=False)
 		
@@ -580,6 +798,7 @@ class TestGame(game.GameController):
 		super(TestGame, self).game_ended()
 		self.modes.remove(self.start_of_ball_mode)
 		self.modes.add(self.attract_mode)
+		self.deadworld.mode_stopped()
 		# for mode in copy.copy(self.modes.modes):
 		# 	self.modes.remove(mode)
 		# self.reset()
@@ -596,9 +815,21 @@ class TestGame(game.GameController):
 		p = self.current_player()
 		p.score += points
 
+	def update_player_record(self, key, record):
+		p = self.current_player()
+		p.info_record[key] = record
+
+	def get_player_record(self, key):
+		p = self.current_player()
+		if key in p.info_record:
+			return p.info_record[key]
+		else:
+			return []
+
 	def setup_ball_search(self):
-                deadworld_search = DeadworldReleaseBall(self, priority=99) 
-		special_handler_modes = [deadworld_search]
+                #deadworld_search = DeadworldReleaseBall(self, priority=99) 
+		#special_handler_modes = [deadworld_search]
+		special_handler_modes = []
 		# Give ball search priority of 100.
 		# It should always be the highest priority so nothing can keep
 		# switch events from getting to it.
