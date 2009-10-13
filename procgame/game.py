@@ -187,13 +187,12 @@ class Mode(object):
 		# Dispatch any qualifying delayed events:
 		t = time.time()
 		for item in self.__delayed:
-			if item['time'] > t:
-				break
-			handler = item['handler']
-			if item['param'] != None:
-				handler(item['param'])
-			else:
-				handler()
+			if item['time'] <= t:
+				handler = item['handler']
+				if item['param'] != None:
+					handler(item['param'])
+				else:
+					handler()
 		self.__delayed = filter(lambda x: x['time'] > t, self.__delayed)
 	def __str__(self):
 		return "%s  pri=%d" % (type(self).__name__, self.priority)
