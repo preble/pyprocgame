@@ -5,31 +5,38 @@ class BallSave(Mode):
 	def __init__(self, game, lamp):
 		super(BallSave, self).__init__(game, 3)
 		self.lamp = lamp
+		self.num_balls_to_save = 1
+		self.mode_begin = 0
+		self.allow_multiple_saves = False
 		self.timer = 0
 
 	def mode_started(self):
-		self.allow_multiple_saves = 0
-		self.mode_begin = 1
-		self.lamp.schedule(schedule=0xFF00FF00, cycle_seconds=0, now=True)
+		pass
 
 	def mode_stopped(self):
-		if (self.timer):
-			#self.cancel_delayed['ball_save_timer']
-			self.timer = 0
 		self.lamp.disable()
 
 	def disable(self):
 		self.timer = 0
 		self.lamp.disable()
 
-	def restart(self, allow_multiple_saves=0):
+	def start(self, num_balls_to_save=1, time=12, now=True, allow_multiple_saves=False):
 		self.allow_multiple_saves = allow_multiple_saves
-		self.mode_begin = 1
 		self.lamp.schedule(schedule=0xFF00FF00, cycle_seconds=0, now=True)
+		self.num_balls_to_save = num_balls_to_save
+		if now and self.timer <= 0:
+			self.timer = time
+			print "heyyyyy"
+			self.delay(name='ball_save_timer', event_type=None, delay=1, handler=self.timer_countdown)
+		else:
+			print "hoooooo"
+			print time
+			self.mode_begin = 1
+			self.timer_hold = time
 
 	def timer_countdown(self):
 		self.timer -= 1
-		if (self.timer):
+		if (self.timer >= 1):
 			self.delay(name='ball_save_timer', event_type=None, delay=1, handler=self.timer_countdown)
 
 		if (self.timer == 2):
@@ -74,7 +81,7 @@ class BallSave(Mode):
 		return self.timer > 0
 
 	def saving_ball(self):
-		if self.allow_multiple_saves == 0:
+		if not self.allow_multiple_saves:
 			self.timer = 1
 			self.lamp.disable()
 
@@ -92,9 +99,12 @@ class BallSave(Mode):
 				self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
 
 	def sw_shooterR_open_for_1s(self, sw):
+		print "hiiiii"
+		print self.timer 
+		print self.num_balls_to_save
 		if self.mode_begin:
+			self.timer = self.timer_hold
 			self.mode_begin = 0
-			self.timer = 12
 			self.lamp.schedule(schedule=0xFF00FF00, cycle_seconds=0, now=True)
 			self.delay(name='ball_save_timer', event_type=None, delay=1, handler=self.timer_countdown)
 
