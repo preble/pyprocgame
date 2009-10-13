@@ -156,6 +156,7 @@ class StartOfBall(game.Mode):
 		self.drop_targets_completed_hurryup = DropTargetsCompletedHurryup(self.game, priority=self.priority+1, drop_target_mode=self.drops)
 		self.auto_plunge = 0
 		self.game.modes.add(self.ball_save)
+		self.game.start_of_ball_mode.ball_save.start(num_balls_to_save=1, time=12, now=False, allow_multiple_saves=False)
 		self.game.ball_search.enable()
 		self.times_warned = 0;
 		self.tilt_status = 0
@@ -209,13 +210,21 @@ class StartOfBall(game.Mode):
 		
 	def trough_check(self):
 		if (self.ball_save.is_active()):
-			if self.game.is_trough_full(self.game.num_balls_total-self.game.deadworld.num_balls_locked):
+			num_balls_out = self.game.deadworld.get_num_balls_locked() + (self.ball_save.num_balls_to_save - 1)
+			print "checking is trough full"
+			print self.game.deadworld.num_balls_locked
+			print self.ball_save.num_balls_to_save
+			print self.game.num_balls_total-num_balls_out
+			if self.game.is_trough_full(self.game.num_balls_total-num_balls_out):
 				self.ball_save.saving_ball()
 				self.game.coils.trough.pulse(20)	
 				self.game.set_status("Ball Saved!")
 		else:
 			#in_play = self.game.is_ball_in_play()
-			if self.game.is_trough_full(self.game.num_balls_total-self.game.deadworld.get_num_balls_locked()):
+			if self.multiball.is_active():
+				if self.game.is_trough_full(self.game.num_balls_total-(self.game.deadworld.get_num_balls_locked()+1)):
+					self.multiball.end_multiball()
+			elif self.game.is_trough_full(self.game.num_balls_total-self.game.deadworld.get_num_balls_locked()):
 				if self.tilt_status:
 					self.game.dmd.layers.remove(self.layer)
 				mb_info_record = self.multiball.get_info_record()
@@ -352,6 +361,7 @@ class Multiball(game.Mode):
 		self.layer = dmd.GroupedLayer(128, 32, [self.banner_layer])
 		self.state = 'load'
 		self.displaying_text = 0
+		self.enable_ball_save_after_launch=False
 	
 	def mode_started(self):
 		self.game.coils.globeMotor.disable()
@@ -363,16 +373,24 @@ class Multiball(game.Mode):
 	def mode_stopped(self):
 		self.game.coils.flasherGlobe.disable()
 		self.game.lamps.gi04.disable()
-		if self.displaying_text:
-			self.game.dmd.layers.remove(self.layer)
-			self.cancel_delayed(['remove_dmd_layer'])
+		#if self.displaying_text:
+		#	self.game.dmd.layers.remove(self.layer)
+		#	self.cancel_delayed(['remove_dmd_layer'])
+
+	def is_active(self):
+		return self.state == 'multiball'
+
+	def end_multiball(self):
+		self.state = 'multiball_complete'
+		self.game.set_status(self.state)
+		self.game.lamps.gi04.disable()
 
 	def display_text(self, text):
 		# use a varable to protect against adding the layer twice
-		if self.displaying_text:
-			self.game.dmd.layers.remove(self.layer)
-			self.cancel_delayed(['remove_dmd_layer'])
-		self.displaying_text = 1
+		#if self.displaying_text:
+		#	self.game.dmd.layers.remove(self.layer)
+		#	self.cancel_delayed(['remove_dmd_layer'])
+		#self.displaying_text = 1
 		self.banner_layer.set_text(text,3)
 		self.game.dmd.layers.append(self.layer)
 		self.delay(name='remove_dmd_layer', event_type=None, delay=2.5, handler=self.remove_dmd_layer)
@@ -442,8 +460,10 @@ class Multiball(game.Mode):
 				if self.num_balls_locked == 4:
 					if self.deadworld_mod_installed:
 						self.game.deadworld.eject_balls(4)
+						self.game.start_of_ball_mode.ball_save.start(num_balls_to_save=4, time=25, now=True, allow_multiple_saves=True)
 					else:
 						self.launch_ball(3)
+						self.enable_ball_save_after_launch=True
 						self.delay(name='stop_globe', event_type=None, delay=7.0, handler=self.stop_globe)
 					self.num_balls_locked = 0
 					self.state = 'multiball'
@@ -521,6 +541,10 @@ class Multiball(game.Mode):
 		num -= 1
 		if num > 0:
 			self.delay(name='launch', event_type=None, delay=2.0, handler=self.launch_ball, param=num)
+		else:
+			if self.enable_ball_save_after_launch:
+				self.game.start_of_ball_mode.ball_save.start(num_balls_to_save=4, time=25, now=False, allow_multiple_saves=True)
+				self.enable_ball_save_after_launch = False
 			
 
 	def how_many_balls_locked(self):
