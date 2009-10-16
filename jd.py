@@ -1,7 +1,6 @@
 import procgame
 import pinproc
 from deadworld import *
-from multiball import *
 from jd_modes import *
 from procgame import *
 from threading import Thread
@@ -44,14 +43,14 @@ class Attract(game.Mode):
 	def __init__(self, game):
 		super(Attract, self).__init__(game, 1)
 		self.layer = dmd.GroupedLayer(128, 32, [])
-		press_start = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("Press Start")
-		proc_banner = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("pyprocgame")
-		splash = dmd.FrameLayer(opaque=True, frame=dmd.Animation().load(fonts_path+'Splash.dmd').frames[0])
-		l = dmd.ScriptedLayer(128, 32, [{'seconds':2.0, 'layer':splash}, {'seconds':2.0, 'layer':press_start}, {'seconds':2.0, 'layer':proc_banner}])
-		self.layer.layers += [l]
-		l = dmd.TextLayer(128/2, 32-7, font_tiny7, "center")
+		self.press_start = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("Press Start")
+		self.proc_banner = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("pyprocgame")
+		self.splash = dmd.FrameLayer(opaque=True, frame=dmd.Animation().load(fonts_path+'Splash.dmd').frames[0])
+		self.l = dmd.ScriptedLayer(128, 32, [{'seconds':2.0, 'layer':self.splash}, {'seconds':2.0, 'layer':self.press_start}, {'seconds':2.0, 'layer':self.proc_banner}])
+		self.layer.layers += [self.l]
+		#l = dmd.TextLayer(128/2, 32-7, font_tiny7, "center")
 		#l.set_text("Free Play")
-		self.layer.layers += [l]
+		#self.layer.layers += [l]
 
 	def mode_topmost(self):
 		self.game.lamps.startButton.schedule(schedule=0x00ff00ff, cycle_seconds=0, now=False)
@@ -68,15 +67,36 @@ class Attract(game.Mode):
 		for name in ['shooterL', 'shooterR']:
 			if self.game.switches[name].is_closed():
 				self.game.coils[name].pulse()
+
+		if len(self.game.old_players) > 0:
+			self.add_score_dmd_layer()
 		self.game.dmd.layers.insert(0, self.layer)
 
 
 	def mode_stopped(self):
 		self.game.dmd.layers.remove(self.layer)
+		self.remove_score_dmd_layer()
 		
 	def mode_tick(self):
 		#self.layer.layers[0].enabled = (int(1.5 * time.time()) % 2) == 0
 		pass
+
+	def remove_score_dmd_layer(self):
+		self.l = dmd.ScriptedLayer(128, 32, [{'seconds':2.0, 'layer':self.splash}, {'seconds':2.0, 'layer':self.press_start}, {'seconds':2.0, 'layer':self.proc_banner}])
+		
+	def add_score_dmd_layer(self):
+		score[0] = dmd.TextLayer(2, 7, font_tiny7, "left")
+		score[1] = dmd.TextLayer(2, 15, font_tiny7, "left")
+		score[2] = dmd.TextLayer(2, 23, font_tiny7, "left")
+		score[3] = dmd.TextLayer(2, 31, font_tiny7, "left")
+		for i in range(0,4):
+			if len(self.game.old_players) >= i:
+				value = self.game.old_players[i].score
+				score[i].set_text(str(i) + ' : ' + str(value))
+
+		score_layer = dmd.GroupedLayer(128, 32, [score[0], score[1], score[2], score[3]])
+		self.l = dmd.ScriptedLayer(128, 32, [{'seconds':2.0, 'layer':self.splash}, {'seconds':2.0, 'layer':self.press_start}, {'seconds':2.0, 'layer':self.proc_banner}, {'seconds':2.0, 'layer':score_layer}])
+		
 					
 	def sw_popperL_open_for_500ms(self, sw): # opto!
 		self.game.coils.popperL.pulse(20)
@@ -149,10 +169,12 @@ class StartOfBall(game.Mode):
 		#self.drops = procgame.modes.BasicDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE')
 		self.multiball = Multiball(self.game, 8, self.game.deadworld_mod_installed, font_jazz18)
 		self.jd_modes = JD_Modes(self.game, 8, font_tiny7)
-		helper_functions = {}
-		helper_functions['popperR_launch'] = self.popperR_eject
-		helper_functions['main_launch'] = self.main_eject
-		self.jd_modes.register_helper_functions(helper_functions)
+		self.jd_modes.popperR_launch = self.popperR_eject
+		self.jd_modes.main_launch = self.main_eject
+
+		self.multiball.start_callback = self.jd_modes.multiball_started
+		self.multiball.end_callback = self.jd_modes.multiball_ended
+		self.multiball.jackpot_callback = self.jd_modes.jackpot_collected
 		#self.drops = procgame.modes.ProgressiveDropTargetBank(self.game, priority=8, prefix='dropTarget', letters='JUDGE', advance_switch='subwayEnter1')
 		#self.drops.on_advance = self.on_drops_advance
 		#self.drops.on_completed = self.on_drops_completed
@@ -169,6 +191,7 @@ class StartOfBall(game.Mode):
 		self.game.ball_search.enable()
 		self.times_warned = 0;
 		self.tilt_status = 0
+		self.bonus = Bonus(self.game, 8, font_jazz18, font_tiny7)
 
 	
 	def mode_stopped(self):
@@ -234,7 +257,6 @@ class StartOfBall(game.Mode):
 			if self.jd_modes.multiball_active or self.jd_modes.two_ball_active:
 				if self.game.is_trough_full(self.game.num_balls_total-(self.game.deadworld.get_num_balls_locked()+1)):
 					if self.jd_modes.two_ball_active:
-						print "asodfijasdf"
 						self.jd_modes.end_two_ball()
 					if self.jd_modes.multiball_active:
 						self.multiball.end_multiball()
@@ -245,15 +267,22 @@ class StartOfBall(game.Mode):
 				self.game.update_player_record('MB', mb_info_record)
 				jd_modes_info_record = self.jd_modes.get_info_record()
 				self.game.update_player_record('JD_MODES', jd_modes_info_record)
-				self.game.end_ball()
-				trough6_closed = self.game.switches.trough6.is_open()
-				shooterR_closed = self.game.switches.shooterR.is_closed()
-				if trough6_closed and not shooterR_closed and self.game.ball != 0:
-					self.game.coils.trough.pulse(20)
-			# TODO: What if the ball doesn't make it into the shooter lane?
-			#       We should check for it on a later mode_tick() and possibly re-pulse.
+				self.game.modes.add(self.bonus)
+				if not self.tilt_status:
+					self.bonus.compute(self.jd_modes.get_bonus_base(), self.jd_modes.get_bonus_x(), self.end_ball)
+				else:
+					self.end_ball()
 		return True
-	
+
+	def end_ball(self):
+		self.game.modes.remove(self.bonus)
+		self.game.end_ball()
+		trough6_closed = self.game.switches.trough6.is_open()
+		shooterR_closed = self.game.switches.shooterR.is_closed()
+		if trough6_closed and not shooterR_closed and self.game.ball != 0:
+			self.game.coils.trough.pulse(20)
+		# TODO: What if the ball doesn't make it into the shooter lane?
+		#       We should check for it on a later mode_tick() and possibly re-pulse.
 	def sw_popperL_open(self, sw):
 		self.game.set_status("Left popper!")
 		
@@ -656,6 +685,10 @@ class TestGame(game.GameController):
 	def score(self, points):
 		p = self.current_player()
 		p.score += points
+
+	def extra_ball(self):
+		p = self.current_player()
+		p.extra_balls += 1
 
 	def update_player_record(self, key, record):
 		p = self.current_player()
