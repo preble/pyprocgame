@@ -16,6 +16,11 @@ class BallSave(Mode):
 	def mode_stopped(self):
 		self.lamp.disable()
 
+	def add(self, add_time):
+		self.timer += add_time
+		if self.timer > 5:
+			self.lamp.schedule(schedule=0xFF00FF00, cycle_seconds=0, now=True)
+
 	def disable(self):
 		self.timer = 0
 		self.lamp.disable()
