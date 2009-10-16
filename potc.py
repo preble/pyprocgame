@@ -9,7 +9,12 @@ import time
 import locale
 import math
 import copy
+import pygame
+from pygame.locals import *
 
+pygame.init()
+screen = pygame.display.set_mode((300, 20))
+pygame.display.set_caption('POTC - Press CTRL-C to exit')
 locale.setlocale(locale.LC_ALL, "") # Used to put commas in the score.
 
 config_path = "../shared/config/POTC.yaml"
@@ -237,6 +242,29 @@ class PlunderDiskMode(game.Mode):
 		self.game.coils.plunderDiskMotor.disable()
 		self.game.coils.plunderPin.disable()
 	
+class ExitMode(game.Mode):
+	"""docstring for AttractMode"""
+	def __init__(self, game, priority):
+		super(ExitMode, self).__init__(game, priority)
+		self.delay(name='keyboard_events', event_type=None, delay=.250, handler=self.keyboard_events)
+		self.ctrl = 0
+
+	def keyboard_events(self):
+		self.delay(name='keyboard_events', event_type=None, delay=.250, handler=self.keyboard_events)
+		for event in pygame.event.get():
+			print "hi"
+			if event.type == KEYDOWN:
+				if event.key == K_RCTRL or event.key == K_LCTRL:
+					self.ctrl = 1
+				if event.key == K_c:
+					if self.ctrl == 1:
+						self.game.end_run_loop()
+				if (event.key == K_ESCAPE):
+					self.game.end_run_loop()
+			if event.type == KEYUP:
+				if event.key == K_RCTRL or event.key == K_LCTRL:
+					self.ctrl = 0
+		
 
 class GameDisplay(game.Mode):
 	"""Displays the score and other game state information on the DMD."""
@@ -354,6 +382,8 @@ class TestGame(game.GameController):
 		self.sound = SoundController(self)
 		self.dmd = dmd.DisplayController(self.proc, width=128, height=32)
 		self.popup = PopupDisplay(self)
+		self.exit_mode = ExitMode(self, 1)
+		self.modes.add(self.exit_mode)
 		
 	def setup(self):
 		"""docstring for setup"""
@@ -410,46 +440,11 @@ class TestGame(game.GameController):
 		p.score += points
 
 	def setup_ball_search(self):
-		# Set up ball search.  These hardcoded lists should be set up automatically.  The changes to do that depend on to-be-implemented YAML settings which allow switches and coils for the ball search to be identified in the YAML file.
-		search_coils = [self.coils.topCenterVUK, \
-                                self.coils.chestLid, \
-                                self.coils.raiseSails, \
-                                self.coils.shooterR, \
-                                self.coils.popL, \
-                                self.coils.popR, \
-                                self.coils.popB, \
-                                self.coils.popEject, \
-                                self.coils.chestLock, \
-                                self.coils.slingL, \
-                                self.coils.slingR, \
-				self.coils.plunderPin, \
-				self.coils.shipPost]
-		search_switches = ["shooterR", \
-                                   "flipperLwL", "flipperLwR", \
-                                   "leftLane", "rightLane", \
-                                   "hitChest", "plunderExit", "plunderEnter", \
-                                   "leftOrbit", "leftRampEnter", \
-                                   "leftTopLane", "middleTopLane", "rightTopLane", \
-                                   "slingR", "slingL", \
-                                   "outlaneL", "inlaneL", \
-                                   "outlaneR", "inlaneR", \
-                                   "popR", "popL", "popB", \
-                                   "bonusTreasureL", "bonusTreasureR", \
-                                   "plunder1", "plunder2", \
-                                   "plunder3", "plunder4", \
-                                   "plunder5", "plunder6", \
-                                   "pirate1", "pirate2", \
-                                   "pirate3", "pirate4", \
-                                   "pirate5", "pirate6", \
-                                   "shipMade"] 
-		stop_switches = ["shooterR", \
-                                 "flipperLwL", "flipperLwR",
-                                 "startButton" ]
 		special_handler_modes = []
 		# Give ball search priority of 100.
 		# It should always be the highest priority so nothing can keep
 		# switch events from getting to it.
-		self.ball_search = procgame.ballsearch.BallSearch(self, priority=100, countdown_time=10, reset_switch_names=search_switches, disable_switch_names=stop_switches,coils=search_coils,special_handler_modes=special_handler_modes)
+		self.ball_search = procgame.ballsearch.BallSearch(self, priority=100, countdown_time=10, coils=self.ballsearch_coils, reset_switches=self.ballsearch_resetSwitches, stop_switches=self.ballsearch_stopSwitches,special_handler_modes=special_handler_modes)
 
 def main():
 	machineType = 'sternSAM'
