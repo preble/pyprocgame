@@ -11,6 +11,7 @@ class BasicDropTargetBank(Mode):
 		self.on_completed = None
 		self.on_advance = None
 		self.state = {}
+		self.paused = False
 		# Ordinarily a mode would have sw_switchName_open() handlers, 
 		# but because this is a generic Mode we will configure them
 		# programatically to all call the dropped() method:
@@ -25,7 +26,7 @@ class BasicDropTargetBank(Mode):
 		"""General handler for all drop target switches"""
 		# if self.all_down():
 		# 	self.game.set_status("ALL DOWN and %s:\n%s" % (self.all_were_down, str.join('', traceback.format_stack())))
-		if self.state[sw.name] == 'up':
+		if not self.paused and self.state[sw.name] == 'up':
 			self.game.lamps[sw.name].schedule(schedule=0xf0f0f0f0, cycle_seconds=1, now=True)
 			self.state[sw.name] = 'down'
 			if self.all_down():
