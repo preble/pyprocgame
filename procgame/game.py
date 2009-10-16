@@ -358,6 +358,7 @@ class GameController(object):
 		self.switches = AttrCollection()
 		self.ball = 0
 		self.players = []
+		self.old_players = []
 		self.current_player_index = 0
 		self.t0 = time.time()
 		self.config = None
@@ -372,6 +373,8 @@ class GameController(object):
 	def reset(self):
 		"""Reset the game state as a slam tilt might."""
 		self.ball = 0
+		self.old_players = []
+		self.old_players = self.players[:]
 		self.players = []
 		self.current_player_index = 0
 		self.modes.modes = []
@@ -408,7 +411,7 @@ class GameController(object):
 		"""Called by the implementor to notify the game that the current ball has ended."""
 		self.ball_ended()
 		if self.current_player().extra_balls > 0:
-			self.extra_balls -= 1
+			self.current_player().extra_balls -= 1
 			self.shoot_again()
 			return
 		if self.current_player_index + 1 == len(self.players):
