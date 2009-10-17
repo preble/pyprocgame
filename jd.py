@@ -601,8 +601,12 @@ class TestGame(game.GameController):
 		
 	def reset(self):
 		super(TestGame, self).reset()
-		self.modes.add(self.score_display)
+		# Now add all of our modes which will be present 24x7.
+		# Note: We add popup first, so it will be at the bottom of the stack and be drawn last.
+		#       However, it will be hidden by any opaque modes!  We need to work on the design for this and probably
+		#       add another nesting with a GroupedLayer containing the popup layer and then the genearl layers.
 		self.modes.add(self.popup)
+		self.modes.add(self.score_display)
 		self.modes.add(self.attract_mode)
 		self.modes.add(self.ball_search)
 		self.modes.add(self.exit_mode)
