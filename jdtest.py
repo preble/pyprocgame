@@ -770,8 +770,8 @@ class TestGame(game.GameController):
 		
 	def reset(self):
 		super(TestGame, self).reset()
-		self.modes.add(self.score_display)
 		self.modes.add(self.popup)
+		self.modes.add(self.score_display)
 		self.modes.add(self.attract_mode)
 	        self.modes.add(self.ball_search)
 		self.modes.add(self.exit_mode)
