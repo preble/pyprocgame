@@ -554,7 +554,7 @@ class Crimescenes(Scoring_Mode):
 			for i in range(0,5):
 				lampname = 'perp' + str(i+1) + self.lamp_colors[0]
 				if self.targets[i]:
-					self.drive_mode_lamp(lampname, 'on')
+					self.drive_mode_lamp(lampname, 'medium')
 				else:
 					self.drive_mode_lamp(lampname, 'off')
 			# Use 4 center crimescene lamps as a binary representation
@@ -1383,20 +1383,18 @@ class Multiball(Scoring_Mode):
 
 	def lock_lamps(self):
 		if self.state == 'load':
-			if self.num_locks_lit >= 1 and self.num_balls_locked < 1 and not self.paused:
-				self.game.lamps.lock1.schedule(schedule=0x00ff00ff, cycle_seconds=0, now=True)
-			else:
-				self.game.lamps.lock1.disable()
+			for i in range(1,4):
+				lampname = 'lock' + str(i)
+				if self.num_locks_lit >= i and not self.paused:
+					if self.num_balls_locked >= i:
+						self.game.lamps[lampname].pulse(0)
+					elif self.num_balls_locked < i:
+						self.game.lamps[lampname].schedule(schedule=0x00ff00ff, cycle_seconds=0, now=True)
+					else:
+						self.game.lamps[lampname].disable()
+				else:
+					self.game.lamps[lampname].disable()
 	
-			if self.num_locks_lit >= 2 and self.num_balls_locked < 2 and not self.paused:
-				self.game.lamps.lock2.schedule(schedule=0x00ff00ff, cycle_seconds=0, now=True)
-			else:
-				self.game.lamps.lock2.disable()
-				
-			if self.num_locks_lit >= 3 and self.num_balls_locked < 3 and not self.paused:
-				self.game.lamps.lock3.schedule(schedule=0x00ff00ff, cycle_seconds=0, now=True)
-			else:
-				self.game.lamps.lock3.disable()
 		elif self.state == 'multiball' and not self.jackpot_lit:
 			self.game.lamps.lock1.schedule(schedule=0x000f000f, cycle_seconds=0, now=False)
 			self.game.lamps.lock2.schedule(schedule=0x003c003c, cycle_seconds=0, now=False)
