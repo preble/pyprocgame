@@ -1,7 +1,9 @@
+import sys
+import os
+sys.path.append(sys.path[0]+'/..') # Set the path so we can find procgame.  We are assuming (stupidly?) that the first member is our directory.
 import pinproc
 import procgame
 from procgame import *
-import sys
 import time
 
 # dmdplayer.py demonstrates how to load and display a sequence of DMD frames.
