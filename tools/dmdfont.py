@@ -6,7 +6,7 @@ import procgame
 from procgame import *
 import time
 
-# dmdplayer.py demonstrates how to load and display a sequence of DMD frames.
+# dmdfont.py Displays the given text on the DMD with the given text.
 
 def main():
 	if len(sys.argv) < 3:

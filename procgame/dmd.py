@@ -154,6 +154,7 @@ class Layer(object):
 		src = self.next_frame()
 		if src != None:
 			Frame.copy_rect(dst=target, dst_x=self.target_x+self.target_x_offset, dst_y=self.target_y+self.target_y_offset, src=src, src_x=0, src_y=0, width=src.width, height=src.height)
+		return src
 
 class FrameLayer(Layer):
 	def __init__(self, opaque=False, frame=None):
@@ -257,9 +258,10 @@ class GroupedLayer(Layer):
 	def next_frame(self):
 		self.buffer.clear()
 		for layer in self.layers:
+			frame = None
 			if layer.enabled:
-				layer.composite_next(self.buffer)
-			if layer.opaque:
+				frame = layer.composite_next(self.buffer)
+			if frame != None and layer.opaque: # If an opaque layer doesn't draw anything, don't stop.
 				break
 		return self.buffer
 
