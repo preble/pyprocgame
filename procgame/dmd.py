@@ -54,6 +54,16 @@ class Animation(object):
 			self.frames += [new_frame]
 		return self
 
+	def save(self, filename):
+		header = struct.pack("IIII", 0x00646D64, len(self.frames), self.width, self.height)
+		if len(header) != 16:
+			raise ValueError, "Packed size not 16 bytes as expected: %d" % (len(header))
+		f = open(filename, 'w')
+		f.write(header)
+		for frame in self.frames:
+			f.write(frame.get_data())
+		f.close()
+
 class Font(object):
 	"""A DMD bitmap font."""
 	def __init__(self, filename=None):
@@ -75,13 +85,28 @@ class Font(object):
 		self.__anim.load(filename)
 		if self.__anim.width != self.__anim.height:
 			raise ValueError, "Width != height!"
-		if len(self.__anim.frames) != 2:
+		if len(self.__anim.frames) == 1:
+			# We allow 1 frame for handmade fonts.
+			# This is so that they can be loaded as a basic bitmap, have their char widths modified, and then be saved.
+			print "Font animation file %s has 1 frame; adding one" % (filename)
+			self.__anim.frames += [Frame(self.__anim.width, self.__anim.height)]
+		elif len(self.__anim.frames) != 2:
 			raise ValueError, "Expected 2 frames: %d" % (len(self.__anim.frames))
 		self.char_size = self.__anim.width / 10
 		self.bitmap = self.__anim.frames[0]
 		self.char_widths = []
 		for i in range(96):
 			self.char_widths += [self.__anim.frames[1].get_dot(i%self.__anim.width, i/self.__anim.width)]
+	
+	def save(self, filename):
+		"""Save the font to the given path."""
+		out = Animation()
+		out.width = self.__anim.width
+		out.height = self.__anim.height
+		out.frames = [self.bitmap, Frame(out.width, out.height)]
+		for i in range(96):
+			out.frames[1].set_dot(i%self.__anim.width, i/self.__anim.width, self.char_widths[i])
+		out.save(filename)
 		
 	def draw(self, frame, text, x, y):
 		"""Uses this font's characters to draw the given string at the given position."""
@@ -129,6 +154,7 @@ class Layer(object):
 		src = self.next_frame()
 		if src != None:
 			Frame.copy_rect(dst=target, dst_x=self.target_x+self.target_x_offset, dst_y=self.target_y+self.target_y_offset, src=src, src_x=0, src_y=0, width=src.width, height=src.height)
+		return src
 
 class FrameLayer(Layer):
 	def __init__(self, opaque=False, frame=None):
@@ -232,12 +258,12 @@ class GroupedLayer(Layer):
 	def next_frame(self):
 		self.buffer.clear()
 		for layer in self.layers:
+			frame = None
 			if layer.enabled:
-				layer.composite_next(self.buffer)
-			if layer.opaque:
+				frame = layer.composite_next(self.buffer)
+			if frame != None and layer.opaque: # If an opaque layer doesn't draw anything, don't stop.
 				break
 		return self.buffer
-
 
 class DisplayController(GroupedLayer):
 	"""docstring for DisplayController"""

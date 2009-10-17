@@ -42,15 +42,11 @@ class Attract(game.Mode):
 	"""docstring for AttractMode"""
 	def __init__(self, game):
 		super(Attract, self).__init__(game, 1)
-		self.layer = dmd.GroupedLayer(128, 32, [])
 		self.press_start = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("Press Start")
 		self.proc_banner = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("pyprocgame")
 		self.splash = dmd.FrameLayer(opaque=True, frame=dmd.Animation().load(fonts_path+'Splash.dmd').frames[0])
-		self.l = dmd.ScriptedLayer(128, 32, [{'seconds':2.0, 'layer':self.splash}, {'seconds':2.0, 'layer':self.press_start}, {'seconds':2.0, 'layer':self.proc_banner}])
-		self.layer.layers += [self.l]
-		#l = dmd.TextLayer(128/2, 32-7, font_tiny7, "center")
-		#l.set_text("Free Play")
-		#self.layer.layers += [l]
+		self.layer = dmd.ScriptedLayer(128, 32, [{'seconds':2.0, 'layer':self.splash}, {'seconds':2.0, 'layer':self.press_start}, {'seconds':2.0, 'layer':self.proc_banner}, {'seconds':2.0, 'layer':None}])
+		self.layer.opaque = True
 
 	def mode_topmost(self):
 		self.game.lamps.startButton.schedule(schedule=0x00ff00ff, cycle_seconds=0, now=False)
@@ -68,36 +64,16 @@ class Attract(game.Mode):
 			if self.game.switches[name].is_closed():
 				self.game.coils[name].pulse()
 
-		if len(self.game.old_players) > 0:
-			self.add_score_dmd_layer()
 		self.game.dmd.layers.insert(0, self.layer)
 
 
 	def mode_stopped(self):
 		self.game.dmd.layers.remove(self.layer)
-		self.remove_score_dmd_layer()
 		
 	def mode_tick(self):
 		#self.layer.layers[0].enabled = (int(1.5 * time.time()) % 2) == 0
 		pass
 
-	def remove_score_dmd_layer(self):
-		self.l = dmd.ScriptedLayer(128, 32, [{'seconds':2.0, 'layer':self.splash}, {'seconds':2.0, 'layer':self.press_start}, {'seconds':2.0, 'layer':self.proc_banner}])
-		
-	def add_score_dmd_layer(self):
-		score[0] = dmd.TextLayer(2, 7, font_tiny7, "left")
-		score[1] = dmd.TextLayer(2, 15, font_tiny7, "left")
-		score[2] = dmd.TextLayer(2, 23, font_tiny7, "left")
-		score[3] = dmd.TextLayer(2, 31, font_tiny7, "left")
-		for i in range(0,4):
-			if len(self.game.old_players) >= i:
-				value = self.game.old_players[i].score
-				score[i].set_text(str(i) + ' : ' + str(value))
-
-		score_layer = dmd.GroupedLayer(128, 32, [score[0], score[1], score[2], score[3]])
-		self.l = dmd.ScriptedLayer(128, 32, [{'seconds':2.0, 'layer':self.splash}, {'seconds':2.0, 'layer':self.press_start}, {'seconds':2.0, 'layer':self.proc_banner}, {'seconds':2.0, 'layer':score_layer}])
-		
-					
 	def sw_popperL_open_for_500ms(self, sw): # opto!
 		self.game.coils.popperL.pulse(20)
 
@@ -145,15 +121,13 @@ class StartOfBall(game.Mode):
 	"""docstring for AttractMode"""
 	def __init__(self, game):
 		super(StartOfBall, self).__init__(game, 2)
-		self.game_display = GameDisplay(self.game)
-                self.ball_save = procgame.ballsave.BallSave(self.game, self.game.lamps.drainShield)
+		self.ball_save = procgame.ballsave.BallSave(self.game, self.game.lamps.drainShield)
 		self.tilt_layer = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("TILT!")
 		self.layer = dmd.GroupedLayer(128, 32, [self.tilt_layer])
 
 	def mode_started(self):
 		self.game.coils.flasherPursuitL.schedule(0x00001010, cycle_seconds=1, now=False)
 		self.game.coils.flasherPursuitR.schedule(0x00000101, cycle_seconds=1, now=False)
-		self.game.modes.add(self.game_display)
 		self.game.enable_flippers(enable=True)
 		self.game.lamps.gi02.pulse(0)
 		self.game.lamps.gi03.pulse(0)
@@ -197,7 +171,6 @@ class StartOfBall(game.Mode):
 	
 	def mode_stopped(self):
 		self.game.enable_flippers(enable=False)
-		self.game.modes.remove(self.game_display)
 		#self.game.modes.remove(self.drops)
 		self.game.modes.remove(self.multiball)
 		self.game.modes.remove(self.jd_modes)
@@ -505,29 +478,6 @@ class ExitMode(game.Mode):
 				if event.key == K_RCTRL or event.key == K_LCTRL:
 					self.ctrl = 0
 		
-
-
-class GameDisplay(game.Mode):
-	"""Displays the score and other game state information on the DMD."""
-	def __init__(self, game):
-		super(GameDisplay, self).__init__(game, 0)
-		self.status_layer = dmd.TextLayer(0, 0, font_tiny7)
-		self.game_layer = dmd.TextLayer(0, 25, font_tiny7)
-		self.score_layer = dmd.TextLayer(128/2, 7, font_jazz18, "center")
-		self.score_layer.set_text("1,000,000")
-		self.layer = dmd.GroupedLayer(128, 32, [self.score_layer, self.status_layer, self.game_layer])
-
-	def mode_started(self):
-		self.game.dmd.layers.insert(0, self.layer)
-
-	def mode_stopped(self):
-		self.game.dmd.layers.remove(self.layer)
-
-	def mode_tick(self):
-		if len(self.game.players) > 0:
-			self.score_layer.set_text(commatize(self.game.current_player().score))
-			self.game_layer.set_text('%s - Ball %d' % (self.game.current_player().name, self.game.ball))
-
 class PopupDisplay(game.Mode):
 	"""Displays a pop-up message on the DMD."""
 	def __init__(self, game):
@@ -635,24 +585,26 @@ class TestGame(game.GameController):
 
                 self.setup_ball_search()
 
+		self.score_display = scoredisplay.ScoreDisplay(self, 1)
 		self.start_of_ball_mode = StartOfBall(self)
 		self.attract_mode = Attract(self)
 		self.deadworld = Deadworld(self, 20, self.deadworld_mod_installed)
 
-                self.sound.register_sound('service_enter', sound_path+"menu_in.wav")
-                self.sound.register_sound('service_exit', sound_path+"menu_out.wav")
-                self.sound.register_sound('service_next', sound_path+"next_item.wav")
-                self.sound.register_sound('service_previous', sound_path+"previous_item.wav")
-                self.sound.register_sound('service_switch_edge', sound_path+"switch_edge.wav")
+		self.sound.register_sound('service_enter', sound_path+"menu_in.wav")
+		self.sound.register_sound('service_exit', sound_path+"menu_out.wav")
+		self.sound.register_sound('service_next', sound_path+"next_item.wav")
+		self.sound.register_sound('service_previous', sound_path+"previous_item.wav")
+		self.sound.register_sound('service_switch_edge', sound_path+"switch_edge.wav")
 		self.service_mode = procgame.service.ServiceMode(self,100,font_tiny7)
 		self.reset()
 		self.disable_popperL = 0
 		
 	def reset(self):
 		super(TestGame, self).reset()
+		self.modes.add(self.score_display)
 		self.modes.add(self.popup)
 		self.modes.add(self.attract_mode)
-	        self.modes.add(self.ball_search)
+		self.modes.add(self.ball_search)
 		self.modes.add(self.exit_mode)
 		self.modes.add(self.deadworld)
 		# Make sure flippers are off, especially for user initiated resets.

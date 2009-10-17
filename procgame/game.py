@@ -104,7 +104,7 @@ class Mode(object):
 		try:
 			sw = self.game.switches[name]
 		except KeyError:
-			print("WARNING: Unknown switch %s for mode method %s in class %s!" % (m.group('name'), item, self.__class__.__name__))
+			print("WARNING: Unknown switch %s for mode method %s in class %s!" % (name, item, self.__class__.__name__))
 			return
 		d = {'name':name, 'type':et, 'delay':delay, 'handler':handler, 'param':sw}
 		self.__accepted_switches += [d]
