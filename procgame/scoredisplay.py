@@ -64,9 +64,13 @@ class ScoreDisplay(Mode):
 				return self.font_09x5
 	def pos_for_player(self, player_index, is_active_player):
 		if is_active_player:
-			posns = [(75, 0), (128, 0), (75, 11), (128, 11)]
+			posns = [(0, 0), (128, 0), (0, 11), (128, 11)]
 		else:
-			posns = [(52, -1), (128, -1), (52, 16), (128, 16)]
+			posns = [(0, -1), (128, -1), (0, 16), (128, 16)]
+		return posns[player_index]
+	
+	def justify_for_player(self, player_index):
+		posns = ['left', 'right', 'left', 'right']
 		return posns[player_index]
 	
 	def update_layer(self):
@@ -101,7 +105,8 @@ class ScoreDisplay(Mode):
 			is_active_player = (self.game.ball > 0) and (i == self.game.current_player_index)
 			font = self.font_for_score(score=score, is_active_player=is_active_player)
 			pos = self.pos_for_player(player_index=i, is_active_player=is_active_player)
-			layer = TextLayer(pos[0], pos[1], font, "right")
+			justify = self.justify_for_player(player_index=i)
+			layer = TextLayer(pos[0], pos[1], font, justify)
 			layer.set_text(self.format_score(score))
 			self.layer.layers += [layer]
 		pass
