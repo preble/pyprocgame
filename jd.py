@@ -157,6 +157,7 @@ class StartOfBall(game.Mode):
 		self.game.enable_flippers(enable=True)
 		self.game.lamps.gi02.pulse(0)
 		self.game.lamps.gi03.pulse(0)
+		self.game.lamps.gi04.pulse(0)
 		self.game.lamps.startButton.disable()
 		self.game.coils.trough.pulse(20)
 			
@@ -360,9 +361,9 @@ class StartOfBall(game.Mode):
 		if (self.auto_plunge):
 			self.game.coils.shooterR.pulse(50)
 
-	def sw_shooterL_active_for_300ms(self,sw):
-		if self.jd_modes.multiball_active or self.jd_modes.two_ball_active:
-			self.game.coils.shooterL.pulse(50)
+	#def sw_shooterL_active_for_300ms(self,sw):
+	#	if self.jd_modes.multiball_active or self.jd_modes.two_ball_active:
+	#		self.game.coils.shooterL.pulse(50)
 
 	def sw_tilt_active(self, sw):
 		if self.times_warned == 2:
