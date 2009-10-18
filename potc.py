@@ -287,24 +287,6 @@ class GameDisplay(game.Mode):
 			self.score_layer.set_text(commatize(self.game.current_player().score))
 			self.game_layer.set_text('%s - Ball %d' % (self.game.current_player().name, self.game.ball))
 
-class PopupDisplay(game.Mode):
-	"""Displays a pop-up message on the DMD."""
-	def __init__(self, game):
-		super(PopupDisplay, self).__init__(game, 0)
-		self.__status_layer = dmd.TextLayer(128/2, 32-2*7, font_tiny7, "center")
-	
-	def set_text(self, text, seconds=3):
-		self.__status_layer.set_text(text, seconds)
-	
-	def mode_started(self):
-		self.game.dmd.layers.insert(0, self.__status_layer)
-		
-	def mode_stopped(self):
-		self.game.dmd.layers.remove(self.__status_layer)
-
-def commatize(n):
-	return locale.format("%d", n, True)
-	
 print("Initializing sound...")
 from pygame import mixer # This call takes a while.
 
@@ -375,8 +357,7 @@ class TestGame(game.GameController):
 	def __init__(self, machineType):
 		super(TestGame, self).__init__(machineType)
 		self.sound = SoundController(self)
-		self.dmd = dmd.DisplayController(self.proc, width=128, height=32)
-		self.popup = PopupDisplay(self)
+		self.dmd = dmd.DisplayController(self.proc, width=128, height=32, message_font=font_tiny7)
 		self.exit_mode = ExitMode(self, 1)
 		self.modes.add(self.exit_mode)
 		
@@ -402,7 +383,6 @@ class TestGame(game.GameController):
 		
 	def reset(self):
 		super(TestGame, self).reset()
-		self.modes.add(self.popup)
 		self.modes.add(self.attract_mode)
 	        self.modes.add(self.ball_search)
 		
@@ -431,7 +411,7 @@ class TestGame(game.GameController):
 		return self.switches.trough4.is_open() # TODO: Check other trough switches.
 	
 	def set_status(self, text):
-		self.popup.set_text(text)
+		self.dmd.set_message(text, 3)
 		print(text)
 	
 	def score(self, points):

@@ -267,9 +267,23 @@ class GroupedLayer(Layer):
 
 class DisplayController(GroupedLayer):
 	"""docstring for DisplayController"""
-	def __init__(self, proc, width=128, height=32):
+	def __init__(self, proc, width=128, height=32, message_font=None):
 		super(DisplayController, self).__init__(width, height)
 		self.proc = proc
+		self.message_layer = None
+		if message_font != None:
+			self.message_layer = TextLayer(width/2, height-2*7, message_font, "center")
+		
+	def set_message(self, message, seconds):
+		if self.message_layer == None:
+			raise ValueError, "Message_font must be specified in constructor to enable message layer."
+		self.message_layer.set_text(message, seconds)
+
+	def next_frame(self):
+		frame = super(DisplayController, self).next_frame()
+		if self.message_layer != None:
+			self.message_layer.composite_next(frame)
+		return frame
 
 	def update(self):
 		"""Update the DMD."""
