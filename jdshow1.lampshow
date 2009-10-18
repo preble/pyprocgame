@@ -1,9 +1,0 @@
-# This is a test lampshow file for Judge Dredd.
-# Chain links, left-right:
-pursuit     |             ....           ....                  ..   .    .      .       .    .
-blackout    |           .... ..         .. ...               ..   .    .      .       .           .
-battleTank  |         ....    ..       ..   ...            ..   .    .      .       .    .
-impersonator|       ....       ..     ..     ...         ..   .    .      .       .        .
-meltdown    |     ....          ..   ..       ...      ..   .    .      .       .    .               .
-manhunt     |   ....             .. ..         ...   ..   .    .      .       .        .     .  
-stakeout    | ....                ...           .....   .    .      .       .     .        .        .

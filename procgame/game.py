@@ -589,6 +589,7 @@ class GameController(object):
 		"""Called by the programmer to read and process switch events until interrupted."""
 		loops = 0
 		self.done = False
+		self.dmd_event()
 		try:
 			while self.done == False:
 

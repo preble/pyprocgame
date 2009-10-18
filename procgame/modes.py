@@ -113,12 +113,13 @@ class ProgressiveDropTargetBank(BasicDropTargetBank):
 		"""General handler for all individual drop target switch events.
 		Advances the current target if it was hit.  
 		Otherwise it advances and physically resets the bank if all targets are now down."""
-		self.advance() # Given how advance() works, this is probably a sufficient replacement for the below:
-		# if sw.name == self.current_target:
-		# 	self.advance()
-		# elif self.all_down():
-		# 	self.advance()
-		# 	self.reset_drop_target_bank()
+		if not self.paused:
+			self.advance() # Given how advance() works, this is probably a sufficient replacement for the below:
+			# if sw.name == self.current_target:
+			# 	self.advance()
+			# elif self.all_down():
+			# 	self.advance()
+			# 	self.reset_drop_target_bank()
 
 	def animated_reset(self, seconds):
 		"""Performs an animated reset and sets the current target back to the first target."""
