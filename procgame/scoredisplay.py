@@ -19,7 +19,7 @@ class ScoreLayer(GroupedLayer):
 
 class ScoreDisplay(Mode):
 	"""After instantiation the ScoreDisplay.layer should be added to the DisplayController."""
-	def __init__(self, game, priority):
+	def __init__(self, game, priority, left_players_justify="right"):
 		super(ScoreDisplay, self).__init__(game, priority)
 		self.layer = ScoreLayer(128, 32, self)
 		font_path = "../shared/dmd"
@@ -33,6 +33,16 @@ class ScoreDisplay(Mode):
 		self.font_09x5 = Font(font_path+"/Willy09x5.dmd")
 		self.font_09x6 = Font(font_path+"/Willy09x6.dmd")
 		self.font_09x7 = Font(font_path+"/Willy09x7.dmd")
+		self.set_left_players_justify(left_players_justify)
+	
+	def set_left_players_justify(self, left_players_justify):
+		if left_players_justify == "left":
+			self.score_posns = { True: [(0, 0), (128, 0), (0, 11), (128, 11)], False: [(0, -1), (128, -1), (0, 16), (128, 16)] }
+		elif left_players_justify == "right":
+			self.score_posns = { True: [(75, 0), (128, 0), (75, 11), (128, 11)], False: [(52, -1), (128, -1), (52, 16), (128, 16)] }
+		else:
+			raise ValueError, "Justify must be right or left."
+		self.score_justs = [left_players_justify, 'right', left_players_justify, 'right']
 	
 	def format_score(self, score):
 		if score == 0:
@@ -63,15 +73,10 @@ class ScoreDisplay(Mode):
 			else:
 				return self.font_09x5
 	def pos_for_player(self, player_index, is_active_player):
-		if is_active_player:
-			posns = [(0, 0), (128, 0), (0, 11), (128, 11)]
-		else:
-			posns = [(0, -1), (128, -1), (0, 16), (128, 16)]
-		return posns[player_index]
+		return self.score_posns[is_active_player][player_index]
 	
 	def justify_for_player(self, player_index):
-		posns = ['left', 'right', 'left', 'right']
-		return posns[player_index]
+		return self.score_justs[player_index]
 	
 	def update_layer(self):
 		"""docstring for update_layer"""

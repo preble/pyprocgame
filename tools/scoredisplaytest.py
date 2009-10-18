@@ -25,8 +25,19 @@ config_path = "../shared/config/JD.yaml"
 fonts_path = "../shared/dmd/"
 
 class ScoreTester(game.Mode):
+	left_players_justify_left = True
 	def sw_flipperLwL_active(self, sw):
 		self.game.score(random.randint(0, 100000)*10)
+		return True
+	def sw_flipperLwR_active(self, sw):
+		self.game.end_ball()
+		return True
+	def sw_fireL_active(self, sw):
+		self.left_players_justify_left = not self.left_players_justify_left
+		if self.left_players_justify_left:
+			self.game.score_display.set_left_players_justify("left")
+		else:
+			self.game.score_display.set_left_players_justify("right")
 		return True
 	def mode_tick(self):
 		self.game.dmd.update() # This is needed so we actually draw the frames!
@@ -47,9 +58,9 @@ class TestGame(game.GameController):
 		
 		for i in range(4):
 			self.add_player()
-			self.players[i].score = random.randint(0, 1e6)*10
+			self.players[i].score = random.randint(0, 1e5)*10
 
-		self.current_player_index = random.randint(0, 3)
+		self.current_player_index = 0#random.randint(0, 3)
 		
 		self.start_ball()
 		
