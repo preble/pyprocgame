@@ -485,7 +485,13 @@ class GameController(object):
 
 		sect_dict = self.config['PRGame']
 		self.num_balls_total = sect_dict['numBalls']
-		self.deadworld_mod_installed = sect_dict['deadworld_mod_installed']
+
+	def load_settings(self, filename):
+		"""Reads the YAML configuration file into memory.
+		Configures the switches, lamps, and coils members.
+		Enables notifyHost for the open and closed debounced states on each configured switch."""
+		self.settings = yaml.load(open(filename, 'r'))
+		print self.settings
 
 	def enable_flippers(self, enable):
 		"""Enables or disables the flippers AND bumpers."""
