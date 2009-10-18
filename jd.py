@@ -492,15 +492,7 @@ class PopupDisplay(game.Mode):
 		
 	def mode_stopped(self):
 		self.game.dmd.layers.remove(self.__status_layer)
-	
-	def mode_tick(self):
-		#if len(self.game.modes.modes) > 0:
-		#	self.mode_layer.set_text('Topmost: '+str(self.game.modes.modes[0].status_str()))
-		self.game.dmd.update()
 
-def commatize(n):
-	return locale.format("%d", n, True)
-	
 print("Initializing sound...")
 from pygame import mixer # This call takes a while.
 
@@ -632,6 +624,10 @@ class TestGame(game.GameController):
 		# self.reset()
 		self.set_status("Game Over")
 		
+	def dmd_event(self):
+		"""Called by the GameController when a DMD event has been received."""
+		self.dmd.update()
+
 	def is_ball_in_play(self):
 		return self.switches.trough1.is_closed() # TODO: Check other trough switches.
 	

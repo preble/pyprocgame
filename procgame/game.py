@@ -443,6 +443,10 @@ class GameController(object):
 		self.game_ended()
 		self.ball = 0
 		
+	def dmd_event(self):
+		"""Called by the GameController when a DMD event has been received."""
+		pass
+		
 	def load_config(self, filename):
 		"""Reads the YAML configuration file into memory.
 		Configures the switches, lamps, and coils members.
@@ -592,7 +596,10 @@ class GameController(object):
 				for event in self.proc.get_events():
 					event_type = event['type']
 					event_value = event['value']
-					if (event_type != 5): # DMD events
+					if event_type == 5: # DMD events
+						#print "% 10.3f Frame event" % (time.time()-self.t0)
+						self.dmd_event()
+					else:
 						sw = self.switches[event_value]
 						recvd_state = event_type == 1
 						if sw.state != recvd_state:

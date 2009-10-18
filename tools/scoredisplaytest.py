@@ -39,8 +39,6 @@ class ScoreTester(game.Mode):
 		else:
 			self.game.score_display.set_left_players_justify("right")
 		return True
-	def mode_tick(self):
-		self.game.dmd.update() # This is needed so we actually draw the frames!
 
 class TestGame(game.GameController):
 	"""docstring for TestGame"""
@@ -71,6 +69,10 @@ class TestGame(game.GameController):
 		# Make sure flippers are off, especially for user initiated resets.
 		self.enable_flippers(enable=False)
 		
+	def dmd_event(self):
+		"""Called by the GameController when a DMD event has been received."""
+		self.dmd.update()
+
 	def score(self, points):
 		p = self.current_player()
 		p.score += points
