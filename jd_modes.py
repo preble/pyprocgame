@@ -230,6 +230,8 @@ class JD_Modes(Scoring_Mode):
 			self.enable_extra_ball()
 		if self.mystery_lit:
 			self.drive_mode_lamp('mystery', 'on')
+		if self.missile_award_lit:
+			self.drive_mode_lamp('airRade', 'medium')
 
 
 	def rotate_modes(self, adder):
@@ -248,6 +250,10 @@ class JD_Modes(Scoring_Mode):
 	def drive_mode_lamp(self, lamp_name, style='on'):
 		if style == 'slow':
 			self.game.lamps[lamp_name].schedule(schedule=0x00ff00ff, cycle_seconds=0, now=True)
+		if style == 'medium':
+			self.game.lamps[lamp_name].schedule(schedule=0x0f0f0f0f, cycle_seconds=0, now=True)
+		if style == 'fast':
+			self.game.lamps[lamp_name].schedule(schedule=0x55555555, cycle_seconds=0, now=True)
 		elif style == 'on':
 			self.game.lamps[lamp_name].pulse(0)
 		elif style == 'off':
@@ -283,6 +289,7 @@ class JD_Modes(Scoring_Mode):
 			else:
 				self.game.set_status('Missile Launch enabled')
 				self.missile_award_lit = True
+				self.drive_mode_lamp('airRade', 'medium')
 
 	def award_extra_ball(self):
 		self.game.extra_ball()
@@ -292,6 +299,15 @@ class JD_Modes(Scoring_Mode):
 		if self.extra_balls_lit == 0:
 			self.drive_mode_lamp('extraBall2','off')
 		self.game.set_status('Extra Ball!')
+
+	def sw_shooterL_active_for_200ms(self, sw):
+		if self.two_ball_active or self.multiball_active:
+			self.game.coils.shooterL.pulse()
+		elif self.missile_award_lit:
+			self.game.set_status("Missile Award")
+			self.drive_mode_lamp('airRade', 'off')
+		else:
+			self.game.coils.shooterL.pulse()
 
 	def sw_fireR_active(self, sw):
 		if not self.multiball_active and self.state == 'idle' and self.game.switches.shooterR.is_inactive():
@@ -366,6 +382,8 @@ class JD_Modes(Scoring_Mode):
 			self.two_ball_active = True
 			self.drive_mode_lamp('mystery', 'on')
 			self.mystery_lit = True
+			if self.missile_award_lit:
+				self.drive_mode_lamp('airRade', 'off')
 			
 			
 		elif self.state == 'pre_ultimate_challenge':
@@ -382,7 +400,7 @@ class JD_Modes(Scoring_Mode):
 	def setup_judge_battle(self):
 		self.state = 'pre_judge_battle'
 		if not self.multiball_active:
-			self.game.coils['flasher' + self.judges_not_attempted[0]].schedule(schedule=0x00000003, cycle_seconds=0, now=True)
+			self.game.coils['flasher' + self.judges_not_attempted[0]].schedule(schedule=0x00030003, cycle_seconds=0, now=True)
 			self.game.lamps.rightStartFeature.schedule(schedule=0x00ff00ff, cycle_seconds=0, now=True)
 
 	def setup_ultimate_challenge(self):
@@ -396,6 +414,8 @@ class JD_Modes(Scoring_Mode):
 		self.multiball_active = True
 		self.drive_mode_lamp('mystery', 'on')
 		self.mystery_lit = True
+		if self.missile_award_lit:
+			self.drive_mode_lamp('airRade', 'off')
 
 	def jackpot_collected(self):
 		self.multiball_jackpot_collected = True
@@ -410,6 +430,8 @@ class JD_Modes(Scoring_Mode):
 			self.setup_judge_battle()
 		elif self.state == 'judge_battle':
 			self.judge_battle_complete()
+		if self.missile_award_lit:
+			self.drive_mode_lamp('airRade', 'medium')
 
 	def end_two_ball(self):
 		self.two_ball_active = False
@@ -457,6 +479,9 @@ class JD_Modes(Scoring_Mode):
 		# Turn on mode lamp to show it has been attempted
 		self.drive_mode_lamp(self.mode, 'on')
 
+		if self.mode == 'impersonator' or self.mode == 'safecracker':
+			self.game.start_of_ball_mode.multiball.drops.animated_reset(.1)
+
 		# See if it's time for a judge battle
 		if len(self.modes_not_attempted) == 7 or len(self.modes_not_attempted) == 5 or len(self.modes_not_attempted) == 3 or len(self.modes_not_attempted) == 0:
 			self.setup_judge_battle()
@@ -482,6 +507,9 @@ class JD_Modes(Scoring_Mode):
 			self.setup_ultimate_challenge()
 		else:
 			self.state = 'modes_completed'
+		self.game.start_of_ball_mode.multiball.drops.animated_reset(.1)
+		if self.missile_award_lit:
+			self.drive_mode_lamp('airRade', 'medium')
 
 	def ultimate_challenge_complete(self):
 		self.reset()
@@ -494,7 +522,7 @@ class Crimescenes(Scoring_Mode):
 		self.mode = 'idle'
 		self.targets = [1,0,0,0,0]
 		self.target_award_order = [1,3,0,2,4]
-		self.lamp_colors = ['W', 'R', 'Y', 'G']
+		self.lamp_colors = ['G', 'Y', 'R', 'W']
 		self.level_templates = [ [0,2,4], [0,2,4], 
                                          [0,2,4], [0,2,4], 
                                          [0,1,2,3,4], [0,1,2,3,4], 
@@ -552,29 +580,35 @@ class Crimescenes(Scoring_Mode):
 				self.drive_mode_lamp(lampname, 'off')
 				
 			for i in range(0,5):
-				lampname = 'perp' + str(i+1) + self.lamp_colors[0]
-				if self.targets[i]:
-					self.drive_mode_lamp(lampname, 'medium')
-				else:
-					self.drive_mode_lamp(lampname, 'off')
+				lamp_color_num = self.level%4
+				for j in range(0,4):
+					lampname = 'perp' + str(i+1) + self.lamp_colors[j]
+					if self.targets[i] and lamp_color_num == j:
+						self.drive_mode_lamp(lampname, 'medium')
+					else:
+						self.drive_mode_lamp(lampname, 'off')
 			# Use 4 center crimescene lamps as a binary representation
 			# of the level.
 			for i in range (1,5):
-				bit = 1 << (i-1)
+				lampnum = self.level%4 + 1
 				lampname = 'crimeLevel' + str(i)
-				if (i & self.level) > 0:
+				if i == lampnum:
 					self.drive_mode_lamp(lampname, 'on')
 				else:
 					self.drive_mode_lamp(lampname, 'off')
 		elif self.mode == 'bonus':
+			lampname = 'advanceCrimeLevel'
+			self.drive_mode_lamp(lampname, 'off')
 			for i in range(0,5):
-				lampname = 'perp' + str(i+1) + self.lamp_colors[0]
+				for j in range(0,4):
+					lampname = 'perp' + str(i+1) + self.lamp_colors[j]
 				self.drive_mode_lamp(lampname, 'off')
 		elif self.mode == 'complete':
 			for i in range(0,5):
 				if self.targets[i]:
-					lampname = 'perp' + str(i+1) + self.lamp_colors[0]
-					self.drive_mode_lamp(lampname, 'off')
+					for j in range(0,4):
+						lampname = 'perp' + str(i+1) + self.lamp_colors[j]
+						self.drive_mode_lamp(lampname, 'off')
 
 	def sw_threeBankTargets_active(self, sw):
 		if self.mode == 'levels':
@@ -790,6 +824,7 @@ class Blackout(ChainFeature):
 		self.game.lamps.gi01.disable()
 		self.game.lamps.gi02.disable()
 		self.game.lamps.gi03.disable()
+		self.game.lamps.gi04.disable()
 		self.game.lamps.blackoutJackpot.schedule(schedule=0x000F000F, cycle_seconds=0, now=True)
 		self.shots = 0
 
@@ -799,6 +834,7 @@ class Blackout(ChainFeature):
 		self.game.lamps.gi01.pulse(0)
 		self.game.lamps.gi02.pulse(0)
 		self.game.lamps.gi03.pulse(0)
+		self.game.lamps.gi04.pulse(0)
 
 	def sw_centerRampExit_active(self, sw):
 		self.completed = True
@@ -1126,10 +1162,20 @@ class PlayIntro(game.Mode):
 		self.delay(name='intro', event_type=None, delay=1, handler=self.next_frame)
 		self.banner_layer.set_text(str(self.mode) + ' intro')
 		self.game.dmd.layers.append(self.layer)
+		self.update_gi(False, 'all')
 
 	def mode_stopped(self):
 		if self.abort:
 			self.cancel_delayed('intro')
+		self.update_gi(True, 'all')
+
+	def update_gi(self, on, num):
+		for i in range(1,5):
+			if num == 'all' or num == i:
+				if on:
+					self.game.lamps['gi0' + str(i)].pulse(0)
+				else:
+					self.game.lamps['gi0' + str(i)].disable()
 
 	def sw_flipperLwL_active(self, sw):
 		if self.game.switches.flipperLwR.is_active():
@@ -1192,7 +1238,6 @@ class Multiball(Scoring_Mode):
 
 	def mode_stopped(self):
 		self.game.coils.flasherGlobe.disable()
-		self.game.lamps.gi04.disable()
 		self.game.modes.remove(self.drops)
 		#if self.displaying_text:
 		#	self.game.dmd.layers.remove(self.layer)
@@ -1207,7 +1252,6 @@ class Multiball(Scoring_Mode):
 	def end_multiball(self):
 		self.state = 'load'
 		self.game.set_status(self.state)
-		self.game.lamps.gi04.disable()
 		self.end_callback()
 		self.jackpot_lit = False
 		self.game.lamps.multiballJackpot.disable()
@@ -1219,7 +1263,6 @@ class Multiball(Scoring_Mode):
 	def start_multiball(self):
 		self.num_balls_locked = 0
 		self.state = 'multiball'
-		self.game.lamps.gi04.schedule(schedule=0x00FF00FF, cycle_seconds=0, now=True)
 		self.display_text("Multiball!")
 		self.start_callback()
 		self.num_left_ramp_shots_hit = 0
