@@ -198,7 +198,8 @@ class SettingsEditor(ServiceModeList):
 		self.value_layer = TextLayer(128/2, 19, font, "center")
 		self.layer = GroupedLayer(128, 32, [self.title_layer, self.item_layer, self.value_layer, self.instruction_layer])
 		for item in itemlist:
-			self.items.append( EditItem(str(item), itemlist[item]['options'], itemlist[item]['value'] ) )
+			#self.items.append( EditItem(str(item), itemlist[item]['options'], itemlist[item]['value'] ) )
+			self.items.append( EditItem(str(item), itemlist[item]['options'], self.game.user_settings[self.name][item]) )
 		self.state = 'nav'
 		self.stop_blinking = True
 		self.item = self.items[0]
@@ -228,7 +229,7 @@ class SettingsEditor(ServiceModeList):
 			self.state = 'nav'
 			self.instruction_layer.set_text("Saving")
 			self.delay(name='saving', event_type=None, delay=1, handler=self.saving)
-			self.game.settings[self.name][self.item.name]['value']=self.item.value
+			self.game.user_settings[self.name][self.item.name]=self.item.value
 			self.stop_blinking = True
 			self.game.save_settings()
 

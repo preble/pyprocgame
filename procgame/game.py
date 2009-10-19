@@ -1,3 +1,4 @@
+import os
 import pinproc
 import Queue
 import yaml
@@ -486,18 +487,37 @@ class GameController(object):
 		sect_dict = self.config['PRGame']
 		self.num_balls_total = sect_dict['numBalls']
 
-	def load_settings(self, filename):
+	def load_settings(self, template_filename, user_filename):
 		"""Reads the YAML configuration file into memory.
 		Configures the switches, lamps, and coils members.
 		Enables notifyHost for the open and closed debounced states on each configured switch."""
-		self.settings = yaml.load(open(filename, 'r'))
+		self.settings = yaml.load(open(template_filename, 'r'))
+		if os.path.exists(user_filename):
+			self.user_settings = yaml.load(open(user_filename, 'r'))
+		else:
+			self.user_settings = {}
+
+		
+		for section in self.settings:
+			for item in self.settings[section]:
+				if not section in self.user_settings:
+					self.user_settings[section] = {}
+					if 'default' in self.settings[section][item]:
+						self.user_settings[section][item] = self.settings[section][item]['default']
+					else:
+						self.user_settings[section][item] = self.settings[section][item]['options'][0]
+				elif not item in self.user_settings[section]:
+					if default in self.settings[section][item]:
+						self.user_settings[section][item] = self.settings[section][item]['default']
+					else:
+						self.user_settings[section][item] = self.settings[section][item]['options'][0]
 
 	def write_settings(self, filename):
 		"""Reads the YAML configuration file into memory.
 		Configures the switches, lamps, and coils members.
 		Enables notifyHost for the open and closed debounced states on each configured switch."""
 		stream = file(filename, 'w')
-		yaml.dump(self.settings, stream)
+		yaml.dump(self.user_settings, stream)
 
 	def enable_flippers(self, enable):
 		"""Enables or disables the flippers AND bumpers."""
