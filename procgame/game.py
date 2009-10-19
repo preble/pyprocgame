@@ -491,7 +491,13 @@ class GameController(object):
 		Configures the switches, lamps, and coils members.
 		Enables notifyHost for the open and closed debounced states on each configured switch."""
 		self.settings = yaml.load(open(filename, 'r'))
-		print self.settings
+
+	def write_settings(self, filename):
+		"""Reads the YAML configuration file into memory.
+		Configures the switches, lamps, and coils members.
+		Enables notifyHost for the open and closed debounced states on each configured switch."""
+		stream = file(filename, 'w')
+		yaml.dump(self.settings, stream)
 
 	def enable_flippers(self, enable):
 		"""Enables or disables the flippers AND bumpers."""
