@@ -15,11 +15,9 @@ class ServiceModeSkeleton(Mode):
 	def mode_started(self):
 		self.title_layer.set_text(str(self.name))
 		self.game.sound.play('service_enter')
-		self.game.dmd.layers.append(self.layer)
 
 	def mode_stopped(self):
 		self.game.sound.play('service_exit')
-		self.game.dmd.layers.remove(self.layer)
 
 	def disable(self):
 		pass
@@ -211,8 +209,6 @@ class SettingsEditor(ServiceModeList):
 
 	def mode_stopped(self):
 		self.game.sound.play('service_exit')
-		self.game.dmd.layers.remove(self.layer)
-
 
 	def sw_enter_active(self, sw):
 		if not self.no_exit_switch:

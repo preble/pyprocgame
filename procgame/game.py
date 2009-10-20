@@ -240,7 +240,10 @@ class ModeQueue(object):
 	def __str__(self):
 		s = ""
 		for mode in self.modes:
-			s += "  #%d %s\n" % (mode.priority, type(mode).__name__)
+			layer = None
+			if hasattr(mode, 'layer'):
+				layer = mode.layer
+			s += "  #%d %s\t\tlayer=%s\n" % (mode.priority, type(mode).__name__, type(layer).__name__)
 		return s
 
 class AttrCollection(object):

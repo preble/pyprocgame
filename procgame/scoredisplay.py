@@ -117,7 +117,7 @@ class ScoreDisplay(Mode):
 		pass
 
 	def mode_started(self):
-		self.game.dmd.layers.insert(0, self.layer)
+		pass
 
 	def mode_stopped(self):
-		self.game.dmd.layers.remove(self.layer)
+		pass

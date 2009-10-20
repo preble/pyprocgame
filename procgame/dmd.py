@@ -134,7 +134,7 @@ class Font(object):
 
 
 class Layer(object):
-	"""Collection of frames displayed sequentially, as an animation.  Optionally holds the last frame on-screen."""
+	"""Abstract layer object."""
 	def __init__(self, opaque=False):
 		super(Layer, self).__init__()
 		self.opaque = opaque
@@ -257,20 +257,26 @@ class GroupedLayer(Layer):
 
 	def next_frame(self):
 		self.buffer.clear()
+		composited_count = 0
 		for layer in self.layers:
 			frame = None
 			if layer.enabled:
 				frame = layer.composite_next(self.buffer)
+			if frame != None:
+				composited_count += 1
 			if frame != None and layer.opaque: # If an opaque layer doesn't draw anything, don't stop.
 				break
+		if composited_count == 0:
+			return None
 		return self.buffer
 
-class DisplayController(GroupedLayer):
-	"""docstring for DisplayController"""
-	def __init__(self, proc, width=128, height=32, message_font=None):
-		super(DisplayController, self).__init__(width, height)
-		self.proc = proc
+class DisplayController:
+	"""DisplayController, on update(), iterates over the game's mode and composites their layer member variable to the output."""
+	def __init__(self, game, width=128, height=32, message_font=None):
+		self.game = game
 		self.message_layer = None
+		self.width = width
+		self.height = height
 		if message_font != None:
 			self.message_layer = TextLayer(width/2, height-2*7, message_font, "center")
 		
@@ -279,15 +285,21 @@ class DisplayController(GroupedLayer):
 			raise ValueError, "Message_font must be specified in constructor to enable message layer."
 		self.message_layer.set_text(message, seconds)
 
-	def next_frame(self):
-		frame = super(DisplayController, self).next_frame()
-		if self.message_layer != None:
-			self.message_layer.composite_next(frame)
-		return frame
-
 	def update(self):
 		"""Update the DMD."""
-		frame = self.next_frame()
+		layers = []
+		for mode in self.game.modes.modes:
+			if hasattr(mode, 'layer') and mode.layer != None:
+				layers += [mode.layer]
+		
+		frame = Frame(self.width, self.height)
+		for layer in layers[::-1]: # We reverse the list here so that the top layer gets the last say.
+			if layer.enabled:
+				layer.composite_next(frame)
+		
+		if self.message_layer != None:
+			self.message_layer.composite_next(frame)
+			
 		if frame != None:
-			self.proc.dmd_draw(frame)
+			self.game.proc.dmd_draw(frame)
 
