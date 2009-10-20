@@ -55,7 +55,10 @@ def main():
 				print "Got empty line"
 				break
 			chars = chars[:-1] # Chop off newline
-			print("Width for %s" % (chars))
+			for char in chars:
+				char_index = ord(char)-ord(' ')
+				print("Current width of %s is % 2d" % (char, font.char_widths[char_index]))
+			#print("Width for %s (now %d):" % (chars, font.char_widths[char_index]))
 			width = int(sys.stdin.readline())
 			for char in chars:
 				char_index = ord(char)-ord(' ')
