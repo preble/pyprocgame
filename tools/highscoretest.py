@@ -34,12 +34,17 @@ class HighScoreEntry(game.Mode):
 		self.layer.opaque = True
 		self.layer.layers = []
 		
-		tophalf = dmd.Frame(width=128, height=16)
-		self.font.draw(tophalf, player, 0, 0)
-		self.font.draw(tophalf, "High Score #%d" % (place), 0, 8)
-		tophalf_layer = dmd.FrameLayer(opaque=False, frame=tophalf)
-		tophalf_layer.set_target_position(0, 0)
-		self.layer.layers += [tophalf_layer]
+		topleft = dmd.Frame(width=64, height=16)
+		self.font.draw(topleft, player, 0, 0)
+		self.font.draw(topleft, "High Score #%d" % (place), 0, 8)
+		topleft_layer = dmd.FrameLayer(opaque=False, frame=topleft)
+		topleft_layer.set_target_position(0, 0)
+		self.layer.layers += [topleft_layer]
+
+		self.topright = dmd.Frame(width=64, height=16)
+		topright_layer = dmd.FrameLayer(opaque=False, frame=self.topright)
+		topright_layer.set_target_position(64, 0)
+		self.layer.layers += [topright_layer]
 		
 		self.lowerhalf_layer = dmd.AnimatedLayer(opaque=False, hold=True)
 		self.lowerhalf_layer.set_target_position(0, 16)
@@ -49,6 +54,8 @@ class HighScoreEntry(game.Mode):
 		for idx in range(26):
 			self.letters += [chr(ord('A')+idx)]
 		self.current_letter_index = 0
+		self.init_index = 0
+		self.inits = [self.letters[self.current_letter_index], '_', '_']
 		self.animate_to_index(0)
 	
 	def mode_started(self):
@@ -69,20 +76,24 @@ class HighScoreEntry(game.Mode):
 		print rng
 		for x in rng:
 			frame = dmd.Frame(width=128, height=16)
-			frame.fill_rect(64-5, 0, 10, 14, 1)
-			frame.fill_rect(64-3, 2, 6, 10, 0)
-			for offset in range(-6, 7):
+			frame.fill_rect(64-5, 0, 10, 11, 1)
+			frame.fill_rect(64-3, 2, 6, 7, 0)
+			for offset in range(-7, 8):
 				index = new_index - offset
-				print "Index %d  len=%d" % (index, len(self.letters))
+				#print "Index %d  len=%d" % (index, len(self.letters))
 				if index < 0:
 					index = len(self.letters) + index
 				elif index >= len(self.letters):
 					index = index - len(self.letters)
 				(w, h) = self.font.size(self.letters[index])
-				print "Drawing %d w=%d" % (index, w)
+				#print "Drawing %d w=%d" % (index, w)
 				self.font.draw(frame, self.letters[index], 128/2 - offset * letter_spread - letter_width/2 + x, 2)
 			self.lowerhalf_layer.frames += [frame]
 		self.current_letter_index = new_index
+		
+		self.topright.clear()
+		for x in range(3):
+			self.font.draw(self.topright, self.inits[x], x * 8 + 10, 4)
 		
 	def letter_increment(self, inc):
 		new_index = (self.current_letter_index + inc)
@@ -90,9 +101,21 @@ class HighScoreEntry(game.Mode):
 			new_index = len(self.letters) + new_index
 		elif new_index >= len(self.letters):
 			new_index = new_index - len(self.letters)
-		print("letter_increment %d + %d = %d" % (self.current_letter_index, inc, new_index))
+		#print("letter_increment %d + %d = %d" % (self.current_letter_index, inc, new_index))
+		self.inits[self.init_index] = self.letters[new_index]
 		self.animate_to_index(new_index, inc)
-		
+	
+	def letter_accept(self):
+		# TODO: Add 'back'/erase/end
+		if self.init_index > 2:
+			return
+		self.init_index += 1
+		if self.init_index == 3:
+			return # TODO: End of mode!
+		else:
+			self.inits[self.init_index] = self.letters[self.current_letter_index]
+			self.letter_increment(0)
+	
 	def sw_flipperLwL_active(self, sw):
 		self.letter_increment(-1)
 		return False
