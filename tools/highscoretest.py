@@ -47,7 +47,7 @@ class HighScoreEntry(game.Mode):
 		self.layer.layers += [topright_layer]
 		
 		self.lowerhalf_layer = dmd.AnimatedLayer(opaque=False, hold=True)
-		self.lowerhalf_layer.set_target_position(0, 16)
+		self.lowerhalf_layer.set_target_position(0, 18)
 		self.layer.layers += [self.lowerhalf_layer]
 		
 		self.letters = []
@@ -68,12 +68,12 @@ class HighScoreEntry(game.Mode):
 		letter_spread = 9
 		letter_width = 7
 		if inc < 0:
-			rng = range(inc * letter_width, 1)
+			rng = range(inc * letter_spread, 1)
 		elif inc > 0:
-			rng = range(inc * letter_width)[::-1]
+			rng = range(inc * letter_spread)[::-1]
 		else:
 			rng = [0]
-		print rng
+		#print rng
 		for x in rng:
 			frame = dmd.Frame(width=128, height=16)
 			frame.fill_rect(64-5, 0, 10, 11, 1)
@@ -91,9 +91,12 @@ class HighScoreEntry(game.Mode):
 			self.lowerhalf_layer.frames += [frame]
 		self.current_letter_index = new_index
 		
+		# Now draw the top right panel, with the selected initials in order:
 		self.topright.clear()
 		for x in range(3):
-			self.font.draw(self.topright, self.inits[x], x * 8 + 10, 4)
+			self.font.draw(self.topright, self.inits[x], x * 8 + 10, 6)
+		if (self.init_index < len(self.inits)): # underline the currently selected initial.
+			self.topright.fill_rect(self.init_index * 8 + 9, 14, 9, 1, 1)
 		
 	def letter_increment(self, inc):
 		new_index = (self.current_letter_index + inc)
@@ -102,15 +105,16 @@ class HighScoreEntry(game.Mode):
 		elif new_index >= len(self.letters):
 			new_index = new_index - len(self.letters)
 		#print("letter_increment %d + %d = %d" % (self.current_letter_index, inc, new_index))
-		self.inits[self.init_index] = self.letters[new_index]
+		if (self.init_index < len(self.inits)):
+			self.inits[self.init_index] = self.letters[new_index]
 		self.animate_to_index(new_index, inc)
 	
 	def letter_accept(self):
 		# TODO: Add 'back'/erase/end
-		if self.init_index > 2:
+		if (self.init_index >= len(self.inits)):
 			return
 		self.init_index += 1
-		if self.init_index == 3:
+		if (self.init_index == len(self.inits)):
 			return # TODO: End of mode!
 		else:
 			self.inits[self.init_index] = self.letters[self.current_letter_index]
