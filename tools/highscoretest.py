@@ -166,10 +166,10 @@ class TestGame(game.GameController):
 		
 	def reset(self):
 		super(TestGame, self).reset()
+		self.modes.add(self.exit_mode)
 		self.modes.add(self.highscore_entry)
 		# Make sure flippers are off, especially for user initiated resets.
 		self.enable_flippers(enable=False)
-		self.modes.add(self.exit_mode)
 		
 	def dmd_event(self):
 		"""Called by the GameController when a DMD event has been received."""
