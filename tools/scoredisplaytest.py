@@ -44,7 +44,7 @@ class TestGame(game.GameController):
 	"""docstring for TestGame"""
 	def __init__(self, machineType):
 		super(TestGame, self).__init__(machineType)
-		self.dmd = dmd.DisplayController(self.proc, width=128, height=32)
+		self.dmd = dmd.DisplayController(self, width=128, height=32)
 		self.score_display = scoredisplay.ScoreDisplay(self, 1)
 		
 	def setup(self):
