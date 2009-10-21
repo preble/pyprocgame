@@ -3,7 +3,6 @@ import os
 sys.path.append(sys.path[0]+'/..') # Set the path so we can find procgame.  We are assuming (stupidly?) that the first member is our directory.
 import procgame
 import pinproc
-from deadworld import *
 from procgame import *
 from threading import Thread
 import random
@@ -130,11 +129,34 @@ class HighScoreEntry(game.Mode):
 		self.letter_accept()
 		return False
 
+class ExitMode(game.Mode):
+	"""docstring for AttractMode"""
+	def __init__(self, game, priority):
+		super(ExitMode, self).__init__(game, priority)
+		self.delay(name='keyboard_events', event_type=None, delay=.250, handler=self.keyboard_events)
+		self.ctrl = 0
+
+	def keyboard_events(self):
+		self.delay(name='keyboard_events', event_type=None, delay=.250, handler=self.keyboard_events)
+		for event in pygame.event.get():
+			if event.type == KEYDOWN:
+				if event.key == K_RCTRL or event.key == K_LCTRL:
+					self.ctrl = 1
+				if event.key == K_c:
+					if self.ctrl == 1:
+						self.game.end_run_loop()
+				if (event.key == K_ESCAPE):
+					self.game.end_run_loop()
+			if event.type == KEYUP:
+				if event.key == K_RCTRL or event.key == K_LCTRL:
+					self.ctrl = 0
+
 class TestGame(game.GameController):
 	"""docstring for TestGame"""
 	def __init__(self, machineType):
 		super(TestGame, self).__init__(machineType)
 		self.dmd = dmd.DisplayController(self, width=128, height=32)
+		self.exit_mode = ExitMode(self, 1)
 		
 	def setup(self):
 		"""docstring for setup"""
@@ -147,6 +169,7 @@ class TestGame(game.GameController):
 		self.modes.add(self.highscore_entry)
 		# Make sure flippers are off, especially for user initiated resets.
 		self.enable_flippers(enable=False)
+		self.modes.add(self.exit_mode)
 		
 	def dmd_event(self):
 		"""Called by the GameController when a DMD event has been received."""
