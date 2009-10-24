@@ -367,6 +367,7 @@ class GameController(object):
 		self.t0 = time.time()
 		self.config = None
 		self.balls_per_game = 3
+		self.keyboard_events_enabled = False
 	
 	def __enter__(self):
 		pass
@@ -616,6 +617,22 @@ class GameController(object):
 
 			return True
 
+	def process_event(self, event):
+		event_type = event['type']
+		event_value = event['value']
+		if event_type == 5: # DMD events
+			#print "% 10.3f Frame event" % (time.time()-self.t0)
+			self.dmd_event()
+		else:
+			sw = self.switches[event_value]
+			recvd_state = event_type == 1
+			if sw.state != recvd_state:
+				sw.set_state(recvd_state)
+				print "% 10.3f %s:\t%s" % (time.time()-self.t0, sw.name, sw.state_str())
+				self.modes.handle_event(event)
+			else:
+				print "% 10.3f DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s" % (time.time()-self.t0, sw.name, sw.state_str())
+
         def end_run_loop(self):
 		"""Called by the programmer when he wants the run_loop to end"""
 		self.done = True
@@ -629,21 +646,13 @@ class GameController(object):
 			while self.done == False:
 
 				loops += 1
+				if self.keyboard_events_enabled:
+					# get_keyboard_events needs to be defined by
+					# the keyboard handler.
+					for event in self.get_keyboard_events():
+						self.process_event(event)
 				for event in self.proc.get_events():
-					event_type = event['type']
-					event_value = event['value']
-					if event_type == 5: # DMD events
-						#print "% 10.3f Frame event" % (time.time()-self.t0)
-						self.dmd_event()
-					else:
-						sw = self.switches[event_value]
-						recvd_state = event_type == 1
-						if sw.state != recvd_state:
-							sw.set_state(recvd_state)
-							print "% 10.3f %s:\t%s" % (time.time()-self.t0, sw.name, sw.state_str())
-							self.modes.handle_event(event)
-						else:
-							print "% 10.3f DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s" % (time.time()-self.t0, sw.name, sw.state_str())
+					self.process_event(event)
 				self.modes.tick()
 				self.proc.watchdog_tickle()
 		finally:
