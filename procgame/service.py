@@ -223,8 +223,9 @@ class SettingsEditor(ServiceModeList):
 			self.delay(name='blink', event_type=None, delay=.3, handler=self.blinker)
 		else:
 			self.state = 'nav'
-			self.instruction_layer.set_text("Saving")
-			self.delay(name='saving', event_type=None, delay=1, handler=self.saving)
+			self.instruction_layer.set_text("Change saved")
+			self.delay(name='change_complete', event_type=None, delay=1, handler=self.change_complete)
+			self.game.sound.play('service_save')
 			self.game.user_settings[self.name][self.item.name]=self.item.value
 			self.stop_blinking = True
 			self.game.save_settings()
@@ -240,6 +241,9 @@ class SettingsEditor(ServiceModeList):
 			self.state = 'nav'
 			self.value_layer.set_text(str(self.item.value))
 			self.stop_blinking = True
+			self.game.sound.play('service_cancel')
+			self.instruction_layer.set_text("Change cancelled")
+			self.delay(name='change_complete', event_type=None, delay=1, handler=self.change_complete)
 			
 	def sw_up_active(self, sw):
 		if self.game.switches.enter.is_inactive():
@@ -308,7 +312,7 @@ class SettingsEditor(ServiceModeList):
 		else:
 			self.value_layer.set_text(str(self.item.value))
 	
-	def saving(self):
+	def change_complete(self):
 		self.instruction_layer.set_text("")
 		
 class EditItem:
