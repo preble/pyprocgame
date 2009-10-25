@@ -11,6 +11,7 @@ import time
 import locale
 import math
 import copy
+import yaml
 import pygame
 from pygame.locals import *
 
@@ -180,7 +181,11 @@ class TestGame(game.GameController):
 		p.score += points
 
 def main():
-	machineType = 'wpc'
+	config = yaml.load(open(config_path, 'r'))
+	machineType = config['PRGame']['machineType']
+	#machineType = 'wpc'
+	print machineType
+	config = 0
 	game = None
 	try:
 	 	game = TestGame(machineType)

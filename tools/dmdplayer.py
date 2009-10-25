@@ -18,7 +18,7 @@ def main():
 	if anim.width != 128 or anim.height != 32:
 		raise ValueError, "Expected animation dimensions to be 128x32."
 
-	proc = pinproc.PinPROC('wpc')
+	proc = pinproc.PinPROC('custom')
 	proc.reset(1)
 	
 	print("Displaying %d frame(s) looped." % (len(anim.frames)))

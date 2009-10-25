@@ -145,8 +145,8 @@ def main():
         # to create.
          
         config = yaml.load(open(yamlpath, 'r'))
-        sect_dict = config['PRGame']
-        machineType = sect_dict['machineType']
+        machineType = config['PRGame']['machineType']
+	config = 0
         print("Machine type is %s"%(machineType))
 	
 	g = game.GameController(str(machineType))
