@@ -469,10 +469,12 @@ class GameController(object):
                 
 			
 		# We want to receive events for all of the defined switches:
+		print "Programming switch rules: ",
 		for switch in self.switches:
-			print("  programming rule for %s" % (switch.name))
+			print("%s," % (switch.name)),
 			self.proc.switch_update_rule(switch.number, 'closed_debounced', {'notifyHost':True}, [])
 			self.proc.switch_update_rule(switch.number, 'open_debounced', {'notifyHost':True}, [])
+		print " ...done!"
 		
 		# Configure the initial switch states:
 		states = self.proc.switch_get_states()
@@ -516,9 +518,9 @@ class GameController(object):
 
 	def enable_flippers(self, enable):
 		"""Enables or disables the flippers AND bumpers."""
-                if self.machineType == 'wpc':
+		if self.machineType == 'wpc':
+			print("Programming flippers...")
 			for flipper in self.config['PRFlippers']:
-				print("  programming flipper %s" % (flipper))
 				main_coil = self.coils[flipper+'Main']
 				hold_coil = self.coils[flipper+'Hold']
 				switch_num = self.switches[flipper].number
