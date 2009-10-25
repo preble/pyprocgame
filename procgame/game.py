@@ -6,15 +6,6 @@ import time
 import copy
 import re
 
-import pygame
-from pygame.locals import *
-
-pygame.init()
-screen = pygame.display.set_mode((640, 480))
-pygame.display.set_caption('Pygame Caption')
-pygame.mouse.set_visible(0)
-
-
 class const:
 	"""From http://code.activestate.com/recipes/65207/"""
 	def __setattr__(self, attr, value):
