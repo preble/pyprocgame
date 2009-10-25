@@ -611,7 +611,10 @@ class GameController(object):
 	def process_event(self, event):
 		event_type = event['type']
 		event_value = event['value']
-		if event_type == 5: # DMD events
+		if event_type == 99: # CTRL-C to quit
+			print "CTRL-C detected, quiting..."	
+			self.end_run_loop()
+		elif event_type == 5: # DMD events
 			#print "% 10.3f Frame event" % (time.time()-self.t0)
 			self.dmd_event()
 		else:

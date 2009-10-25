@@ -12,12 +12,6 @@ import locale
 import math
 import copy
 import yaml
-import pygame
-from pygame.locals import *
-
-pygame.init()
-screen = pygame.display.set_mode((300, 20))
-pygame.display.set_caption('scoredisplaytest.py - Press CTRL-C to exit')
 
 locale.setlocale(locale.LC_ALL, "") # Used to put commas in the score.
 
@@ -130,34 +124,14 @@ class HighScoreEntry(game.Mode):
 		self.letter_accept()
 		return False
 
-class ExitMode(game.Mode):
-	"""docstring for AttractMode"""
-	def __init__(self, game, priority):
-		super(ExitMode, self).__init__(game, priority)
-		self.delay(name='keyboard_events', event_type=None, delay=.250, handler=self.keyboard_events)
-		self.ctrl = 0
-
-	def keyboard_events(self):
-		self.delay(name='keyboard_events', event_type=None, delay=.250, handler=self.keyboard_events)
-		for event in pygame.event.get():
-			if event.type == KEYDOWN:
-				if event.key == K_RCTRL or event.key == K_LCTRL:
-					self.ctrl = 1
-				if event.key == K_c:
-					if self.ctrl == 1:
-						self.game.end_run_loop()
-				if (event.key == K_ESCAPE):
-					self.game.end_run_loop()
-			if event.type == KEYUP:
-				if event.key == K_RCTRL or event.key == K_LCTRL:
-					self.ctrl = 0
-
 class TestGame(game.GameController):
 	"""docstring for TestGame"""
 	def __init__(self, machineType):
 		super(TestGame, self).__init__(machineType)
 		self.dmd = dmd.DisplayController(self, width=128, height=32)
-		self.exit_mode = ExitMode(self, 1)
+		self.keyboard_handler = procgame.keyboard.KeyboardHandler()
+		self.keyboard_events_enabled = True
+		self.get_keyboard_events = self.keyboard_handler.get_keyboard_events
 		
 	def setup(self):
 		"""docstring for setup"""
@@ -167,7 +141,6 @@ class TestGame(game.GameController):
 		
 	def reset(self):
 		super(TestGame, self).reset()
-		self.modes.add(self.exit_mode)
 		self.modes.add(self.highscore_entry)
 		# Make sure flippers are off, especially for user initiated resets.
 		self.enable_flippers(enable=False)

@@ -3,7 +3,6 @@ import os
 sys.path.append(sys.path[0]+'/..') # Set the path so we can find procgame.  We are assuming (stupidly?) that the first member is our directory.
 import procgame
 import pinproc
-from deadworld import *
 from procgame import *
 from threading import Thread
 import random
@@ -12,12 +11,6 @@ import time
 import locale
 import math
 import copy
-import pygame
-from pygame.locals import *
-
-pygame.init()
-screen = pygame.display.set_mode((300, 20))
-pygame.display.set_caption('scoredisplaytest.py - Press CTRL-C to exit')
 
 locale.setlocale(locale.LC_ALL, "") # Used to put commas in the score.
 
@@ -46,6 +39,9 @@ class TestGame(game.GameController):
 		super(TestGame, self).__init__(machineType)
 		self.dmd = dmd.DisplayController(self, width=128, height=32)
 		self.score_display = scoredisplay.ScoreDisplay(self, 1)
+		self.keyboard_handler = procgame.keyboard.KeyboardHandler()
+		self.keyboard_events_enabled = True
+		self.get_keyboard_events = self.keyboard_handler.get_keyboard_events
 		
 	def setup(self):
 		"""docstring for setup"""
