@@ -40,7 +40,7 @@ class Animation(object):
 		transparency.
 		"""
 		self.frames = []
-		f = open(filename, 'r')
+		f = open(filename, 'rb')
 		f.seek(4)
 		frame_count = struct.unpack("I", f.read(4))[0]
 		self.width = struct.unpack("I", f.read(4))[0]
