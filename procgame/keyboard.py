@@ -31,12 +31,24 @@ class KeyboardHandler():
 					if self.ctrl == 1:
 						key_event['type'] = 99
 						key_event['value'] = 'quit'
-				if (event.key == K_ESCAPE):
-					event['type'] == 99
-					event['value'] == 'quit'
-			if event.type == KEYUP:
+				elif (event.key == K_ESCAPE):
+					key_event['type'] = 99
+					key_event['value'] = 'quit'
+				elif (event.key == K_RSHIFT):
+					key_event['type'] = 1
+					key_event['value'] = 1
+				elif (event.key == K_LSHIFT):
+					key_event['type'] = 1
+					key_event['value'] = 3
+			elif event.type == KEYUP:
 				if event.key == K_RCTRL or event.key == K_LCTRL:
 					self.ctrl = 0
+				elif (event.key == K_RSHIFT):
+					key_event['type'] = 2
+					key_event['value'] = 1
+				elif (event.key == K_LSHIFT):
+					key_event['type'] = 2
+					key_event['value'] = 3
 			if len(key_event):
 				key_events.append(key_event)
 		return key_events
