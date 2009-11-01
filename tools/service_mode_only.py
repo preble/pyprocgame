@@ -210,12 +210,12 @@ class TestGame(game.GameController):
 def main():
         
 	if len(sys.argv) < 2:
-		print("Usage: %s <lampshow> <yaml>"%(sys.argv[0]))
+		print("Usage: %s <yaml>"%(sys.argv[0]))
 		return
 	else:
 		yamlpath = sys.argv[1]
 		if yamlpath.find('.yaml', 0) == -1:
-			print("Usage: %s <lampshow> <yaml>"%(sys.argv[0]))
+			print("Usage: %s <yaml>"%(sys.argv[0]))
 			return
 
 	config = yaml.load(open(yamlpath, 'r'))
