@@ -88,8 +88,12 @@ class ServiceMode(ServiceModeList):
 		#self.title_layer.set_text('Service Mode')
 		self.name = 'Service Mode'
 		self.tests = Tests(self.game, self.priority+1, font)
-		self.settings = Settings(self.game, self.priority+1, font, 'Settings', self.game.settings)
-		self.items = [self.tests, self.settings]
+		if len(self.game.settings) > 0: 
+			self.settings = Settings(self.game, self.priority+1, font, 'Settings', self.game.settings)
+			self.items = [self.tests, self.settings]
+		else:
+			self.items = [self.tests]
+
 
 class Tests(ServiceModeList):
 	"""Service Mode."""
