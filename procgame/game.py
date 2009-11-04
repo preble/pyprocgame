@@ -176,7 +176,9 @@ class Mode(object):
 		pass
 	def mode_tick(self):
 		"""Called by the GameController run loop during each loop when the mode is running."""
-		# Dispatch any qualifying delayed events:
+		pass
+	def dispatch_delayed(self):
+		"""Called by the GameController to dispatch any delayed events."""
 		t = time.time()
 		for item in self.__delayed:
 			if item['time'] <= t:
@@ -191,8 +193,9 @@ class Mode(object):
 
 class ModeQueue(object):
 	"""docstring for ModeQueue"""
-	def __init__(self):
+	def __init__(self, game):
 		super(ModeQueue, self).__init__()
+		self.game = game
 		self.modes = []
 		
 	def add(self, mode):
@@ -201,7 +204,7 @@ class ModeQueue(object):
 		self.modes += [mode]
 		# Sort by priority, descending:
 		self.modes.sort(lambda x, y: y.priority - x.priority)
-		print "Added %s, now:\n%s" % (str(mode), str(self))
+		self.game.log("Added %s, now:\n%s" % (str(mode), str(self)))
 		mode.mode_started()
 		if mode == self.modes[0]:
 			mode.mode_topmost()
@@ -210,7 +213,7 @@ class ModeQueue(object):
 		for idx, m in enumerate(self.modes):
 			if m == mode:
 				del self.modes[idx]
-				print "Removed %s, now:\n%s" % (str(mode), str(self))
+				self.game.log("Removed %s, now:\n%s" % (str(mode), str(self)))
 				mode.mode_stopped()
 				break
 		if len(self.modes) > 0:
@@ -226,6 +229,7 @@ class ModeQueue(object):
 	def tick(self):
 		modes = copy.copy(self.modes) # Make a copy so if a mode is added we don't get into a loop.
 		for mode in modes:
+			mode.dispatch_delayed()
 			mode.mode_tick()
 		
 	def __str__(self):
@@ -234,8 +238,8 @@ class ModeQueue(object):
 			layer = None
 			if hasattr(mode, 'layer'):
 				layer = mode.layer
-			s += "  #%d %s\t\tlayer=%s\n" % (mode.priority, type(mode).__name__, type(layer).__name__)
-		return s
+			s += "\t\t#%d %s\t\tlayer=%s\n" % (mode.priority, type(mode).__name__, type(layer).__name__)
+		return s[:-1] # Remove \n
 
 class AttrCollection(object):
 	"""docstring for AttrCollection"""
@@ -271,15 +275,15 @@ class Driver(GameItem):
 		GameItem.__init__(self, game, name, number)
 		self.default_pulse_time = 30
 	def disable(self):
-		print("Driver %s - disable" % (self.name))
+		self.game.log("Driver %s - disable" % (self.name))
 		self.game.proc.driver_disable(self.number)
 	def pulse(self, milliseconds=None):
 		if milliseconds == None:
 			milliseconds = self.default_pulse_time
-		print("Driver %s - pulse %d" % (self.name, milliseconds))
+		self.game.log("Driver %s - pulse %d" % (self.name, milliseconds))
 		self.game.proc.driver_pulse(self.number, milliseconds)
 	def schedule(self, schedule, cycle_seconds, now):
-		print("Driver %s - schedule %08x" % (self.name, schedule))
+		self.game.log("Driver %s - schedule %08x" % (self.name, schedule))
 		self.game.proc.driver_schedule(number=self.number, schedule=schedule, cycle_seconds=cycle_seconds, now=now)
 	def enable(self):
 		self.schedule(0xffffffff, 0, True)
@@ -347,7 +351,7 @@ class GameController(object):
 		self.machineType = machineType
 		self.proc = pinproc.PinPROC(self.machineType)
 		self.proc.reset(1)
-		self.modes = ModeQueue()
+		self.modes = ModeQueue(self)
 		self.coils = AttrCollection()
 		self.lamps = AttrCollection()
 		self.switches = AttrCollection()
@@ -624,14 +628,18 @@ class GameController(object):
 			recvd_state = event_type == 1
 			if sw.state != recvd_state:
 				sw.set_state(recvd_state)
-				print "% 10.3f %s:\t%s" % (time.time()-self.t0, sw.name, sw.state_str())
+				self.log("    %s:\t%s" % (sw.name, sw.state_str()))
 				self.modes.handle_event(event)
 			else:
-				print "% 10.3f DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s" % (time.time()-self.t0, sw.name, sw.state_str())
+				#self.log("DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s" % (sw.name, sw.state_str()))
+				pass
 
         def end_run_loop(self):
 		"""Called by the programmer when he wants the run_loop to end"""
 		self.done = True
+
+	def log(self, line):
+		print("% 10.3f %s" % (time.time()-self.t0, line))
 
 	def run_loop(self):
 		"""Called by the programmer to read and process switch events until interrupted."""

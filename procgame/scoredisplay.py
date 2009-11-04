@@ -19,10 +19,9 @@ class ScoreLayer(GroupedLayer):
 
 class ScoreDisplay(Mode):
 	"""After instantiation the ScoreDisplay.layer should be added to the DisplayController."""
-	def __init__(self, game, priority, left_players_justify="right"):
+	def __init__(self, game, priority, left_players_justify="right", font_path="../shared/dmd"):
 		super(ScoreDisplay, self).__init__(game, priority)
 		self.layer = ScoreLayer(128, 32, self)
-		font_path = "../shared/dmd"
 		self.font_common = Font(font_path+"/Font07x5.dmd")
 		self.font_18x12 = Font(font_path+"/Font18x12.dmd")
 		self.font_18x11 = Font(font_path+"/Font18x11.dmd")
