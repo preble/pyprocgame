@@ -6,11 +6,11 @@ The P-ROC software architecture is divided into 3 layers:
 - Layer 1: libpinproc, C API to P-ROC.
 - Layer 2: High level ruleset development frameworks, such as pyprocgame.
 
-pyprocgame is a set of Python classes designed to make implementing a mode-based custom ruleset easier.  The classes make responding to switch events easier, as well as providing support for providing graphics and text to the pinball display (DMD).  pyprocgame is based on pypinproc, the Python wrapper for libpinproc.
+pyprocgame is a set of Python classes designed to provide a framework for implementing mode-based custom rulesets for pinball games.  The classes make responding to abritrary and non-trivial switch events easy, as well as providing support for displaying graphics and text on the pinball display (DMD).  pyprocgame is based on pypinproc, the Python wrapper for libpinproc.
 
 ### Prerequisites
 
-This guide is written with the assumption that you are familiar with [object-oriented programming](http://en.wikipedia.org/wiki/Object-oriented_programming) and, to a lesser extent, the [Python](http://python.org) programming language.  Terminology such as object, class, and subclass are used frequently within this guide and having a basic understanding of what those terms mean is important.  There is a significant amount of demo code available for pyprocgame; you should not hesitate to examine it or post to the appropriate forums if you have questions.
+This guide is written with the assumption that you are familiar with [object-oriented programming](http://en.wikipedia.org/wiki/Object-oriented_programming) and, to a lesser extent, the [Python](http://python.org) programming language.  Terminology such as *object*, *class*, and *subclass* are used frequently within this guide and having a basic understanding of what those terms mean is important.  There is a significant amount of demo code available for pyprocgame; you should not hesitate to examine it or post to the appropriate forums if you have questions.
 
 
 ## What's In pyprocgame
@@ -26,20 +26,20 @@ pyprocgame provides a powerful set of classes to help you implement your game.  
 
 In addition, pyprocgame provides a number of classes to make controlling the dot matrix display (DMD) of your game much easier:
 
-- **DisplayController** --Manages the DMD by assembling the currently displayed frame from the active modes on the mode queue.
+- **DisplayController** -- Manages the DMD by assembling the currently displayed frame from the active modes on the mode queue.
 - **ScoreDisplay** -- Makes providing a classic 4-player score display extremely easy.  ScoreDisplay is implemented as a Mode that generates a DMD Frame on demand (usually to DisplayController).
-- **Frame** --A single DMD bitmap, usually 128x32.
-- **Animation** --A collection of DMD frames.
-- **Font** --A bitmap font for use with the DMD.
-- **Layer** --An abstract class; provides a sequence of DMD Frames.
-- **GroupedLayer**, **ScriptedLayer**, **AnimatedLayer**, **FrameLayer**, **TextLayer** --Implementations of the Layer class that provide the building blocks necessary to build sophisticated displays.
+- **Frame** -- A single DMD bitmap, usually 128x32.
+- **Animation** -- A collection of DMD frames.
+- **Font** -- A bitmap font for use with the DMD.
+- **Layer** -- An abstract class; provides a sequence of DMD Frames.
+- **GroupedLayer**, **ScriptedLayer**, **AnimatedLayer**, **FrameLayer**, **TextLayer** -- Implementations of the Layer class that provide the building blocks necessary to build sophisticated displays.
 
 These classes will be described in greater depth in the sections that follow.
 
 
 ## What's in a pyprocgame Game?
 
-Fortunately you won't need to understand all of those classes to build a pinball game with pyprocgame, but you will need is a basic understanding of how the GameController and ModeQueue work.
+Fortunately you won't need to understand all of those classes in order to build a pinball game with pyprocgame, but you will need is a basic understanding of how the GameController and ModeQueue work.
 
 Let's look at a ridiculously simple game implemented with pyprocgame:
 
@@ -69,7 +69,7 @@ Here we load a [YAML](http://yaml.org/) file that describes the pinball hardware
 
 It wouldn't be pinball without flippers; here's where we turn them on.  The pyprocgame code behind this statement uses the machine description (from the YAML file previously loaded with load\_config()) to create the association between the flipper buttons (switches) and the flipper coils.
 
-Internally, this takes advantage of P-ROC's switch rules feature, which enables a hardware-triggered linkage between switch events and coil drivers to guarantee that when the player hits the flipper button the reaction time will be immediate.  This keeps P-ROC-based games responsive, rather than suffering from any latency between the computer host processing of the switch event and activating the coil driver.  The same principle can be applied to pop bumpers.
+Internally, this takes advantage of P-ROC's switch rules feature, which enables a hardware-triggered linkage between switch events and coil drivers to guarantee that when the player hits the flipper button the coil will be fired immediately.  This keeps P-ROC-based games responsive, rather than suffering from any latency between the computer host processing of the switch event and activating the coil driver.  The same principle can be applied to pop bumpers.
 
 	game.run_loop()
 
@@ -80,7 +80,7 @@ Finally we start the game's run loop, which allows the game to actually run.  Th
 
 Most pinball games are a bit more sophisticated than just hitting the flippers.  You usually have targets to hit, banks of drop targets to knock down, and so on.  In the abstract those features seem pretty easy to implement: respond to the switch event and award points.  But what about more complex rulesets?  Multiball?  *Stacked* multiballs?  Things can get complicated quickly!
 
-When we were designing pyprocgame our goal was to enable the developer (that's you) to create rulesets that are as complicated as they can imagine while keeping the task of implementing (and debugging) those rulesets as sane as possible.  Just like you, we want to design our own games, and we want to be able to have fun doing it.  
+When we were designing pyprocgame our goal was to enable the developer (that's you) to create rulesets that are as complicated as they can imagine while keeping the task of implementing (and debugging) those rulesets as sane as possible.  Just like you, we want to design our own games, and we want to have fun doing it.  
 
 To reiterate the above, we designed pyprocgame to be flexible enough to allow you to create any game ruleset you can imagine, yet provide enough of a framework to help you get off the ground quickly.  We've strived to keep the features modular and limit interdependence so that if, for example, you want to write your own routines to control the DMD you can do so, or if you want to create your own mode system you can replace ours and still take advantage of the Python interface to libpinproc and the DMD utilities.
 
@@ -88,7 +88,7 @@ To reiterate the above, we designed pyprocgame to be flexible enough to allow yo
 
 We've been talking about pyprocgame at a very high level, but let's get down to specifics for a moment:
 
-Mode objects are the building blocks of pyprocgame games.  In pyrpocgame a mode is *a functional subset of a game that receives switch events*.   When active, modes are organized in a queue (ModeQueue), which determines the order in which they receive switch events.  That is, when the GameController's run\_loop() receives a switch event from the P-ROC hardware, only objects in the ModeQueue will be notified of the event.  If you want your game to react to a switch event, one of your modes will be given that responsibility.
+Mode objects are the building blocks of pyprocgame games.  In pyrpocgame a mode is *a functional subset of a game that receives switch events*.   When active, modes are organized in a queue (ModeQueue), which determines the order in which they receive switch events.  That is, when the GameController's run\_loop() receives a switch event from the P-ROC hardware, only objects in the ModeQueue will be notified of the event.  If you want your game to react to a switch event, one or more of your modes must be given that responsibility.
 
 We subclass Mode to create our own useful modes.  Let's look at a simple mode:
 
@@ -100,13 +100,15 @@ We subclass Mode to create our own useful modes.  Let's look at a simple mode:
 			print("Start!")
 			return True
 
-Here we have defined a class, FirstMode, which subclasses the procgame Mode class.  The Mode constructor takes 2 parameters: *game* and *priority*.  Game is a reference to an instance of our own GameController subclass, and priority governs the order in which this mode will receive events, relative to the others – more on that later.
+Here we have defined a class, FirstMode, which subclasses the procgame Mode class.  The Mode constructor takes 2 parameters.  *Game* is a reference to an instance of our own GameController subclass, and *priority* governs the order in which this mode will receive events, relative to the others – more on that later.
 
-Next we define a method with a rather distinctive name: *sw\_startButton\_active()*.  This is our switch event handler.  When a Mode is instantiated its method list is scanned for methods that match a certain naming pattern: *sw\_(switch name)_active* in this case.  This tells pyprocgame that it should call this method when the button named startButton is active (closed in this case, although this is configurable).  Similarly, a method named *sw\_trainWreck\_inactive()* would be called when the trainWreck switch had changed to an inactive state.  The switch name in these method names must correspond to a switch name in the YAML configuration; otherwise a warning message will be printed when instantiating the class.  More on switch even handlers (including responding to events after a delay) later.
+Next we define a method with a rather distinctive name: *sw\_startButton\_active()*.  This is our switch event handler.  When a Mode is instantiated its method list is scanned for methods that match a certain naming pattern: *sw\_(switch name)_active* in this case.  This tells pyprocgame that it should call this method when the button named startButton is active (closed in this case; this is configurable for each switch using the YAML file).  
 
-Our switch handler in this case is very simple.  It prints out a message and returns True.  Each switch event handler must return True or False.  A return value of True tells the ModeQueue to allow this switch event to be sent to other active modes; a return value of false instructs ModeQueue to stop processing this event.
+Similarly, a method named *sw\_trainWreck\_inactive()* would be called when the trainWreck switch had changed to an inactive state.  The switch name in these method names must correspond to a switch name in the YAML configuration; otherwise a warning message will be printed when instantiating the class.  More on switch even handlers (including responding to events after a delay) later.
 
-This is where the priority of a mode becomes important.  The ModeQueue is essentially a priority queue: the highest-priority modes receive switch events first.  If they do not return False, the switch event is then sent to lower priority modes.  In this way you can use a high priority mode to enable switches on the playfield to have special meaning during any number of modes, without having to handle that special case alongside the code for the more normal meaning of the switch.  Or you can easily have a switch result in multiple mode triggers.
+Our switch handler in this case is very simple.  It prints out a message and returns True.  Each switch event handler must return True or False.  A return value of True tells the ModeQueue to allow this switch event to be sent to other active modes; a return value of False instructs ModeQueue to stop processing this event.
+
+This is where the priority of a mode becomes important.  The ModeQueue is essentially a priority queue: the highest-priority modes receive switch events first.  If they do not return False, the switch event is then sent to lower priority modes.  In this way you can use a high priority mode to give switches on the playfield to have special meaning during any number of modes, without having to handle that special case alongside the code for the more normal meaning of the switch.  Or you can easily have a switch result in multiple mode triggers.
 
 
 ### Mode Management
@@ -132,7 +134,7 @@ We've reorganized the code a bit to reflect the recommended layout for pyprocgam
 
 ### Other Mode Features
 
-In some cases you may wish to respond to a switch event only after the switch has been in that state for a certain time period.  The Mode class provides a means for accomplishing this easily using method names of the following form:
+In some cases you may wish to respond to a switch event only after the switch has been in that state for a certain time period.  The Mode class provides a means for accomplishing this with incredible ease -- just add a _for\_(time period)_ suffix to the normal switch method convention:
 
 - sw\_switchName\_active\_for\_500ms() -- called once switchName is active for 500 milliseconds
 - sw\_switchName\_inactive\_for\_3s() -- called once switchName is inactive for 3 seconds
