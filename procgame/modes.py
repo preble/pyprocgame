@@ -1,6 +1,13 @@
 from game import *
 import traceback
 
+class Scoring_Mode(Mode):
+	"""Scoring_mode base class.  Useful for modes that result in bonus points."""
+	def __init__(self, game, priority):
+		super(Scoring_Mode, self).__init__(game, priority)
+		self.bonus_base_elements = {}
+		self.bonus_x = 1
+
 class BasicDropTargetBank(Mode):
 	"""Basic Drop Target Bank mode."""
 	def __init__(self, game, priority, prefix, letters):

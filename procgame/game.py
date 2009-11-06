@@ -504,7 +504,7 @@ class GameController(object):
 					else:
 						self.user_settings[section][item] = self.settings[section][item]['options'][0]
 				elif not item in self.user_settings[section]:
-					if default in self.settings[section][item]:
+					if 'default' in self.settings[section][item]:
 						self.user_settings[section][item] = self.settings[section][item]['default']
 					else:
 						self.user_settings[section][item] = self.settings[section][item]['options'][0]
@@ -586,29 +586,6 @@ class GameController(object):
 		if enable:
 			drivers += [pinproc.driver_state_pulse(coil.state(),pulse_duration)]
 		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host}, drivers)
-
-	def is_trough_full(self, num_balls=0):
-		if num_balls == 0:
-			num_balls = self.num_balls_total
-		print "Checking for trough balls:"
-		print num_balls
-                if self.machineType == 'wpc':
-			end_number = 6 - num_balls
-			for i in range(6, end_number, -1):
-				swName = 'trough' + str(i) 
-				if self.switches[swName].is_closed():
-					return False
-
-			return True
-					
-		else:
-			end_number = 1 + num_balls
-			for i in range(1, end_number):
-				swName = 'trough' + str(i) 
-				if self.switches[swName].is_open():
-					return False
-
-			return True
 
 	def process_event(self, event):
 		event_type = event['type']
