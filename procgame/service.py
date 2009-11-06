@@ -299,6 +299,7 @@ class SettingsEditor(ServiceModeList):
 			ctr += 1
 		self.max = ctr - 1
 		self.item_layer.set_text(self.item.name)
+		self.value_layer.set_text(str(self.item.value))
 		self.option_index = self.item.options.index(self.item.value)
 			
 	def disable(self):
