@@ -118,7 +118,6 @@ class BallSave(Mode):
 				self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
 
 	def sw_shooterR_open_for_1s(self, sw):
-		print "hiiiii"
 		print self.timer 
 		print self.num_balls_to_save
 		if self.mode_begin:
