@@ -11,10 +11,18 @@ class BallSave(Mode):
 		self.timer = 0
 
 	def mode_started(self):
-		pass
-
+		self.game.trough.ball_save_callback = self.launch_callback
+		
 	def mode_stopped(self):
 		self.lamp.disable()
+
+	def launch_callback(self):
+		if not self.allow_multiple_saves:
+			self.disable()
+		self.game.set_status('Ball Saved!')
+
+	def start_lamp(self):
+		self.lamp.schedule(schedule=0xFF00FF00, cycle_seconds=0, now=True)
 
 	def add(self, add_time):
 		self.timer += add_time
@@ -22,10 +30,12 @@ class BallSave(Mode):
 			self.lamp.schedule(schedule=0xFF00FF00, cycle_seconds=0, now=True)
 
 	def disable(self):
+		self.game.trough.ball_save_active = False
 		self.timer = 0
 		self.lamp.disable()
 
 	def start(self, num_balls_to_save=1, time=12, now=True, allow_multiple_saves=False):
+		self.game.trough.ball_save_active = True
 		self.allow_multiple_saves = allow_multiple_saves
 		self.lamp.schedule(schedule=0xFF00FF00, cycle_seconds=0, now=True)
 		self.num_balls_to_save = num_balls_to_save
@@ -41,6 +51,10 @@ class BallSave(Mode):
 
 	def timer_countdown(self):
 		self.timer -= 1
+
+		if self.timer < 1:
+			self.game.trough.ball_save_active = False
+
 		if (self.timer >= 1):
 			self.delay(name='ball_save_timer', event_type=None, delay=1, handler=self.timer_countdown)
 
