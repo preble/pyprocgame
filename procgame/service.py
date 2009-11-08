@@ -83,11 +83,11 @@ class ServiceModeList(ServiceModeSkeleton):
 
 class ServiceMode(ServiceModeList):
 	"""Service Mode."""
-	def __init__(self, game, priority, font):
+	def __init__(self, game, priority, font, extra_tests=[]):
 		super(ServiceMode, self).__init__(game, priority,font)
 		#self.title_layer.set_text('Service Mode')
 		self.name = 'Service Mode'
-		self.tests = Tests(self.game, self.priority+1, font)
+		self.tests = Tests(self.game, self.priority+1, font, extra_tests)
 		if len(self.game.settings) > 0: 
 			self.settings = Settings(self.game, self.priority+1, font, 'Settings', self.game.settings)
 			self.items = [self.tests, self.settings]
@@ -97,7 +97,7 @@ class ServiceMode(ServiceModeList):
 
 class Tests(ServiceModeList):
 	"""Service Mode."""
-	def __init__(self, game, priority, font):
+	def __init__(self, game, priority, font, extra_tests=[]):
 		super(Tests, self).__init__(game, priority,font)
 		#self.title_layer.set_text('Tests')
 		self.name = 'Tests'
@@ -105,6 +105,8 @@ class Tests(ServiceModeList):
 		self.coil_test = CoilTest(self.game, self.priority+1, font)
 		self.switch_test = SwitchTest(self.game, self.priority+1, font)
 		self.items = [self.switch_test, self.lamp_test, self.coil_test]
+		for test in extra_tests:
+			self.items.append(test)
 
 class LampTest(ServiceModeList):
 	"""Lamp Test"""
