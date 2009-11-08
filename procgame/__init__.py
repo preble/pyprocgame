@@ -1,1 +1,1 @@
-__all__ = ['game', 'modes', 'dmd', 'sound', 'ballsearch', 'service', 'ballsave', 'trough', 'scoredisplay', 'keyboard']
+__all__ = ['game', 'modes', 'dmd', 'sound', 'lamps', 'ballsearch', 'service', 'ballsave', 'trough', 'scoredisplay', 'keyboard']
