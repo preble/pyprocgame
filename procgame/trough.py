@@ -20,6 +20,7 @@ class Trough(Mode):
 		for switch in early_save_switchnames:
 			self.add_switch_handler(name=switch, event_type='active', delay=None, handler=self.early_save_switch_handler)
 	
+		# Reset variables
 		self.num_balls_in_play = 0
 		self.num_balls_locked = 0
 		self.ball_save_active = False
@@ -29,6 +30,8 @@ class Trough(Mode):
 
 	def early_save_switch_handler(self, sw):
 		if self.ball_save_active:
+			# Only do an early ball save if a ball is ready to be launched.
+			# Otherwise, let the trough switches take care of it.
 			if self.game.switches[self.eject_switchname].is_active():
 				self.launch_balls(1, self.ball_save_callback)
 
@@ -50,22 +53,23 @@ class Trough(Mode):
 				# If there are too few balls in the trough.  Ignore this one in an attempt to correct the tracking.
 				return 'ignore'
 		else:
+			# Calculate how many balls should be in the trough for various conditions.
 			num_trough_balls_if_ball_ending = num_current_machine_balls - self.num_balls_locked
 			num_trough_balls_if_multiball_ending = num_trough_balls_if_ball_ending - 1
 			num_trough_balls_if_multiball_drain = num_trough_balls_if_ball_ending - (self.num_balls_in_play - 1)
 
+			# The ball should end if all of the balls are in the trough.
 			if self.num_balls() == num_trough_balls_if_ball_ending:
 				self.num_balls_in_play = 0
 				self.drain_callback()
+			# Multiball is ending if all but 1 ball are in the trough.
 			# Shouldn't need this, but it fixes situations where num_balls_in_play tracking
 			# fails, and those situations are still occuring.
 			elif self.num_balls() == num_trough_balls_if_multiball_ending:
 				self.num_balls_in_play = 1
 				self.drain_callback()
-			# Check to see if the number of balls in the trough
-			# indicate a ball is newly out of play (rather than the
-			# trough switches simply being reactivated do to machine
-			# shaking or something).
+			# Otherwise, another ball from multiball is draining if the trough gets one more
+			# than it would have if all num_balls_in_play are not in the trough.
 			elif self.num_balls() == num_trough_balls_if_multiball_drain:
 				# Fix num_balls_in_play if too low.
 				if self.num_balls_in_play < 3:
@@ -79,6 +83,7 @@ class Trough(Mode):
 	def is_full(self):
 		return self.game.num_balls_total == self.num_balls()
 
+	# Count the number of balls in the trough by counting active trough switches.
 	def num_balls(self):
 		ball_count = 0
 		for switch in self.position_switchnames:
@@ -86,6 +91,9 @@ class Trough(Mode):
 				ball_count += 1
 		return ball_count
 
+	# Either initiate a new launch or add another ball to the count of balls
+	# being launched.  Make sure to keep a separate count for stealth launches
+	# that should not increase num_balls_in_play.
 	def launch_balls(self, num, callback='None', stealth=False):
 		self.num_balls_to_launch += num
 		if stealth:
@@ -95,25 +103,25 @@ class Trough(Mode):
 			self.launch_callback = callback
 			self.common_launch_code()
 
+	# This is the part of the ball launch code that repeats for multiple launches.
 	def common_launch_code(self):
+		# Only kick out another ball if the last ball is gone from the shooter lane.	
 		if self.game.switches[self.shooter_lane_switchname].is_inactive():
 			self.num_balls_to_launch -= 1
 			self.game.coils[self.eject_coilname].pulse(40)
+			# Only increment num_balls_in_play if there are no more stealth launches
+			# to complete.
 			if self.num_balls_to_stealth_launch > 0:
 				self.num_balls_to_stealth_launch -= 1
 			else:
 				self.num_balls_in_play += 1
+			# If more balls need to be launched, delay 1 second 
 			if self.num_balls_to_launch > 0:
-                       		self.delay(name='launch', event_type=None, delay=1.0, handler=self.shooter_lane_check)
+                       		self.delay(name='launch', event_type=None, delay=1.0, handler=self.common_launch_code)
 			else:
 				self.launch_in_progress = False
 				if self.launch_callback != 'None':
 					self.launch_callback()
+		# Otherwise, wait 1 second before trying again.
 		else:
-			self.delay(name='launch', event_type=None, delay=1.0, handler=self.shooter_lane_check)
-
-	def shooter_lane_check(self):
-		if self.game.switches[self.shooter_lane_switchname].is_inactive():
-			self.common_launch_code()
-		else:
-                       	self.delay(name='launch', event_type=None, delay=1.0, handler=self.shooter_lane_check)
+			self.delay(name='launch', event_type=None, delay=1.0, handler=self.common_launch_code)
