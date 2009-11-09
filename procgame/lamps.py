@@ -142,6 +142,7 @@ class LampShowMode(Mode):
 		self.lampshow.load(filename)
 		self.filename = filename
 		self.delay(name='show_tick', event_type=None, delay=0.03, handler=self.show_tick)
+		self.restart()
 
 	def restart(self):
 		#self.load(self.filename)
