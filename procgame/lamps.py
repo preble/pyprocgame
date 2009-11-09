@@ -82,6 +82,10 @@ class LampShowTrack(object):
 		print "%s | %s" % (self.name, m.group('data'))
 		print "%s | %s" % (self.name, data)
 
+	def reset(self):
+		self.schedules = []
+		self.current_index = 0
+
 	def restart(self):
 		self.current_index = 0
 	
@@ -103,6 +107,10 @@ class LampShow(object):
 		self.tracks = []
 		self.t0 = None
 		self.last_seconds = -1
+
+	def reset(self):
+		for tr in self.tracks:
+			tr.reset()	
 		
 	def load(self, filename):
 		f = open(filename, 'r')
@@ -133,26 +141,56 @@ class LampShow(object):
 
 class LampShowMode(Mode):
 	"""Keeps track of ball save timer."""
-	def __init__(self, game, repeat=False):
+	def __init__(self, game):
 		super(LampShowMode, self).__init__(game, 3)
-		self.lampshow = LampShow(game)
-		self.repeat = repeat
+		self.lampshow = LampShow(self.game)
+		self.show_over = True
 
-	def load(self, filename):
+	def load(self, filename, repeat=False, callback='None'):
+		self.callback = callback
+		self.repeat = repeat
+		self.lampshow.reset()
 		self.lampshow.load(filename)
-		self.filename = filename
-		self.delay(name='show_tick', event_type=None, delay=0.03, handler=self.show_tick)
 		self.restart()
 
 	def restart(self):
-		#self.load(self.filename)
 		self.lampshow.restart()
 		self.delay(name='show_tick', event_type=None, delay=0.03, handler=self.show_tick)
+		self.show_over = False
 
 	def show_tick(self):
 		if self.lampshow.is_complete():
 			if self.repeat:
 				self.restart()
+			else:
+				self.cancel_delayed('show_tick')
+				self.show_over = True
+				if self.callback != 'None':
+					self.callback()
 		else:
 			self.lampshow.tick()
 			self.delay(name='show_tick', event_type=None, delay=0.03, handler=self.show_tick)
+
+class LampController(object):
+	"""docstring for TestGame"""
+	def __init__(self, game):
+		self.game = game
+		self.shows = {}
+		self.show = LampShowMode(self.game)
+		self.show_playing = False
+		
+	def register_show(self, key, show_file):
+                self.shows[key] = show_file
+
+	def play_show(self, key, repeat=False, callback='None'):
+		# Always stop any previously running show first.
+		self.stop_show()
+		self.show.load(self.shows[key], repeat, callback)
+		self.game.modes.add(self.show)
+		self.show_playing = True
+
+	def stop_show(self):
+		if self.show_playing:
+			self.game.modes.remove(self.show)
+		self.show_playing = False
+
