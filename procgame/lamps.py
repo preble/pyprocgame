@@ -104,13 +104,14 @@ class LampShow(object):
 	def __init__(self, game):
 		super(LampShow, self).__init__()
 		self.game = game
+		self.reset()
+
+	def reset(self):
+		#for tr in self.tracks:
+		#	tr.reset()	
 		self.tracks = []
 		self.t0 = None
 		self.last_seconds = -1
-
-	def reset(self):
-		for tr in self.tracks:
-			tr.reset()	
 		
 	def load(self, filename):
 		f = open(filename, 'r')
@@ -132,6 +133,8 @@ class LampShow(object):
 	def restart(self):
 		for tr in self.tracks:
 			tr.restart()
+		#self.t0 = None
+		#self.last_seconds = -1
 	
 	def is_complete(self):
 		for tr in self.tracks:
@@ -155,11 +158,10 @@ class LampShowMode(Mode):
 
 	def restart(self):
 		self.lampshow.restart()
-		self.delay(name='show_tick', event_type=None, delay=0.03, handler=self.show_tick)
 		self.show_over = False
 
-	def show_tick(self):
-		if self.lampshow.is_complete():
+	def mode_tick(self):
+		if self.lampshow.is_complete() and not self.show_over:
 			if self.repeat:
 				self.restart()
 			else:
@@ -167,9 +169,8 @@ class LampShowMode(Mode):
 				self.show_over = True
 				if self.callback != 'None':
 					self.callback()
-		else:
+		elif not self.show_over:
 			self.lampshow.tick()
-			self.delay(name='show_tick', event_type=None, delay=0.03, handler=self.show_tick)
 
 class LampController(object):
 	"""docstring for TestGame"""
