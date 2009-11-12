@@ -65,15 +65,18 @@ class LampShowTrack(object):
 		data = expand_line(data)
 		bits = 0
 		bit_count = 0
+		ignore_first = True
 		for ch in data:
 			bits >>= 1
 			bit_count += 1
 			if ch != " ":
 				bits |= 1 << 31
-			if bit_count == 32:
-				self.schedules.append(bits)
-				bits = 0
-				bit_count = 0
+			if bit_count % 16 == 0:
+				if not ignore_first:
+					self.schedules.append(bits)
+					#bits = 0
+					#bit_count = 0
+				ignore_first = False
 		# FIXME: This lops off the last up to 31 bits of track data!
 		# Print out all of the data for debugging purposes:
 		# print "Loaded %d schedules for %s:" % (len(self.schedules), self.name)
@@ -111,7 +114,7 @@ class LampShow(object):
 		#	tr.reset()	
 		self.tracks = []
 		self.t0 = None
-		self.last_seconds = -1
+		self.last_time = -.5
 		
 	def load(self, filename):
 		f = open(filename, 'r')
@@ -122,9 +125,11 @@ class LampShow(object):
 	def tick(self):
 		if self.t0 == None:
 			self.t0 = time.time()
-		seconds = int((time.time() - self.t0))
-		if (seconds != self.last_seconds):
-			self.last_seconds = seconds
+		new_time = (time.time() - self.t0)
+		seconds = int(new_time)
+		time_diff = new_time - self.last_time
+		if (time_diff > 0.500):
+			self.last_time = new_time
 			for tr in self.tracks:
 				sch = tr.next_schedule()
 				self.game.lamps[tr.name].schedule(schedule=sch, cycle_seconds=1, now=True)
