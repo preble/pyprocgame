@@ -58,8 +58,9 @@ class Trough(Mode):
 			num_trough_balls_if_multiball_ending = num_trough_balls_if_ball_ending - 1
 			num_trough_balls_if_multiball_drain = num_trough_balls_if_ball_ending - (self.num_balls_in_play - 1)
 
+
 			# The ball should end if all of the balls are in the trough.
-			if self.num_balls() == num_trough_balls_if_ball_ending:
+			if self.is_full() or self.num_balls() == num_trough_balls_if_ball_ending:
 				self.num_balls_in_play = 0
 				self.drain_callback()
 			# Multiball is ending if all but 1 ball are in the trough.
