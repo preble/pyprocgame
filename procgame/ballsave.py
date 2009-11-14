@@ -24,10 +24,17 @@ class BallSave(Mode):
 	def start_lamp(self):
 		self.lamp.schedule(schedule=0xFF00FF00, cycle_seconds=0, now=True)
 
-	def add(self, add_time):
-		self.timer += add_time
+	def update_lamps(self):
 		if self.timer > 5:
 			self.lamp.schedule(schedule=0xFF00FF00, cycle_seconds=0, now=True)
+		elif self.timer > 2:
+			self.lamp.schedule(schedule=0x55555555, cycle_seconds=0, now=True)
+		else:
+			self.lamp.disable()
+
+	def add(self, add_time):
+		self.timer += add_time
+		self.update_lamps()
 
 	def disable(self):
 		self.game.trough.ball_save_active = False
@@ -37,15 +44,12 @@ class BallSave(Mode):
 	def start(self, num_balls_to_save=1, time=12, now=True, allow_multiple_saves=False):
 		self.game.trough.ball_save_active = True
 		self.allow_multiple_saves = allow_multiple_saves
-		self.lamp.schedule(schedule=0xFF00FF00, cycle_seconds=0, now=True)
 		self.num_balls_to_save = num_balls_to_save
+		self.timer = time
+		self.update_lamps()
 		if now and self.timer <= 0:
-			self.timer = time
-			print "heyyyyy"
 			self.delay(name='ball_save_timer', event_type=None, delay=1, handler=self.timer_countdown)
 		else:
-			print "hoooooo"
-			print time
 			self.mode_begin = 1
 			self.timer_hold = time
 
@@ -58,10 +62,7 @@ class BallSave(Mode):
 		if (self.timer >= 1):
 			self.delay(name='ball_save_timer', event_type=None, delay=1, handler=self.timer_countdown)
 
-		if (self.timer == 2):
-			self.lamp.disable()
-		elif (self.timer == 5):
-			self.lamp.schedule(schedule=0x55555555, cycle_seconds=0, now=True)
+		self.update_lamps()
 
 	# Use this to keep trough4 switch from propogating to other modes
 #	def sw_trough4_closed(self, sw):
@@ -118,11 +119,9 @@ class BallSave(Mode):
 				self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
 
 	def sw_shooterR_open_for_1s(self, sw):
-		print self.timer 
-		print self.num_balls_to_save
 		if self.mode_begin:
 			self.timer = self.timer_hold
 			self.mode_begin = 0
-			self.lamp.schedule(schedule=0xFF00FF00, cycle_seconds=0, now=True)
+			self.update_lamps()
 			self.delay(name='ball_save_timer', event_type=None, delay=1, handler=self.timer_countdown)
 

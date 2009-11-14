@@ -66,6 +66,11 @@ class BasicDropTargetBank(Mode):
 		for name in self.names():
 			self.game.lamps[name].enable()
 			self.state[name] = 'up'
+
+	def update_lamps(self):
+		for name in self.names():
+			if self.state[name] == 'up':
+				self.game.lamps[name].enable()
 	
 	def all_down(self):
 		"""Returns True if all of the drop targets are down."""

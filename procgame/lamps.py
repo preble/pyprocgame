@@ -184,6 +184,7 @@ class LampController(object):
 		self.shows = {}
 		self.show = LampShowMode(self.game)
 		self.show_playing = False
+		self.saved_state_dicts = {}
 		
 	def register_show(self, key, show_file):
                 self.shows[key] = show_file
@@ -195,8 +196,47 @@ class LampController(object):
 		self.game.modes.add(self.show)
 		self.show_playing = True
 
+	def restore_callback(self):
+		self.resume_state = False
+		self.restore_state(self.resume_key)
+		self.callback()
+
 	def stop_show(self):
 		if self.show_playing:
 			self.game.modes.remove(self.show)
 		self.show_playing = False
 
+	def save_state(self, key):
+		state_dict = {}
+		for lamp in self.game.lamps:
+			state_dict[lamp.name] = {'time':lamp.last_time_changed, 'state':lamp.state()}
+		self.saved_state_dicts[key] = state_dict
+		self.saved_state_dicts[key + '_time'] = time.time()
+		print self.saved_state_dicts
+
+	def restore_state(self, key):
+		print "restoring lamp states"
+		if key in self.saved_state_dicts:
+			state_dict = self.saved_state_dicts[key]
+			for lamp_name, record in state_dict.iteritems():
+				# For now, only use schedules.  This won't work with pulses lamps... probably needs to be fixed.
+				# So, ignore GIs for now.
+				if lamp_name.find('gi0', 0) == -1:
+					time_remaining =  (record['state']['outputDriveTime'] + record['time']) - \
+					                  self.saved_state_dicts[key + '_time']
+					# Disable the lamp if it has never been used or if there would have
+					# been less than 1 second of drive time when the state was saved.
+					if (record['time'] == 0 or time_remaining < 1.0) and record['state']['outputDriveTime'] != 0:
+						self.game.lamps[lamp_name].disable()
+					# Otherwise, resume the lamp
+					else:
+						if record['state']['outputDriveTime'] == 0:
+							duration = 0
+						else:
+							duration = int(time_remaining)
+						if record['state']['timeslots'] == 0:
+							self.game.lamps[lamp_name].disable()
+						else:
+							self.game.lamps[lamp_name].schedule(record['state']['timeslots'], \
+                                                                    duration, \
+                                                                    record['state']['waitForFirstTimeSlot'])
