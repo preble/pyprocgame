@@ -190,6 +190,9 @@ class Mode(object):
 		self.__delayed = filter(lambda x: x['time'] > t, self.__delayed)
 	def __str__(self):
 		return "%s  pri=%d" % (type(self).__name__, self.priority)
+	def update_lamps(self):
+		"""Called by the GameController re-apply active lamp schedules"""
+		pass
 
 class ModeQueue(object):
 	"""docstring for ModeQueue"""
@@ -274,19 +277,24 @@ class Driver(GameItem):
 	def __init__(self, game, name, number):
 		GameItem.__init__(self, game, name, number)
 		self.default_pulse_time = 30
+		self.last_time_changed = 0
 	def disable(self):
 		self.game.log("Driver %s - disable" % (self.name))
 		self.game.proc.driver_disable(self.number)
+		self.last_time_changed = time.time()
 	def pulse(self, milliseconds=None):
 		if milliseconds == None:
 			milliseconds = self.default_pulse_time
 		self.game.log("Driver %s - pulse %d" % (self.name, milliseconds))
 		self.game.proc.driver_pulse(self.number, milliseconds)
+		self.last_time_changed = time.time()
 	def schedule(self, schedule, cycle_seconds, now):
 		self.game.log("Driver %s - schedule %08x" % (self.name, schedule))
 		self.game.proc.driver_schedule(number=self.number, schedule=schedule, cycle_seconds=cycle_seconds, now=now)
+		self.last_time_changed = time.time()
 	def enable(self):
 		self.schedule(0xffffffff, 0, True)
+		self.last_time_changed = time.time()
 	def state(self):
 		return self.game.proc.driver_get_state(self.number)
 
@@ -610,6 +618,10 @@ class GameController(object):
 			else:
 				#self.log("DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s" % (sw.name, sw.state_str()))
 				pass
+
+	def update_lamps(self):
+		for mode in reversed(self.modes.modes):
+			mode.update_lamps()
 
         def end_run_loop(self):
 		"""Called by the programmer when he wants the run_loop to end"""

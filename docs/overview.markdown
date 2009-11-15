@@ -106,7 +106,7 @@ Next we define a method with a rather distinctive name: *sw\_startButton\_active
 
 Similarly, a method named *sw\_trainWreck\_inactive()* would be called when the trainWreck switch had changed to an inactive state.  The switch name in these method names must correspond to a switch name in the YAML configuration; otherwise a warning message will be printed when instantiating the class.  More on switch even handlers (including responding to events after a delay) later.
 
-Our switch handler in this case is very simple.  It prints out a message and returns True.  Each switch event handler must return True or False.  A return value of True tells the ModeQueue to allow this switch event to be sent to other active modes; a return value of False instructs ModeQueue to stop processing this event.
+Our switch handler in this case is very simple.  It prints out a message and returns True.  Each switch event handler must return True or False.  A return value of True instructs ModeQueue to stop processing this event; a return value of False tells the ModeQueue to allow this switch event to be sent to other active modes.
 
 This is where the priority of a mode becomes important.  The ModeQueue is essentially a priority queue: the highest-priority modes receive switch events first.  If they do not return False, the switch event is then sent to lower priority modes.  In this way you can use a high priority mode to give switches on the playfield to have special meaning during any number of modes, without having to handle that special case alongside the code for the more normal meaning of the switch.  Or you can easily have a switch result in multiple mode triggers.
 
