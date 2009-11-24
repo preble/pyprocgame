@@ -33,8 +33,13 @@ class Attract(game.Mode):
 		pass
 
 	def mode_started(self):
-		self.game.lamps.gi01.pulse(0)
-		self.game.lamps.gi02.disable()
+		# Only mess with gi if the machine has gi's configured.  Stern machines don't have
+		# user controllable GI circuits
+
+
+		for lamp in self.game.lamps:
+			if lamp.name.find('gi0', 0) != -1:
+				lamp.pulse(0)
 
 		lamp_schedules = []
 		for i in range(0,32):
