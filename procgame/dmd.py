@@ -185,6 +185,7 @@ class AnimatedLayer(Layer):
 				self.frames += [f]
 			else:
 				del self.frames[0] # Pop off the frame if there are others
+		if self.frame_time_counter == 0:
 			self.frame_time_counter = self.frame_time
 		return frame
 
