@@ -37,8 +37,9 @@ class Attract(game.Mode):
 		# Blink the start button to notify player about starting a game.
 		self.game.lamps.startButton.schedule(schedule=0x00ff00ff, cycle_seconds=0, now=False)
 		# Turn on minimal GI lamps
-		self.game.lamps.gi01.pulse(0)
-		self.game.lamps.gi02.disable()
+		# Some games don't have controllable GI's (ie Stern games)
+		#self.game.lamps.gi01.pulse(0)
+		#self.game.lamps.gi02.disable()
 
 
 	def mode_stopped(self):
