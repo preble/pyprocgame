@@ -119,6 +119,10 @@ class LampTest(ServiceModeList):
 		super(LampTest, self).change_item()
 		self.item.schedule(schedule=0x00ff00ff, cycle_seconds=0, now=True)
 
+	def sw_enter_active(self,sw):
+		return True
+
+
 class CoilTest(ServiceModeList):
 	"""Coil Test"""
 	def __init__(self, game, priority, font):
@@ -176,6 +180,9 @@ class SwitchTest(ServiceModeSkeleton):
 		if (sw.state):
 			self.game.sound.play('service_switch_edge')
 		self.item_layer.set_text(sw.name + ' - ' + str(sw.state))
+		return True
+
+	def sw_enter_active(self,sw):
 		return True
 
 class Settings(ServiceModeList):
