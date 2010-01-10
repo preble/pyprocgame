@@ -55,6 +55,8 @@ class Animation(object):
 		return self
 
 	def save(self, filename):
+		if self.width == None or self.height == None:
+			raise ValueError, "width and height must be set on Animation before it can be saved."
 		header = struct.pack("IIII", 0x00646D64, len(self.frames), self.width, self.height)
 		if len(header) != 16:
 			raise ValueError, "Packed size not 16 bytes as expected: %d" % (len(header))
