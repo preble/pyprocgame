@@ -17,6 +17,11 @@ class PanningLayer(dmd.Layer):
 		self.origin = origin
 		self.translate = translate
 		self.tick = 0
+		# Make sure the translate value doesn't cause us to do any strange movements:
+		if width == frame.width:
+			self.translate = (0, self.translate[1])
+		if height == frame.height:
+			self.translate = (self.translate[0], 0)
 	
 	def next_frame(self):
 		self.tick += 1
