@@ -12,8 +12,17 @@ import pygame
 from pygame.locals import *
 
 pygame.init()
-screen = pygame.display.set_mode((300, 20))
+screen = pygame.display.set_mode((300, 50))
 pygame.display.set_caption('Press CTRL-C to exit')
+circle = pygame.Surface([300, 50])
+line = pygame.Surface([300,50])
+color = pygame.Color(100,0,0,100)
+pygame.draw.line(line, color, [0,25], [300,25], 2)
+pygame.draw.circle(circle, color, [125,25], 20,8)
+screen.blit(line, [0,0])
+pygame.display.flip()
+screen.blit(circle, [0,0])
+pygame.display.flip()
 
 class KeyboardHandler():
 	"""docstring for KeyboardHandler"""
