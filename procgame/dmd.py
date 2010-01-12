@@ -55,6 +55,8 @@ class Animation(object):
 		return self
 
 	def save(self, filename):
+		if self.width == None or self.height == None:
+			raise ValueError, "width and height must be set on Animation before it can be saved."
 		header = struct.pack("IIII", 0x00646D64, len(self.frames), self.width, self.height)
 		if len(header) != 16:
 			raise ValueError, "Packed size not 16 bytes as expected: %d" % (len(header))
@@ -165,17 +167,28 @@ class FrameLayer(Layer):
 
 class AnimatedLayer(Layer):
 	"""Collection of frames displayed sequentially, as an animation.  Optionally holds the last frame on-screen."""
-	def __init__(self, opaque=False, hold=True, frames=[]):
+	def __init__(self, opaque=False, hold=True, repeat=False, frame_time=1, frames=[]):
 		super(AnimatedLayer, self).__init__(opaque)
 		self.hold = hold
+		self.repeat = repeat
 		self.frames = frames
+		self.frame_time = frame_time # Number of frames each frame should be displayed for before moving to the next.
+		self.frame_time_counter = self.frame_time
 	def next_frame(self):
 		"""Returns the frame to be shown, or None if there is no frame."""
 		if len(self.frames) == 0:
 			return None
 		frame = self.frames[0] # Get the first frame in this layer's list.
-		if self.hold == False or len(self.frames) > 1:
-			del self.frames[0] # Pop off the frame if there are others
+		self.frame_time_counter -= 1
+		if (self.hold == False or len(self.frames) > 1) and (self.frame_time_counter == 0):
+			if self.repeat:
+				f = self.frames[0]
+				del self.frames[0]
+				self.frames += [f]
+			else:
+				del self.frames[0] # Pop off the frame if there are others
+		if self.frame_time_counter == 0:
+			self.frame_time_counter = self.frame_time
 		return frame
 
 class TextLayer(Layer):
