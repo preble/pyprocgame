@@ -183,7 +183,55 @@ We've spent a good amount of time talking about how to react to events within th
 *To be written.*
 
 
-## Dot Matrix Display
+## Dot Matrix Display (DMD) Control
+
+### pyprocgame Display Architecture
+
+There are a lot of different ways one could run a DMD with pyprocgame, but here we're going to talk about the recommended approach, which is well-integrated with the mode queue system.  Let's talk about how the P-ROC hardware works first.  The P-ROC board provides a three hardware frame buffers, displaying them in order as new frames are provided by the software.  This helps keep the display smooth to avoid hiccups caused by operating system scheduling variances.  Much like a switch event, P-ROC sends a DMD event when it's ready to display another frame.  So if we send the next frame whenever we see this event, we can keep P-ROC's frame buffers full and maintain smooth, skipless video.
+
+The DisplayController class makes this pretty easy.  Here's how we incorporate it into our GameController subclass:
+
+	class DemoGame(game.GameController):
+		def __init__(self, machineType):
+			super(DemoGame, self).__init__(machineType)
+			self.dmd = dmd.DisplayController(self, 128, 32)
+		
+		def dmd_event(self):
+			self.dmd.update()        
+
+That's great, but how do we tell the DisplayController what to display?  Every time DisplayController.update() is called it traverses the mode queue and asks each mode if it has a DMD frame to display.  If it does, it composites it upon the frames of lower priority modes.  Once it has the final frame assembled it is uploaded to the P-ROC hardware.  
+
+Note the order in which the frames are composited: _frames from lower priority modes are overwritten by higher priority frames_.  So imagine that you have laid out your modes like this:
+
+  * Priority 1 (low): General game play mode.  Provides a frame showing the score.
+  * Priority 5 (medium): "Hurry-up" mode.  Provides a frame showing the hurry-up countdown and jackpot value.
+
+If you've been thinking about how you'd organize your modes already, this is the sort of pattern that you should follow for switch events.  More specialized modes get first crack at the switch events due to their priority.  This pattern also works well with DisplayController: the hurry-up information is shown to the player when that mode is active; otherwise the score is shown.
+
+How does the mode supply the DMD frame to DisplayController, though?  To explain that we first need to introduce the Layer class, which provides a sequence of frames via its method next\_frame().  There are a number of useful Layer subclasses provided with pyprocgame:
+
+  * FrameLayer: Provides an endless sequence of one frame (dmd.Frame).
+  * AnimatedLayer: Provides an ordered sequence of dmd.Frame objects.
+  * TextLayer: Uses a dmd.Font to display a text string to the user.
+  * GroupedLayer: Composites the output of multiple Layer subclasses into one common output.  This can be used to create complicated displays with numerous subcomponents.
+  * ScriptedLayer: Runs a simple "script" (dictionary) to display a sequence of layers, showing each layer for a specified amount of time.
+
+DisplayController checks for a member variable on each Mode class called _layer_.  If the mode has a layer, the next\_frame() from that layer is used; otherwise it is ignored.  Let's add a layer to an example mode:
+
+	class HurryUpMode(game.Mode):
+		def __init__(self):
+			super(HurryUpMode, self).__init__(priority=5)
+			self.layer = dmd.TextLayer(x=128/2, y=8, font=my_font, justify="center")
+		def update_countdown_display(self, seconds):
+			self.layer.set_text('%d seconds' % (seconds));
+
+
+### Animations, Frames, and Fonts
+
+*To be written.*
+
+
+## Sound
 
 *To be written.*
 
