@@ -10,10 +10,10 @@ class Frame(pinproc.DMDBuffer):
 		self.width = width
 		self.height = height
 
-	def copy_rect(dst, dst_x, dst_y, src, src_x, src_y, width, height):
+	def copy_rect(dst, dst_x, dst_y, src, src_x, src_y, width, height, op="copy"):
 		if not (issubclass(type(dst), pinproc.DMDBuffer) and issubclass(type(src), pinproc.DMDBuffer)):
 			raise ValueError, "Incorrect types"
-		src.copy_to_rect(dst, dst_x, dst_y, src_x, src_y, width, height)
+		src.copy_to_rect(dst, dst_x, dst_y, src_x, src_y, width, height, op)
 	copy_rect = staticmethod(copy_rect)
 
 class Animation(object):
@@ -144,6 +144,7 @@ class Layer(object):
 		self.target_x_offset = 0
 		self.target_y_offset = 0
 		self.enabled = True
+		self.composite_op = 'copy'
 	def set_target_position(self, x, y):
 		"""Sets the location in the final output that this layer will be positioned at."""
 		self.target_x = x
@@ -155,7 +156,7 @@ class Layer(object):
 		"""Composites the next frame of this layer onto the given target buffer."""
 		src = self.next_frame()
 		if src != None:
-			Frame.copy_rect(dst=target, dst_x=self.target_x+self.target_x_offset, dst_y=self.target_y+self.target_y_offset, src=src, src_x=0, src_y=0, width=src.width, height=src.height)
+			Frame.copy_rect(dst=target, dst_x=self.target_x+self.target_x_offset, dst_y=self.target_y+self.target_y_offset, src=src, src_x=0, src_y=0, width=src.width, height=src.height, op=self.composite_op)
 		return src
 
 class FrameLayer(Layer):
