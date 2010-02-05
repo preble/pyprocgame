@@ -97,6 +97,7 @@ class BaseGameMode(game.Mode):
 		super(BaseGameMode, self).__init__(game, 2)
 		self.tilt_layer = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("TILT!")
 		self.layer = None # Presently used for tilt layer
+		self.ball_starting = True
 
 	def mode_started(self):
 
@@ -129,8 +130,12 @@ class BaseGameMode(game.Mode):
 		# handler.
 		self.game.trough.drain_callback = self.ball_drained_callback
 
+		# Each time this mode is added to game Q, set this flag true.
+		self.ball_starting = True
+
 	def ball_launch_callback(self):
-		self.game.ball_save.start_lamp()
+		if self.ball_starting:
+			self.game.ball_save.start_lamp()
 	
 	def mode_stopped(self):
 		
@@ -166,8 +171,12 @@ class BaseGameMode(game.Mode):
 			self.game.set_status(p.name + " added!")
 
 	def sw_shooterR_open_for_1s(self,sw):
-		ball_save_time = 10
-		self.game.ball_save.start(num_balls_to_save=1, time=ball_save_time, now=True, allow_multiple_saves=False)
+		if self.ball_starting:
+			self.ball_starting = False
+			ball_save_time = 10
+			self.game.ball_save.start(num_balls_to_save=1, time=ball_save_time, now=True, allow_multiple_saves=False)
+		else:
+			self.game.ball_save.disable()
 
 	# Note: Game specific item
 	# Set the switch name to the launch button on your game.
@@ -326,6 +335,7 @@ class Game(game.GameController):
 		super(Game, self).game_ended()
 		self.modes.remove(self.base_game_mode)
 		self.set_status("Game Over")
+		self.modes.add(self.attract_mode)
 		
 	def dmd_event(self):
 		"""Called by the GameController when a DMD event has been received."""
