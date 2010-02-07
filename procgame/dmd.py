@@ -168,11 +168,14 @@ class FrameLayer(Layer):
 
 class AnimatedLayer(Layer):
 	"""Collection of frames displayed sequentially, as an animation.  Optionally holds the last frame on-screen."""
-	def __init__(self, opaque=False, hold=True, repeat=False, frame_time=1, frames=[]):
+	def __init__(self, opaque=False, hold=True, repeat=False, frame_time=1, frames=None):
 		super(AnimatedLayer, self).__init__(opaque)
 		self.hold = hold
 		self.repeat = repeat
-		self.frames = frames
+		if frames == None:
+			self.frames = list()
+		else:
+			self.frames = frames
 		self.frame_time = frame_time # Number of frames each frame should be displayed for before moving to the next.
 		self.frame_time_counter = self.frame_time
 	def next_frame(self):
@@ -264,10 +267,13 @@ class ScriptedLayer(Layer):
 
 class GroupedLayer(Layer):
 	"""docstring for GroupedLayer"""
-	def __init__(self, width, height, layers=[]):
+	def __init__(self, width, height, layers=None):
 		super(GroupedLayer, self).__init__()
 		self.buffer = Frame(width, height)
-		self.layers = layers
+		if layers == None:
+			self.layers = list()
+		else:
+			self.layers = layers
 
 	def next_frame(self):
 		self.buffer.clear()
@@ -293,6 +299,9 @@ class DisplayController:
 		self.height = height
 		if message_font != None:
 			self.message_layer = TextLayer(width/2, height-2*7, message_font, "center")
+		# Do two updates to get the pump primed:
+		for x in range(2):
+			self.update()
 		
 	def set_message(self, message, seconds):
 		if self.message_layer == None:
