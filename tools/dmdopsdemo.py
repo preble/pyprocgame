@@ -6,24 +6,30 @@ import procgame
 from procgame import *
 import time
 
-# dmdplayer.py demonstrates how to load and display a sequence of DMD frames.
-
+# dmdopsdemo.py demonstrates how to use Layer.composite_op.
 
 class Game(game.GameController):
 	"""Very simple game to get our DMD running."""
 	def __init__(self, machineType):
 		super(Game, self).__init__(machineType)
 		self.dmd = dmd.DisplayController(self, width=128, height=32)
+		self.frame_count = 0
 	def dmd_event(self):
 		"""Called by the GameController when a DMD event has been received."""
 		self.dmd.update()
+		if self.frame_count == 0:
+			self.first_frame_time = time.time()
+		self.frame_count += 1
+		if self.frame_count == 200:
+			secs = time.time() - self.first_frame_time
+			print "%d frames, %0.2f seconds, %0.2ffps" % (self.frame_count, secs, self.frame_count/secs)
+		
 	def play(self, anim):
-		font = dmd.Font("../shared/dmd/Jazz18-18px.dmd")
-		# font = dmd.Font("../shared/dmd/Font09Bx7.dmd")
+		font = dmd.Font("../shared/dmd/Font18x12.dmd")
 		mode = game.Mode(self, 9)
-		anim_layer = dmd.AnimatedLayer(frames=anim.frames, frame_time=3, repeat=True, hold=False)
-		text_layer = dmd.TextLayer(128/2, 7, font, 'center').set_text('EXTRA BALL')
-		text_layer.composite_op = 'add'
+		anim_layer = dmd.AnimatedLayer(frames=anim.frames, repeat=True, hold=False)
+		text_layer = dmd.TextLayer(128/2, 8, font, 'center').set_text('EXTRA BALL')
+		text_layer.composite_op = 'sub'
 		mode.layer = dmd.GroupedLayer(width=128, height=32)
 		mode.layer.layers += [anim_layer]
 		mode.layer.layers += [text_layer]
@@ -40,7 +46,7 @@ def main():
 		raise ValueError, "Expected animation dimensions to be 128x32."
 
 	game = Game('custom')
-	
+	game.proc.dmd_update_config(high_cycles=(90, 250, 50, 500)) # Gerry: setting max to 375 should result in 60fps
 	game.play(anim=anim)
 	
 	print("Displaying %d frame(s) looped." % (len(anim.frames)))
