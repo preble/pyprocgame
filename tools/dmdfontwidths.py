@@ -37,6 +37,7 @@ def main():
 	w = 128
 	h = 32
 	proc.reset(1)
+	proc.dmd_update_config(high_cycles=(375,375,375,375));
 	
 	
 	while True:
@@ -45,8 +46,8 @@ def main():
 		if frame == None:
 			print("No frame?")
 			return
-		for x in range(5): # Send it enough times to get it to show
-			proc.dmd_draw(frame)
+		#for x in range(5): # Send it enough times to get it to show
+		proc.dmd_draw(frame)
 		
 		print("Enter character to set: ")
 		try:
