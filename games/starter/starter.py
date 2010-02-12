@@ -267,7 +267,7 @@ class Game(game.GameController):
 		self.base_game_mode = BaseGameMode(self)
 		# Note - Game specific item:
 		# The last parameter should be the name of the game's ball save lamp
-		self.ball_save = procgame.ballsave.BallSave(self, self.lamps.drainShield)
+		self.ball_save = procgame.ballsave.BallSave(self, self.lamps.drainShield, 'shooterR')
 
 		trough_switchnames = []
 		# Note - Game specific item:

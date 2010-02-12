@@ -2,19 +2,20 @@ from game import *
 
 class BallSave(Mode):
 	"""Keeps track of ball save timer."""
-	def __init__(self, game, lamp):
+	def __init__(self, game, lamp, delayed_start_switch):
 		super(BallSave, self).__init__(game, 3)
 		self.lamp = lamp
 		self.num_balls_to_save = 1
 		self.mode_begin = 0
 		self.allow_multiple_saves = False
 		self.timer = 0
+		self.add_switch_handler(name=delayed_start_switch, event_type='inactive', delay=1.0, handler=self.delayed_start_handler)
 
 	def mode_started(self):
 		self.game.trough.ball_save_callback = self.launch_callback
 		
 	def mode_stopped(self):
-		self.lamp.disable()
+		self.disable()
 
 	def launch_callback(self):
 		if not self.allow_multiple_saves:
@@ -64,39 +65,6 @@ class BallSave(Mode):
 
 		self.update_lamps()
 
-	# Use this to keep trough4 switch from propogating to other modes
-#	def sw_trough4_closed(self, sw):
-#		if self.game.machineType == 'sternWhitestar' or self.game.machineType == 'sternSAM':
-#                	if self.timer:
-#				return True
-#
-#	def sw_trough4_closed_for_200ms(self, sw):
-#		if self.game.machineType == 'sternWhitestar' or self.game.machineType == 'sternSAM':
-#               		if self.timer:
-#				if self.allow_multiple_saves == 0:
-#					self.timer = 2
-#					self.lamp.disable()
-#				if self.game.switches.trough1.is_closed():
-#					self.game.coils.trough.pulse(20)
-#				else:
-#					self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
-	# Use this to keep trough1 switch from propogating to other modes
-#	def sw_trough1_open(self, sw):
-#		if self.game.machineType == 'wpc':
-#                	if self.timer:
-#				return True
-
-#	def sw_trough1_open_for_200ms(self, sw):
-#		if self.game.machineType == 'wpc':
-#               		if self.timer:
-#				if self.allow_multiple_saves == 0:
-#					self.timer = 1
-#					self.lamp.disable()
-#				if self.game.switches.trough6.is_open():
-#					self.game.coils.trough.pulse(20)
-#				else:
-#					self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
-
 	def is_active(self):
 		return self.timer > 0
 
@@ -118,7 +86,7 @@ class BallSave(Mode):
 			else:
 				self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
 
-	def sw_shooterR_open_for_1s(self, sw):
+	def delayed_start_handler(self, sw):
 		if self.mode_begin:
 			self.timer = self.timer_hold
 			self.mode_begin = 0
