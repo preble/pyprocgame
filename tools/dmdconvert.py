@@ -11,7 +11,10 @@ def image_to_dmd(src_filename, dst_filename):
 	last_filename = None
 	anim = procgame.dmd.Animation()
 	for frame_index in range(1000):
-		filename = src_filename % (frame_index)
+		if '%d' in src_filename:
+			filename = src_filename % (frame_index)
+		else:
+			filename = src_filename
 		if filename == last_filename:
 			break
 		if not os.path.exists(filename):

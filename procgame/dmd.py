@@ -15,6 +15,11 @@ class Frame(pinproc.DMDBuffer):
 			raise ValueError, "Incorrect types"
 		src.copy_to_rect(dst, dst_x, dst_y, src_x, src_y, width, height, op)
 	copy_rect = staticmethod(copy_rect)
+	
+	def copy(self):
+		frame = Frame(self.width, self.height)
+		frame.set_data(self.get_data())
+		return frame
 
 class Animation(object):
 	"""A set of frames."""

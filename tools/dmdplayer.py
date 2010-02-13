@@ -8,19 +8,6 @@ import time
 
 # dmdplayer.py demonstrates how to load and display a sequence of DMD frames.
 
-class Game(game.GameController):
-	"""Very simple game to get our DMD running."""
-	def __init__(self, machineType):
-		super(Game, self).__init__(machineType)
-		self.dmd = dmd.DisplayController(self, width=128, height=32)
-	def dmd_event(self):
-		"""Called by the GameController when a DMD event has been received."""
-		self.dmd.update()
-	def play(self, anim):
-		mode = game.Mode(self, 9)
-		mode.layer = dmd.AnimatedLayer(frames=anim.frames, repeat=True, hold=False)
-		self.modes.add(mode)
-	
 def main():
 	if len(sys.argv) < 2:
 		print("Usage: %s <file.dmd>"%(sys.argv[0]))
@@ -30,14 +17,21 @@ def main():
 	anim = dmd.Animation().load(filename)
 	if anim.width != 128 or anim.height != 32:
 		raise ValueError, "Expected animation dimensions to be 128x32."
-
-	print("Displaying %d frame(s) looped." % (len(anim.frames)))
 	
-	game = Game('custom')
+	proc = pinproc.PinPROC('custom')
+	layer = dmd.AnimatedLayer(frames=anim.frames, repeat=False, hold=False)
+	while True:
+		for event in proc.get_events():
+			if event['type'] == 5:
+				frame = layer.next_frame()
+				if frame == None:
+					sys.exit(0)
+				proc.dmd_draw(frame)
+				if len(layer.frames) == 0:
+					proc.dmd_draw(frame)
+					proc.dmd_draw(frame)
+					proc.dmd_draw(frame)
 	
-	game.play(anim=anim)
-	
-	game.run_loop()
 
 if __name__ == "__main__":
 	main()
