@@ -1,15 +1,16 @@
 from game import *
 
 class BallSave(Mode):
-	"""Keeps track of ball save timer."""
-	def __init__(self, game, lamp, delayed_start_switch):
+	"""Keeps track of ball save timer.  Works in conjection with a trough object."""
+	def __init__(self, game, lamp, delayed_start_switch='None'):
 		super(BallSave, self).__init__(game, 3)
 		self.lamp = lamp
 		self.num_balls_to_save = 1
 		self.mode_begin = 0
 		self.allow_multiple_saves = False
 		self.timer = 0
-		self.add_switch_handler(name=delayed_start_switch, event_type='inactive', delay=1.0, handler=self.delayed_start_handler)
+		if delayed_start_switch != 'None' and delayed_start_switch != 'none':
+			self.add_switch_handler(name=delayed_start_switch, event_type='inactive', delay=1.0, handler=self.delayed_start_handler)
 
 	def mode_started(self):
 		self.game.trough.ball_save_callback = self.launch_callback
@@ -33,9 +34,12 @@ class BallSave(Mode):
 		else:
 			self.lamp.disable()
 
-	def add(self, add_time):
-		self.timer += add_time
-		self.update_lamps()
+	def add(self, add_time, allow_multiple_saves=True):
+		if self.timer >= 1:
+			self.timer += add_time
+			self.update_lamps()
+		else:
+			self.start(self.num_balls_to_save, add_time, True, allow_multiple_saves)
 
 	def disable(self):
 		self.game.trough.ball_save_active = False
