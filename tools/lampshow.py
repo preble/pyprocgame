@@ -125,7 +125,6 @@ class LampShow(object):
 			for tr in self.tracks:
 				sch = tr.next_schedule()
 				self.game.lamps[tr.name].schedule(schedule=sch, cycle_seconds=1, now=True)
-			print time.time()
 	
 	def is_complete(self):
 		for tr in self.tracks:
