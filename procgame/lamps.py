@@ -128,12 +128,14 @@ class LampShow(object):
 		new_time = (time.time() - self.t0)
 		seconds = int(new_time)
 		time_diff = new_time - self.last_time
+		logging_was_enabled = self.game.logging_enabled
+		self.game.logging_enabled = False
 		if (time_diff > 0.500):
 			self.last_time = new_time
 			for tr in self.tracks:
 				sch = tr.next_schedule()
 				self.game.lamps[tr.name].schedule(schedule=sch, cycle_seconds=1, now=True)
-			print time.time()
+		self.game.logging_enabled = logging_was_enabled
 
 	def restart(self):
 		for tr in self.tracks:

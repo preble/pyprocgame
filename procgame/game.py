@@ -371,6 +371,7 @@ class GameController(object):
 		self.config = None
 		self.balls_per_game = 3
 		self.keyboard_events_enabled = False
+		self.logging_enabled = True
 	
 	def __enter__(self):
 		pass
@@ -628,7 +629,8 @@ class GameController(object):
 		self.done = True
 
 	def log(self, line):
-		print("% 10.3f %s" % (time.time()-self.t0, line))
+		if self.logging_enabled:
+			print("% 10.3f %s" % (time.time()-self.t0, line))
 
 	def run_loop(self):
 		"""Called by the programmer to read and process switch events until interrupted."""
