@@ -15,7 +15,7 @@ class SoundController(object):
 		#self.play_music('wizard')
 
 	def play_music(self, key, loops=0, start_time=0.0):
-		if self.music[key] != 'no_file':
+		if key in self.music:
 			self.load_music(key)
 			mixer.music.play(loops,start_time)
 
@@ -29,28 +29,25 @@ class SoundController(object):
 		mixer.music.load(self.music[key])
 
 	def register_sound(self, key, sound_file):
-		if not key in self.sounds:
-			if os.path.isfile(sound_file):
-				self.new_sound = mixer.Sound(str(sound_file))
-                		self.sounds[key] = self.new_sound
-				self.sounds[key].set_volume(self.volume)
-			else:
-				self.sounds[key] = 'no_file'
-				print ("Sound registration error: file %s does not exist!" % sound_file)
+		if os.path.isfile(sound_file):
+			self.new_sound = mixer.Sound(str(sound_file))
+               		self.sounds[key] = self.new_sound
+			self.sounds[key].set_volume(self.volume)
+		else:
+			print ("Sound registration error: file %s does not exist!" % sound_file)
 
 	def register_music(self, key, music_file):
 		if os.path.isfile(music_file):
                 	self.music[key] = music_file
 		else:
-			self.music[key] = 'no_file'
 			print ("Music registration error: file %s does not exist!" % music_file)
 
 	def play(self,key, loops=0, max_time=0, fade_ms=0):
-		if self.sounds[key] != 'no_file':
+		if key in self.sounds:
 			self.sounds[key].play(loops,max_time,fade_ms)
 
 	def stop(self,key, loops=0, max_time=0, fade_ms=0):
-		if self.sounds[key] != 'no_file':
+		if key in self.sounds:
 			self.sounds[key].stop()
 
 	def volume_up(self):
