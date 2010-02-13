@@ -33,7 +33,7 @@ class Trough(Mode):
 			# Only do an early ball save if a ball is ready to be launched.
 			# Otherwise, let the trough switches take care of it.
 			if self.game.switches[self.eject_switchname].is_active():
-				self.launch_balls(1, self.ball_save_callback)
+				self.launch_balls(1, self.ball_save_callback, stealth=True)
 
 
 	def position_switch_handler(self, sw):
@@ -48,7 +48,7 @@ class Trough(Mode):
 			balls_in_trough = num_current_machine_balls - num_balls_out
 
 			if (self.num_balls() - self.num_balls_to_launch) >= balls_in_trough:
-				self.launch_balls(1, self.ball_save_callback)
+				self.launch_balls(1, self.ball_save_callback, stealth=True)
 			else:
 				# If there are too few balls in the trough.  Ignore this one in an attempt to correct the tracking.
 				return 'ignore'
