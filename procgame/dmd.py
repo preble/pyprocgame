@@ -2,6 +2,7 @@ import pinproc
 import struct
 import time
 import os
+import game
 
 class Frame(pinproc.DMDBuffer):
 	"""DMD frame/bitmap."""
@@ -150,6 +151,7 @@ class Layer(object):
 		self.target_y_offset = 0
 		self.enabled = True
 		self.composite_op = 'copy'
+		self.transition = None
 	def set_target_position(self, x, y):
 		"""Sets the location in the final output that this layer will be positioned at."""
 		self.target_x = x
@@ -161,8 +163,132 @@ class Layer(object):
 		"""Composites the next frame of this layer onto the given target buffer."""
 		src = self.next_frame()
 		if src != None:
+			if self.transition != None:
+				src = self.transition.next_frame(from_frame=target, to_frame=src)
 			Frame.copy_rect(dst=target, dst_x=self.target_x+self.target_x_offset, dst_y=self.target_y+self.target_y_offset, src=src, src_x=0, src_y=0, width=src.width, height=src.height, op=self.composite_op)
 		return src
+
+class TransitionOutHelperMode(game.Mode):
+	def __init__(self, game, priority, transition, layer):
+		super(TransitionOutHelperMode, self).__init__(game=game, priority=priority)
+		self.layer = layer
+		self.layer.transition = transition
+		self.layer.transition.in_out = 'out'
+		self.layer.transition.completed_handler = self.transition_completed
+	def mode_started(self):
+		self.layer.transition.start()
+	def transition_completed(self):
+		self.game.modes.remove(self)
+
+class LayerTransitionBase(object):
+	"""Transition that """
+	def __init__(self):
+		super(LayerTransitionBase, self).__init__()
+		self.progress = 0.0
+		self.progress_per_frame = 1.0/60.0 # default to 60fps
+		self.progress_mult = 0 # not moving, -1 for B to A, 1 for A to B
+		self.completed_handler = None
+		self.in_out = 'in'
+	def start(self):
+		self.reset()
+		self.progress_mult = 1
+	def pause(self):
+		self.progress_mult = 0
+	def reset(self):
+		self.progress_mult = 0
+		self.progress = 0
+	def next_frame(self, from_frame, to_frame):
+		"""Applies the transition and increments the progress if the transition is running.  Returns the resulting frame."""
+		self.progress = max(0.0, min(1.0, self.progress + self.progress_mult * self.progress_per_frame))
+		if self.progress <= 0.0:
+			if self.in_out == 'in':
+				return from_frame
+			else:
+				return to_frame
+		if self.progress >= 1.0:
+			if self.completed_handler != None:
+				self.completed_handler()
+			if self.in_out == 'in':
+				return to_frame
+			else:
+				return from_frame
+		return self.transition_frame(from_frame=from_frame, to_frame=to_frame)
+	def transition_frame(self, from_frame, to_frame):
+		"""Applies the transition at the current progress value.
+		   Subclasses should override this method to provide more interesting transition effects.
+		   Base implementation simply returns the from_frame."""
+		return from_frame
+
+class SlideOverLayerTransition(LayerTransitionBase):
+	def __init__(self, direction='north'):
+		super(SlideOverLayerTransition, self).__init__()
+		self.direction = direction
+		self.progress_per_frame = 1.0/15.0
+	def transition_frame(self, from_frame, to_frame):
+		frame = from_frame.copy()
+		dst_x, dst_y = 0, 0
+		prog = self.progress
+		if self.in_out == 'in':
+			prog = 1.0 - prog
+		dst_x, dst_y = {
+		 'north': (0, -prog*frame.height),
+		 'south': (0,  prog*frame.height),
+		 'east':  (-prog*frame.width, 0),
+		 'west':  ( prog*frame.width, 0),
+		}[self.direction]
+		Frame.copy_rect(dst=frame, dst_x=dst_x, dst_y=dst_y, src=to_frame, src_x=0, src_y=0, width=from_frame.width, height=from_frame.height, op='copy')
+		return frame
+
+class PushLayerTransition(LayerTransitionBase):
+	def __init__(self, direction='north'):
+		super(PushLayerTransition, self).__init__()
+		self.direction = direction
+		self.progress_per_frame = 1.0/15.0
+	def transition_frame(self, from_frame, to_frame):
+		frame = Frame(width=from_frame.width, height=from_frame.height)
+		dst_x, dst_y = 0, 0
+		prog = self.progress
+		prog1 = self.progress
+		if self.in_out == 'in':
+			prog = 1.0 - prog
+		else:
+			prog1 = 1.0 - prog1
+		dst_x, dst_y, dst_x1, dst_y1 = {
+		 'north': (0, -prog*frame.height,  0,  prog1*frame.height),
+		 'south': (0,  prog*frame.height,  0, -prog1*frame.height),
+		 'east':  (-prog*frame.width, 0,    prog1*frame.width, 0),
+		 'west':  ( prog*frame.width, 0,   -prog1*frame.width, 0),
+		}[self.direction]
+		Frame.copy_rect(dst=frame, dst_x=dst_x, dst_y=dst_y, src=to_frame, src_x=0, src_y=0, width=from_frame.width, height=from_frame.height, op='copy')
+		Frame.copy_rect(dst=frame, dst_x=dst_x1, dst_y=dst_y1, src=from_frame, src_x=0, src_y=0, width=from_frame.width, height=from_frame.height, op='copy')
+		return frame
+
+class CrossFadeTransition(LayerTransitionBase):
+	"""Performs a cross-fade between two layers.  As one fades out the other one fades in."""
+	def __init__(self, width, height):
+		LayerTransitionBase.__init__(self)
+		self.width, self.height = width, height
+		self.progress_per_frame = 1.0/45.0
+		# Create the frames that will be used in the composite operations:
+		self.frames = []
+		for value in range(16):
+			frame = Frame(width, height)
+			frame.fill_rect(0, 0, width, height, value)
+			self.frames.append(frame)
+	def transition_frame(self, from_frame, to_frame):
+		# Calculate the frame index:
+		if self.in_out == 'in':
+			index = int(self.progress * (len(self.frames)-1))
+		else:
+			index = int((1.0-self.progress) * (len(self.frames)-1))
+		# Subtract the respective reference frame from each of the input frames:
+		from_frame = from_frame.copy()
+		Frame.copy_rect(dst=from_frame, dst_x=0, dst_y=0, src=self.frames[index], src_x=0, src_y=0, width=self.width, height=self.height, op='sub')
+		to_frame = to_frame.copy()
+		Frame.copy_rect(dst=to_frame, dst_x=0, dst_y=0, src=self.frames[-(1+index)], src_x=0, src_y=0, width=self.width, height=self.height, op='sub')
+		# Add the results together:
+		Frame.copy_rect(dst=from_frame, dst_x=0, dst_y=0, src=to_frame, src_x=0, src_y=0, width=self.width, height=self.height, op='add')
+		return from_frame
 
 class FrameLayer(Layer):
 	def __init__(self, opaque=False, frame=None):
