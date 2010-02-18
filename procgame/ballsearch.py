@@ -26,11 +26,11 @@ class BallSearch(Mode):
 
 	def enable(self):
 		self.enabled = 1;
+		self.reset('None')
 
 	def disable(self):
 		self.stop(None)
 		self.enabled = 0;
-
 
         def reset(self,sw):
 		if self.enabled:
