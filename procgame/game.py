@@ -600,6 +600,20 @@ class GameController(object):
 			drivers += [pinproc.driver_state_pulse(coil.state(),pulse_duration)]
 		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host}, drivers)
 
+	def install_switch_rule_coil_schedule(self, switch_num, switch_state, coil_name, schedule, schedule_seconds, now, notify_host, enable):
+		coil = self.coils[coil_name];
+		drivers = []
+		if enable:
+			drivers += [pinproc.driver_state_schedule(coil.state(),schedule,schedule_seconds,now)]
+		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host}, drivers)
+
+	def install_switch_rule_coil_patter(self, switch_num, switch_state, coil_name, milliseconds_on, milliseconds_off, original_on_time, notify_host, enable):
+		coil = self.coils[coil_name];
+		drivers = []
+		if enable:
+			drivers += [pinproc.driver_state_patter(coil.state(),milliseconds_on,milliseconds_off,original_on_time)]
+		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host}, drivers)
+
 	def process_event(self, event):
 		event_type = event['type']
 		event_value = event['value']
