@@ -11,6 +11,7 @@ class BallSave(Mode):
 		self.timer = 0
 		if delayed_start_switch != 'None' and delayed_start_switch != 'none':
 			self.add_switch_handler(name=delayed_start_switch, event_type='inactive', delay=1.0, handler=self.delayed_start_handler)
+		self.callback = 'None'
 
 	def mode_started(self):
 		self.game.trough.ball_save_callback = self.launch_callback
@@ -21,7 +22,8 @@ class BallSave(Mode):
 	def launch_callback(self):
 		if not self.allow_multiple_saves:
 			self.disable()
-		self.game.set_status('Ball Saved!')
+		if self.callback != 'None':
+			self.callback()
 
 	def start_lamp(self):
 		self.lamp.schedule(schedule=0xFF00FF00, cycle_seconds=0, now=True)
