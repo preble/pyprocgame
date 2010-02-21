@@ -88,12 +88,13 @@ class ServiceMode(ServiceModeList):
 		#self.title_layer.set_text('Service Mode')
 		self.name = 'Service Mode'
 		self.tests = Tests(self.game, self.priority+1, font, extra_tests)
+		self.items = [self.tests]
 		if len(self.game.settings) > 0: 
 			self.settings = Settings(self.game, self.priority+1, font, 'Settings', self.game.settings)
-			self.items = [self.tests, self.settings]
-		else:
-			self.items = [self.tests]
-
+			self.items.append(self.settings)
+		if len(self.game.game_data) > 0: 
+			self.statistics = Statistics(self.game, self.priority+1, font, 'Statistics', self.game.game_data)
+			self.items.append(self.statistics)
 
 class Tests(ServiceModeList):
 	"""Service Mode."""
@@ -185,6 +186,94 @@ class SwitchTest(ServiceModeSkeleton):
 	def sw_enter_active(self,sw):
 		return True
 
+class Statistics(ServiceModeList):
+	"""Service Mode."""
+	def __init__(self, game, priority, font, name, itemlist):
+		super(Statistics, self).__init__(game, priority,font)
+		#self.title_layer.set_text('Settings')
+		self.name = name
+		self.items = []
+		for section in itemlist:
+			self.items.append( StatsDisplay( self.game, priority + 1, font, str(section),itemlist[section] ))
+
+class StatsDisplay(ServiceModeList):
+	"""Coil Test"""
+	def __init__(self, game, priority, font, name, itemlist):
+		super(StatsDisplay, self).__init__(game, priority, font)
+		self.name = name
+		self.value_layer = TextLayer(128/2, 22, font, "center")
+		self.items = []
+		for item in itemlist:
+			if type(itemlist[item])==type({}):
+				self.items.append( HighScoreItem(str(item), itemlist[item]['name'], itemlist[item]['score']) )
+			else:
+				self.items.append( StatsItem(str(item), itemlist[item]) )
+		self.layer = GroupedLayer(128, 32, [self.title_layer, self.item_layer, self.value_layer])
+
+	def mode_started(self):
+		super(StatsDisplay, self).mode_started()
+
+	def change_item(self):
+		super(StatsDisplay, self).change_item()
+		try:
+			self.item.score
+		except:
+			self.item.score = 'None'
+
+		if self.item.score == 'None':
+			self.value_layer.set_text(str(self.item.value))
+		else:
+			self.value_layer.set_text(self.item.value + ": " + str(self.item.score))
+
+	def sw_enter_active(self, sw):
+		return True
+
+class StatsItem:
+	"""Service Mode."""
+	def __init__(self, name, value):
+		self.name = name
+		self.value = value
+
+	def disable(self):
+		pass
+
+class HighScoreItem:
+	"""Service Mode."""
+	def __init__(self, name, value, score):
+		self.name = name
+		self.value = value
+		self.score = score
+
+	def disable(self):
+		pass
+
+
+class SwitchTest(ServiceModeSkeleton):
+	"""Switch Test"""
+	def __init__(self, game, priority, font):
+		super(SwitchTest, self).__init__(game, priority,font)
+		self.name = "Switch Test"
+		for switch in self.game.switches:
+			if self.game.machineType == 'sternWhitestar':
+				add_handler = 1
+			elif switch != self.game.switches.exit:
+				add_handler = 1
+			else:
+				add_handler = 0
+			if add_handler:
+				self.add_switch_handler(name=switch.name, event_type='inactive', delay=None, handler=self.switch_handler)
+				self.add_switch_handler(name=switch.name, event_type='active', delay=None, handler=self.switch_handler)
+
+	def switch_handler(self, sw):
+		if (sw.state):
+			self.game.sound.play('service_switch_edge')
+		self.item_layer.set_text(sw.name + ' - ' + str(sw.state))
+		return True
+
+	def sw_enter_active(self,sw):
+		return True
+
+
 class Settings(ServiceModeList):
 	"""Service Mode."""
 	def __init__(self, game, priority, font, name, itemlist):
@@ -192,6 +281,7 @@ class Settings(ServiceModeList):
 		#self.title_layer.set_text('Settings')
 		self.name = name
 		self.items = []
+		self.font = font
 		for section in itemlist:
 			self.items.append( SettingsEditor( self.game, priority + 1, font, str(section),itemlist[section] ))
 
@@ -210,15 +300,28 @@ class SettingsEditor(ServiceModeList):
 		self.layer = GroupedLayer(128, 32, [self.title_layer, self.item_layer, self.value_layer, self.instruction_layer])
 		for item in itemlist:
 			#self.items.append( EditItem(str(item), itemlist[item]['options'], itemlist[item]['value'] ) )
-			self.items.append( EditItem(str(item), itemlist[item]['options'], self.game.user_settings[self.name][item]) )
+			if 'increments' in itemlist[item]:
+				print "item"
+				print str(item)
+				print "increments:"
+				print itemlist[item]
+				num_options = (itemlist[item]['options'][1]-itemlist[item]['options'][0]) / itemlist[item]['increments']
+				option_list = []
+				for i in range(0,num_options):
+					option_list.append(itemlist[item]['options'][0] + (i * itemlist[item]['increments']))
+				self.items.append( EditItem(str(item), option_list, self.game.user_settings[self.name][item]) )
+			else:
+				print "options"
+				print itemlist[item]['options']
+				self.items.append( EditItem(str(item), itemlist[item]['options'], self.game.user_settings[self.name][item]) )
 		self.state = 'nav'
 		self.stop_blinking = True
 		self.item = self.items[0]
+		self.value_layer.set_text(str(self.item.value))
+		self.option_index = self.item.options.index(self.item.value)
 
 	def mode_started(self):
 		super(SettingsEditor, self).mode_started()
-		self.value_layer.set_text(str(self.item.value))
-		self.option_index = self.item.options.index(self.item.value)
 
 	def mode_stopped(self):
 		self.game.sound.play('service_exit')
