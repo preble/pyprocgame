@@ -350,6 +350,7 @@ class Player(object):
 		self.name = name
 		self.extra_balls = 0
 		self.info_record = {}
+		self.game_time = 0
 	
 
 class GameController(object):
@@ -372,6 +373,8 @@ class GameController(object):
 		self.balls_per_game = 3
 		self.keyboard_events_enabled = False
 		self.logging_enabled = True
+		self.game_data = {}
+		self.user_settings = {}
 	
 	def __enter__(self):
 		pass
@@ -399,12 +402,24 @@ class GameController(object):
 		self.players += [player]
 		return player
 
+        def get_ball_time(self):
+                return self.ball_end_time - self.ball_start_time
+
+        def get_game_time(self, player):
+                return self.players[player].game_time
+
+	def save_ball_start_time(self):
+		self.ball_start_time = time.time()
+		
 	def start_ball(self):
 		"""Called by the implementor to notify the game that (usually the first) ball should be started."""
 		self.ball_starting()
 
 	def ball_starting(self):
 		"""Called by the game framework when a new ball is starting."""
+		self.save_ball_start_time()	
+                print "Ball Start time: % 10.3f" % self.ball_start_time
+
 		pass
 	
 	def shoot_again(self):
@@ -418,6 +433,14 @@ class GameController(object):
 	
 	def end_ball(self):
 		"""Called by the implementor to notify the game that the current ball has ended."""
+
+		self.ball_end_time = time.time()
+		# Calculate ball time and save it because the start time
+		# gets overwritten when the next ball starts.
+		self.ball_time = self.get_ball_time()
+                print "Ball End time: % 10.3f" % self.ball_end_time
+                self.current_player().game_time += self.ball_time
+
 		self.ball_ended()
 		if self.current_player().extra_balls > 0:
 			self.current_player().extra_balls -= 1
@@ -451,7 +474,7 @@ class GameController(object):
 		"""Called by the implementor to mark notify the game that the game has ended."""
 		self.game_ended()
 		self.ball = 0
-		
+
 	def dmd_event(self):
 		"""Called by the GameController when a DMD event has been received."""
 		pass
@@ -501,12 +524,10 @@ class GameController(object):
 		"""Reads the YAML configuration file into memory.
 		Configures the switches, lamps, and coils members.
 		Enables notifyHost for the open and closed debounced states on each configured switch."""
+		self.user_settings = {}
 		self.settings = yaml.load(open(template_filename, 'r'))
 		if os.path.exists(user_filename):
 			self.user_settings = yaml.load(open(user_filename, 'r'))
-		else:
-			self.user_settings = {}
-
 		
 		for section in self.settings:
 			for item in self.settings[section]:
@@ -522,12 +543,44 @@ class GameController(object):
 					else:
 						self.user_settings[section][item] = self.settings[section][item]['options'][0]
 
-	def write_settings(self, filename):
+	def load_game_data(self, template_filename, user_filename):
 		"""Reads the YAML configuration file into memory.
 		Configures the switches, lamps, and coils members.
 		Enables notifyHost for the open and closed debounced states on each configured switch."""
+		self.game_data = {}
+		self.game_template_data = yaml.load(open(template_filename, 'r'))
+		if os.path.exists(user_filename):
+			self.game_data = yaml.load(open(user_filename, 'r'))
+		
+		for section in self.game_template_data:
+			if not section in self.game_data:
+				self.game_data[section] = {}
+			if section == 'Audits':
+				for entry in self.game_template_data[section]:
+					if not entry in self.game_data[section]:
+						self.game_data[section][entry] = self.game_template_data[section][entry]	
+
+			else:
+				for item in self.game_template_data[section]:
+					if not item in self.game_data[section]:
+						self.game_data[section][item] = {}
+					for entry in self.game_template_data[section][item]:
+						if not entry in self.game_data[section][item]:
+							self.game_data[section][item][entry] = self.game_template_data[section][item][entry]	
+
+	def write_settings(self, filename):
+		"""Reads the YAML configuration file into memory."""
+		if os.path.exists(filename):
+			os.remove(filename)
 		stream = file(filename, 'w')
 		yaml.dump(self.user_settings, stream)
+
+	def write_game_data(self, filename):
+		"""Reads the YAML configuration file into memory."""
+		if os.path.exists(filename):
+			os.remove(filename)
+		stream = file(filename, 'w')
+		yaml.dump(self.game_data, stream)
 
 	def enable_flippers(self, enable):
 		"""Enables or disables the flippers AND bumpers."""
