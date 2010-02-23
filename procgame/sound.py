@@ -9,6 +9,7 @@ class SoundController(object):
 		mixer.init()
 		self.sounds = {}
 		self.music = {}
+		self.music_volume_offset = 0
 		self.set_volume(0.5)
                                              
                 #self.register_music('wizard',"sound/pinball_wizard.mp3")
@@ -62,7 +63,7 @@ class SoundController(object):
 
 	def set_volume(self, new_volume):
 		self.volume = new_volume
-		mixer.music.set_volume (new_volume)
+		mixer.music.set_volume (new_volume + self.music_volume_offset)
 		for key in self.sounds:
 			self.sounds[key].set_volume(self.volume)
 
