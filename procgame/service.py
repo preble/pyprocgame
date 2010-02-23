@@ -203,7 +203,7 @@ class StatsDisplay(ServiceModeList):
 		self.name = name
 		self.value_layer = TextLayer(128/2, 22, font, "center")
 		self.items = []
-		for item in itemlist:
+		for item in sorted(itemlist.iterkeys()):
 			if type(itemlist[item])==type({}):
 				self.items.append( HighScoreItem(str(item), itemlist[item]['name'], itemlist[item]['score']) )
 			else:
@@ -282,7 +282,7 @@ class Settings(ServiceModeList):
 		self.name = name
 		self.items = []
 		self.font = font
-		for section in itemlist:
+		for section in sorted(itemlist.iterkeys()):
 			self.items.append( SettingsEditor( self.game, priority + 1, font, str(section),itemlist[section] ))
 
 class SettingsEditor(ServiceModeList):
@@ -298,7 +298,7 @@ class SettingsEditor(ServiceModeList):
 		self.items = []
 		self.value_layer = TextLayer(128/2, 19, font, "center")
 		self.layer = GroupedLayer(128, 32, [self.title_layer, self.item_layer, self.value_layer, self.instruction_layer])
-		for item in itemlist:
+		for item in sorted(itemlist.iterkeys()):
 			#self.items.append( EditItem(str(item), itemlist[item]['options'], itemlist[item]['value'] ) )
 			if 'increments' in itemlist[item]:
 				print "item"
