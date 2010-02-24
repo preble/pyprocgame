@@ -689,7 +689,7 @@ class GameController(object):
 
 	def update_lamps(self):
 		for mode in reversed(self.modes.modes):
-			mode.update_lamps()
+			 mode.update_lamps()
 
         def end_run_loop(self):
 		"""Called by the programmer when he wants the run_loop to end"""
