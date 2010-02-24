@@ -34,6 +34,12 @@ class BallSearch(Mode):
 
         def reset(self,sw):
 		if self.enabled:
+			# Stop delayed coil activations in case a ball search has
+			# already started.
+			for coil in self.coils:
+				self.cancel_delayed('ball_search_coil1')
+			self.cancel_delayed('start_special_handler_modes')
+			self.cancel_delayed
 			schedule_search = 1
 			for switch in self.stop_switches:
 				if self.game.switches[str(switch)].is_closed():
@@ -51,16 +57,11 @@ class BallSearch(Mode):
 			self.game.set_status("Balls Missing") # Replace with permanent message
 		delay = .150
 		for coil in self.coils:
-			#self.delay(name='ball_search_coil1', event_type=None, delay=delay, handler=self.pop_coil, param=[str(coil), self.coils[str(coil)]])
 			self.delay(name='ball_search_coil1', event_type=None, delay=delay, handler=self.pop_coil, param=str(coil))
 			delay = delay + .150
-		for special_handler_mode in self.special_handler_modes:
-			self.game.modes.add(special_handler_mode)
-			self.delay(name='remove_special_handler_mode', event_type=None, delay=7, handler=self.remove_special_handler_mode, param=special_handler_mode)
-			delay = delay + .150
+		self.delay(name='start_special_handler_modes', event_type=None, delay=delay, handler=self.start_special_handler_modes)
 
 		if (completion_wait_time != 0):
-			#self.delay(name='search_completion', event_type=None, delay=completion_wait_time, handler=completion_handler, param=completion_param)
 			pass
 		else:
 			self.cancel_delayed(name='ball_search_countdown');
@@ -68,6 +69,11 @@ class BallSearch(Mode):
 	
 	def pop_coil(self,coil):
 		self.game.coils[coil].pulse()
+
+	def start_special_handler_modes(self):
+		for special_handler_mode in self.special_handler_modes:
+			self.game.modes.add(special_handler_mode)
+			self.delay(name='remove_special_handler_mode', event_type=None, delay=7, handler=self.remove_special_handler_mode, param=special_handler_mode)
 
 	def remove_special_handler_mode(self,special_handler_mode):
 		self.game.modes.remove(special_handler_mode)
