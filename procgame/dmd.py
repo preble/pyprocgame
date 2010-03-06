@@ -21,6 +21,16 @@ class Frame(pinproc.DMDBuffer):
 		frame = Frame(self.width, self.height)
 		frame.set_data(self.get_data())
 		return frame
+	
+	def ascii(self):
+		output = ''
+		table = [' ', '.', '.', '.', ',', ',', ',', '-', '-', '=', '=', '=', '*', '*', '#', '#',]
+		for y in range(self.height):
+			for x in range(self.width):
+				dot = self.get_dot(x, y)
+				output += table[dot]
+			output += "\n"
+		return output
 
 class Animation(object):
 	"""A set of frames."""
