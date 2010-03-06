@@ -6,6 +6,19 @@ import time
 #import pygame.image
 import Image
 
+class ImageSequence:
+	"""Iterates over all images in a sequence (of PIL Images)."""
+	# Source: http://www.pythonware.com/library/pil/handbook/introduction.htm
+	def __init__(self, im):
+		self.im = im
+	def __getitem__(self, ix):
+		try:
+			if ix:
+				self.im.seek(ix)
+			return self.im
+		except EOFError:
+			raise IndexError # end of sequence
+
 def image_to_dmd(src_filename, dst_filename):
 	"""docstring for image_to_dmd"""
 	last_filename = None
@@ -23,18 +36,20 @@ def image_to_dmd(src_filename, dst_filename):
 		src = Image.open(filename)
 		last_filename = filename
 		(w, h) = src.size
-	
-		reduced = src.convert("L") #.quantize(palette=pal_im).convert("P", palette=Image.ADAPTIVE, colors=4)#
-	
-		frame = procgame.dmd.Frame(w, h)
-	
-		for x in range(w):
-			for y in range(h):
-				color = int((reduced.getpixel((x,y))/255.0)*15)
-				frame.set_dot(x=x, y=y, value=color)
-	
-		(anim.width, anim.height) = (w, h)
-		anim.frames += [frame]
+		
+		for src_im in ImageSequence(src):
+			reduced = src.convert("L") #.quantize(palette=pal_im).convert("P", palette=Image.ADAPTIVE, colors=4)#
+			
+			frame = procgame.dmd.Frame(w, h)
+			
+			for x in range(w):
+				for y in range(h):
+					color = int((reduced.getpixel((x,y))/255.0)*15)
+					frame.set_dot(x=x, y=y, value=color)
+			
+			(anim.width, anim.height) = (w, h)
+			anim.frames += [frame]
+		
 	anim.save(dst_filename)
 	print "Saved."
 
