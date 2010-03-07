@@ -24,8 +24,12 @@ def gif_frames(src):
 	frames = []
 	
 	# We have to do some special stuff for animated GIFs: check for the background index, and if we get it use the last frame's value.
-	transparent_idx = src.info['transparency']
-	background_idx = src.info['background']
+	transparent_idx = -1
+	background_idx = -1
+	if 'transparency' in src.info:
+		transparent_idx = src.info['transparency']
+	if 'background' in src.info:
+		background_idx = src.info['background']
 	last_frame = None
 	
 	(w, h) = src.size
