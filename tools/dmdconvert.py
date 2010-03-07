@@ -19,6 +19,39 @@ class ImageSequence:
 		except EOFError:
 			raise IndexError # end of sequence
 
+def gif_frames(src):
+	"""Returns an array of frames to be added to the animation."""
+	frames = []
+	
+	# We have to do some special stuff for animated GIFs: check for the background index, and if we get it use the last frame's value.
+	transparent_idx = src.info['transparency']
+	background_idx = src.info['background']
+	last_frame = None
+	
+	(w, h) = src.size
+	
+	for src_im in ImageSequence(src):
+		reduced = src.convert("L") #.quantize(palette=pal_im).convert("P", palette=Image.ADAPTIVE, colors=4)#
+		
+		frame = procgame.dmd.Frame(w, h)
+		
+		for x in range(w):
+			for y in range(h):
+				idx = src_im.getpixel((x, y)) # Get the palette index for this pixel
+				if idx == background_idx and last_frame != None:
+					if last_frame == None:
+						color = 0xff # Don't have a good option here.
+					else:
+						color = last_frame.get_dot(x,y)
+				else:
+					color = int((reduced.getpixel((x,y))/255.0)*15)
+				frame.set_dot(x=x, y=y, value=color)
+				
+		frames += [frame]
+		last_frame = frame
+		
+	return frames
+
 def image_to_dmd(src_filename, dst_filename):
 	"""docstring for image_to_dmd"""
 	last_filename = None
@@ -35,9 +68,13 @@ def image_to_dmd(src_filename, dst_filename):
 		print "Appending ", filename
 		src = Image.open(filename)
 		last_filename = filename
-		(w, h) = src.size
 		
-		for src_im in ImageSequence(src):
+		(w, h) = src.size
+		(anim.width, anim.height) = (w, h)
+		
+		if filename.endswith('.gif'):
+			anim.frames += gif_frames(src)
+		else:
 			reduced = src.convert("L") #.quantize(palette=pal_im).convert("P", palette=Image.ADAPTIVE, colors=4)#
 			
 			frame = procgame.dmd.Frame(w, h)
@@ -47,7 +84,6 @@ def image_to_dmd(src_filename, dst_filename):
 					color = int((reduced.getpixel((x,y))/255.0)*15)
 					frame.set_dot(x=x, y=y, value=color)
 			
-			(anim.width, anim.height) = (w, h)
 			anim.frames += [frame]
 		
 	anim.save(dst_filename)
