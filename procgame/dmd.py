@@ -438,6 +438,7 @@ class DisplayController:
 		self.message_layer = None
 		self.width = width
 		self.height = height
+		self.capture = None
 		if message_font != None:
 			self.message_layer = TextLayer(width/2, height-2*7, message_font, "center")
 		# Do two updates to get the pump primed:
@@ -466,4 +467,6 @@ class DisplayController:
 			
 		if frame != None:
 			self.game.proc.dmd_draw(frame)
+			if self.capture != None:
+				self.capture.append(frame)
 
