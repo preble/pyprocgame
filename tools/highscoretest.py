@@ -16,18 +16,21 @@ import yaml
 locale.setlocale(locale.LC_ALL, "") # Used to put commas in the score.
 
 config_path = "../shared/config/JD.yaml"
-fonts_path = "../shared/dmd/"
+dmd.font_path.append('../shared/dmd')
 
 class HighScoreEntry(game.Mode):
-	def __init__(self, game, priority, player, place):
+	"""entered_handler should be a function taking 2 parameters: mode and inits."""
+	def __init__(self, game, priority, player, place, entered_handler):
 		super(HighScoreEntry, self).__init__(game, priority)
+		
+		self.entered_handler = entered_handler
 		
 		self.char_back = '<'
 		self.char_done = '='
 		
-		self.init_font = dmd.Font(fonts_path+'Font09Bx7.dmd')
-		self.font = dmd.Font(fonts_path+'Font07x5.dmd')
-		self.letters_font = dmd.Font(fonts_path+'Font07x5.dmd')
+		self.init_font = dmd.font_named('Font09Bx7.dmd')
+		self.font = dmd.font_named('Font07x5.dmd')
+		self.letters_font = dmd.font_named('Font07x5.dmd')
 		
 		self.layer = dmd.GroupedLayer(128, 32)
 		self.layer.opaque = True
@@ -122,7 +125,11 @@ class HighScoreEntry(game.Mode):
 			if len(self.inits) > 0:
 				self.inits = self.inits[:-1]
 		elif letter == self.char_done:
-			pass # We are done!
+			self.inits = self.inits[:-1] # Strip off the done character
+			if self.entered_handler != None:
+				self.entered_handler(mode=self, inits=self.inits)
+			else:
+				self.game.log('HighScoreEntry finished but no entered_handler to notify!')
 		else:
 			self.inits += letter
 		self.letter_increment(0)
@@ -162,7 +169,7 @@ class TestGame(game.GameController):
 	def setup(self):
 		"""docstring for setup"""
 		self.load_config(config_path)
-		self.highscore_entry = HighScoreEntry(self, 1, "Player 1", 2)
+		self.highscore_entry = HighScoreEntry(game=self, priority=1, player="Player 1", place=2, highscore_entered=self.highscore_entered)
 		self.reset()
 		
 	def reset(self):
@@ -178,6 +185,10 @@ class TestGame(game.GameController):
 	def score(self, points):
 		p = self.current_player()
 		p.score += points
+	
+	def highscore_entered(self, mode, inits):
+		self.modes.remove(mode)
+		print "Got high score entry:", inits
 
 def main():
 	config = yaml.load(open(config_path, 'r'))

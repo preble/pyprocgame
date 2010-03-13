@@ -151,6 +151,24 @@ class Font(object):
 		return (x, self.char_size)
 
 
+font_path = ['.']
+__font_cache = {}
+def font_named(name):
+	"""Searches the font_path for a font file of the given name and returns an instance if it exists."""
+	if name in __font_cache:
+		return __font_cache[name]
+	for path in font_path:
+		path = os.path.join(path, name)
+		if os.path.isfile(path):
+			import dmd # have to do this to get dmd.Font to work below... odd.
+			font = dmd.Font(path)
+			__font_cache[name] = font
+			return font
+	raise ValueError, 'Font named "%s" not found; font_path=%s' % (name, font_path)
+
+
+
+
 class Layer(object):
 	"""Abstract layer object."""
 	def __init__(self, opaque=False):
