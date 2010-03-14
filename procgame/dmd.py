@@ -345,12 +345,17 @@ class TextLayer(Layer):
 		self.started_at = None
 		self.seconds = None # Number of seconds to show the text for
 		self.frame = None # Frame that text is rendered into.
+		self.frame_old = None
 		self.justify = justify
+		self.blink_frames = None # Number of frame times to turn frame on/off
+		self.blink_frames_counter = 0
 		
-	def set_text(self, text, seconds=None):
+	def set_text(self, text, seconds=None, blink_frames=None):
 		"""Displays the given message for the given number of seconds."""
 		self.started_at = None
 		self.seconds = seconds
+		self.blink_frames = blink_frames
+		self.blink_frames_counter = self.blink_frames
 		if text == None:
 			self.frame = None
 		else:
@@ -370,6 +375,16 @@ class TextLayer(Layer):
 			self.started_at = time.time()
 		if (self.seconds != None) and ((self.started_at + self.seconds) < time.time()):
 			self.frame = None
+		elif self.blink_frames > 0:
+			if self.blink_frames_counter == 0:
+				self.blink_frames_counter = self.blink_frames
+				if self.frame == None:
+					self.frame = self.frame_old
+				else:
+					self.frame_old = self.frame
+					self.frame = None
+			else:
+				self.blink_frames_counter -= 1
 		return self.frame
 	
 	def is_visible(self):
