@@ -481,7 +481,9 @@ class DisplayController:
 		layers = []
 		for mode in self.game.modes.modes:
 			if hasattr(mode, 'layer') and mode.layer != None:
-				layers += [mode.layer]
+				layers.append(mode.layer)
+				if mode.layer.opaque:
+					break # if we have an opaque layer we don't render any lower layers
 		
 		frame = Frame(self.width, self.height)
 		for layer in layers[::-1]: # We reverse the list here so that the top layer gets the last say.
