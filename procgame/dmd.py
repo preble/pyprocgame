@@ -152,8 +152,19 @@ class Font(object):
 
 
 class Layer(object):
-	"""Abstract layer object."""
+	"""
+	Abstract layer object.  
+	Provides a stream of frames through its next_frame() method.
+	"""
 	def __init__(self, opaque=False):
+		"""
+		Initialize a new Layer object.
+		
+		Keyword arguments:
+		opaque -- Determines whether layers below this one will be rendered.
+		          If True, the DisplayController will not render any layers
+		          after this one (such as from Modes with lower priorities).
+		"""
 		super(Layer, self).__init__()
 		self.opaque = opaque
 		self.set_target_position(0, 0)
@@ -167,7 +178,7 @@ class Layer(object):
 		self.target_x = x
 		self.target_y = y
 	def next_frame(self):
-		"""Returns the frame to be shown, or None if there is no frame."""
+		"""Returns an instance of a Frame object to be shown, or None if there is no frame."""
 		return None
 	def composite_next(self, target):
 		"""Composites the next frame of this layer onto the given target buffer."""
