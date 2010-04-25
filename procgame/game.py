@@ -584,7 +584,7 @@ class GameController(object):
 
 	def enable_flippers(self, enable):
 		"""Enables or disables the flippers AND bumpers."""
-		if self.machineType == 'wpc':
+		if self.machineType == 'wpc' or self.machineType == 'wpc95' or self.machineType == 'wpcAlphanumeric':
 			print("Programming flippers...")
 			for flipper in self.config['PRFlippers']:
 				main_coil = self.coils[flipper+'Main']
