@@ -39,9 +39,8 @@ class TestGame(game.GameController):
 		super(TestGame, self).__init__(machineType)
 		self.dmd = dmd.DisplayController(self, width=128, height=32)
 		self.score_display = scoredisplay.ScoreDisplay(self, 1)
-		self.keyboard_handler = procgame.keyboard.KeyboardHandler()
-		self.keyboard_events_enabled = True
-		self.get_keyboard_events = self.keyboard_handler.get_keyboard_events
+		self.desktop = procgame.desktop.Desktop()
+		self.get_keyboard_events = self.desktop.get_keyboard_events
 		
 	def setup(self):
 		"""docstring for setup"""

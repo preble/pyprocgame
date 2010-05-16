@@ -155,9 +155,8 @@ class TestGame(game.GameController):
 		super(TestGame, self).__init__(machineType)
 		self.sound = SoundController(self)
 		self.dmd = dmd.DisplayController(self, width=128, height=32, message_font=font_tiny7)
-		self.keyboard_handler = procgame.keyboard.KeyboardHandler()
-		self.keyboard_events_enabled = True
-		self.get_keyboard_events = self.keyboard_handler.get_keyboard_events
+		self.desktop = procgame.desktop.Desktop()
+		self.get_keyboard_events = self.desktop.get_keyboard_events
 
 	def save_settings(self):
 		pass
