@@ -371,10 +371,10 @@ class GameController(object):
 		self.t0 = time.time()
 		self.config = None
 		self.balls_per_game = 3
-		self.keyboard_events_enabled = False
 		self.logging_enabled = True
 		self.game_data = {}
 		self.user_settings = {}
+		self.get_keyboard_events = None
 	
 	def __enter__(self):
 		pass
@@ -708,7 +708,7 @@ class GameController(object):
 			while self.done == False:
 
 				loops += 1
-				if self.keyboard_events_enabled:
+				if self.get_keyboard_events != None:
 					# get_keyboard_events needs to be defined by
 					# the keyboard handler.
 					for event in self.get_keyboard_events():
