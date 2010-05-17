@@ -45,6 +45,20 @@ class Frame(pinproc.DMDBuffer):
 			output += "\n"
 		return output
 
+	def create_frames_from_grid( self, num_cols, num_rows ):
+		frames = []
+		width = self.width / num_cols
+		height = self.height / num_rows
+	
+		# Use nested loops to step through each column of each row, creating a new frame at each iteration and copying in the appropriate data.
+		for row_index in range(0,num_rows):
+			for col_index in range(0,num_cols):
+				new_frame = Frame(width, height)
+				Frame.copy_rect(dst=new_frame, dst_x=0, dst_y=0, src=self, src_x=width*col_index, src_y=height*row_index, width=width, height=height, op='copy')
+				frames += [new_frame]
+		return frames
+
+
 class Animation(object):
 	"""An ordered collection of :class:`.Frame` objects."""
 	
@@ -272,6 +286,32 @@ class LayerTransitionBase(object):
 		   Base implementation simply returns the from_frame."""
 		return from_frame
 
+class ExpandTransition(LayerTransitionBase):
+	def __init__(self, direction='vertical'):
+		super(ExpandTransition, self).__init__()
+		self.direction = direction
+		self.progress_per_frame = 1.0/11.0
+	def transition_frame(self, from_frame, to_frame):
+		frame = Frame(width=from_frame.width, height=from_frame.height)
+		dst_x, dst_y = 0, 0
+		prog = self.progress
+		if self.in_out == 'out':
+			prog = 1.0 - prog
+		dst_x, dst_y = {
+		 'vertical': (0, frame.height/2-prog*(frame.height/2)),
+		 'horizontal':  (frame.width/2-prog*(frame.width/2), 0),
+		}[self.direction]
+
+		if (self.direction == 'vertical'):
+                	width = frame.width
+			height = prog*frame.height
+		else:
+			width = prog*frame.width
+			height = frame.height
+
+		Frame.copy_rect(dst=frame, dst_x=dst_x, dst_y=dst_y, src=to_frame, src_x=dst_x, src_y=dst_y, width=width, height=height, op='copy')
+		return frame
+
 class SlideOverLayerTransition(LayerTransitionBase):
 	def __init__(self, direction='north'):
 		super(SlideOverLayerTransition, self).__init__()
@@ -347,7 +387,20 @@ class FrameLayer(Layer):
 	def __init__(self, opaque=False, frame=None):
 		super(FrameLayer, self).__init__(opaque)
 		self.frame = frame
+		self.blink_frames = None # Number of frame times to turn frame on/off
+		self.blink_frames_counter = 0
+		self.frame_old = None
 	def next_frame(self):
+		if self.blink_frames > 0:
+			if self.blink_frames_counter == 0:
+				self.blink_frames_counter = self.blink_frames
+				if self.frame == None:
+					self.frame = self.frame_old
+				else:
+					self.frame_old = self.frame
+					self.frame = None
+			else:
+				self.blink_frames_counter -= 1
 		return self.frame
 
 class AnimatedLayer(Layer):
@@ -497,6 +550,7 @@ class DisplayController:
 		self.width = width
 		self.height = height
 		self.capture = None
+		self.alt_frame_handler = None
 		if message_font != None:
 			self.message_layer = TextLayer(width/2, height-2*7, message_font, "center")
 		# Do two updates to get the pump primed:
@@ -527,6 +581,8 @@ class DisplayController:
 			
 		if frame != None:
 			self.game.proc.dmd_draw(frame)
+			if self.alt_frame_handler != None:
+				self.alt_frame_handler(frame)
 			if self.capture != None:
 				self.capture.append(frame)
 

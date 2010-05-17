@@ -28,7 +28,7 @@ rect = pygame.Surface([128*screen_multiplier,32*screen_multiplier])
 #screen.blit(circle, [0,0])
 #pygame.display.flip()
 
-class KeyboardHandler():
+class Desktop():
 	"""docstring for KeyboardHandler"""
 	def __init__(self):
 		self.ctrl = 0
