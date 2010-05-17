@@ -18,28 +18,35 @@ class Mode(object):
 	programmer.
 	
 	Modes are essentially a collection of switch even thandlers.  
-	Active modes are held in the GameController object's modes
-	ModeQueue, which dispatches event notifications to modes in
+	Active modes are held in the :class:`game.GameController` object's modes
+	:class:`game.ModeQueue`, which dispatches event notifications to modes in
 	order of priority (highest to lowest).  If a higher priority
 	mode's switch event handler method returns True, the event
 	is not passed down to lower modes.
 	
-	Switch event handlers are detected when Mode.__init__() is
+	Switch event handlers are detected when ``Mode.__init__()`` is
 	called by the subclass.  Various switch event handler formats
 	are recognized:
 	
-	sw_switchName_open(self, sw) -- called when a switch (named 
-	                                switchName) is opened
-	sw_switchName_closed(self, sw) -- closed variant of the above
-	sw_switchName_open_for_1s(self, sw)
-	  -- called when switchName has been open continuously for
-	     one second
-	sw_switchName_closed_for_2s(self, sw)
-	sw_switchName_closed_for_100ms(self, sw)
-	sw_switchName_open_for_500ms(self, sw)
-	  -- variants of the above
+	``sw_switchName_open(self, sw)``
+	  Called when a switch (named switchName) is opened.
+	``sw_switchName_closed(self, sw)``
+	  Closed variant of the above.
+	``sw_switchName_open_for_1s(self, sw)``
+	  Called when switchName has been open continuously for one second
 	
-	Modes can be programatically configured using add_switch_handler().
+	Example variants of the above: ::
+	
+		def sw_switchName_closed_for_2s(self, sw):
+			pass
+		
+		def sw_switchName_closed_for_100ms(self, sw):
+			pass
+		
+		def sw_switchName_open_for_500ms(self, sw):
+			pass
+	
+	Modes can be programatically configured using :meth:`.add_switch_handler`.
 	"""
 	def __init__(self, game, priority):
 		super(Mode, self).__init__()
@@ -70,12 +77,17 @@ class Mode(object):
 		"""Programatically configure a switch event handler.
 		
 		Keyword arguments:
-		name       -- valid switch name
-		event_type -- 'open','closed','active', or 'inactive'
-		delay      -- float number of seconds that the state should be held 
-		              before invoking the handler, or None if it should be
-		              invoked immediately.
-		handler    -- method to call with signature handler(self, switch)
+		
+		``name``
+		  valid switch name
+		``event_type``
+		  'open','closed','active', or 'inactive'
+		``delay``
+		  float number of seconds that the state should be held 
+		  before invoking the handler, or None if it should be
+		  invoked immediately.
+		``handler``
+		  method to call with signature ``handler(self, switch)``
 		"""
 
                 # Convert active/inactive to open/closed based on switch's type
@@ -108,14 +120,20 @@ class Mode(object):
 		"""Schedule the run loop to call the given handler at a later time.
 		
 		Keyword arguments:
-		name -- string name of the event, usually the corresponding switch name
-		event_type -- 'closed', 'open', or None
-		delay      -- number of seconds to wait before calling the handler (float)
-		handler    -- function to be called once delay seconds have elapsed
-		param      -- value to be passed as the first (non-self) argument to handler.
 		
-		If param is None, handler's signature must be handler(self).  Otherwise,
-		it is handler(self, param) to match the switch method handler pattern.
+		``name``
+			String name of the event, usually the corresponding switch name.
+		``event_type``
+			'closed', 'open', or None.
+		``delay``
+			Number of seconds to wait before calling the handler (float).
+		``handler``
+			Function to be called once delay seconds have elapsed.
+		``param``
+			Value to be passed as the first (non-self) argument to handler.
+		
+		If param is None, handler's signature must be ``handler(self)``.  Otherwise,
+		it is ``handler(self, param)`` to match the switch method handler pattern.
 		"""
 		if type(event_type) == str:
 			event_type = {'closed':1, 'open':2}[event_type]
