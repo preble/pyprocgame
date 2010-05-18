@@ -462,6 +462,8 @@ class ScriptedLayer(Layer):
 		self.script = script
 		self.script_index = 0
 		self.frame_start_time = None
+		self.force_direction = None
+		self.on_complete = None
 	
 	def next_frame(self):
 		# This assumes looping.  TODO: Add code to not loop!
@@ -469,11 +471,19 @@ class ScriptedLayer(Layer):
 			self.frame_start_time = time.time()
 		script_item = self.script[self.script_index]
 		time_on_frame = time.time() - self.frame_start_time
-		if time_on_frame > script_item['seconds']:
-			# Time for the next frame:
-			self.script_index += 1
+		if self.force_direction != None or time_on_frame > script_item['seconds']:
+			if self.force_direction == False:
+				self.script_index -= 1
+			else:
+				self.script_index += 1
+
+			# Only force one item.
+			self.force_direction = None
+
 			if self.script_index == len(self.script):
 				self.script_index = 0
+				if self.on_complete != None:
+					self.on_complete()
 			script_item = self.script[self.script_index]
 			self.frame_start_time = time.time()
 		layer = script_item['layer']
@@ -483,6 +493,9 @@ class ScriptedLayer(Layer):
 			return self.buffer
 		else:
 			return None
+
+	def force_next(self, forward=True):
+		self.force_direction = forward
 			
 
 class GroupedLayer(Layer):
