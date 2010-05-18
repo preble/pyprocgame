@@ -11,6 +11,31 @@ import copy
 import pygame
 from pygame.locals import *
 import dmd
+import ctypes
+
+if hasattr(ctypes.pythonapi, 'Py_InitModule4'):
+   Py_ssize_t = ctypes.c_int
+elif hasattr(ctypes.pythonapi, 'Py_InitModule4_64'):
+   Py_ssize_t = ctypes.c_int64
+else:
+   raise TypeError("Cannot determine type of Py_ssize_t")
+
+PyObject_AsWriteBuffer = ctypes.pythonapi.PyObject_AsWriteBuffer
+PyObject_AsWriteBuffer.restype = ctypes.c_int
+PyObject_AsWriteBuffer.argtypes = [ctypes.py_object,
+                                  ctypes.POINTER(ctypes.c_void_p),
+                                  ctypes.POINTER(Py_ssize_t)]
+
+def array(surface):
+   buffer_interface = surface.get_buffer()
+   address = ctypes.c_void_p()
+   size = Py_ssize_t()
+   PyObject_AsWriteBuffer(buffer_interface,
+                          ctypes.byref(address), ctypes.byref(size))
+   bytes = (ctypes.c_byte * size.value).from_address(address.value)
+   bytes.object = buffer_interface
+   return bytes
+
 
 pygame.init()
 screen_multiplier = 2
@@ -32,9 +57,10 @@ class Desktop():
 	"""docstring for KeyboardHandler"""
 	def __init__(self):
 		self.ctrl = 0
-		self.old_frame = dmd.Frame(128,32)
-		self.old_frame.fill_rect(0,0,128,32,0)
+		#self.old_frame = dmd.Frame(128,32)
+		#self.old_frame.fill_rect(0,0,128,32,0)
 		self.i = 0
+
 
 	def get_keyboard_events(self):
 		key_events = []
@@ -82,25 +108,45 @@ class Desktop():
 		# This should increase screen update times.
 		changed_rect_list = []
 
-		for y in range(frame.height):
-			for x in range(frame.width):
-
-				dot = frame.get_dot(x, y)
-				#if True:
-				if dot != self.old_frame.get_dot(x,y):
-					color_val = dot*16
-					color = pygame.Color(color_val, color_val, color_val)
-					
-					dot = pygame.Rect(x*screen_multiplier, \
-       	                                           y*screen_multiplier, \
-       	                                           screen_multiplier+adjustment, \
-       	                                           screen_multiplier+adjustment)
-					
-					pygame.draw.rect(rect, color, dot, 0)
-					changed_rect_list += [dot]
+#		for y in range(frame.height):
+#			for x in range(frame.width):
+#
+#				dot = frame.get_dot(x, y)
+#				#if True:
+#				if dot != self.old_frame.get_dot(x,y):
+#					color_val = dot*16
+#					color = pygame.Color(color_val, color_val, color_val)
+#					
+#					dot = pygame.Rect(x*screen_multiplier, \
+#       	                                           y*screen_multiplier, \
+#       	                                           screen_multiplier+adjustment, \
+#       	                                           screen_multiplier+adjustment)
+#					
+#					pygame.draw.rect(rect, color, dot, 0)
+#					changed_rect_list += [dot]
 					#pygame.draw.circle(rect, color, [x*screen_multiplier,y*screen_multiplier], screen_multiplier/2, 0)
 					
-		screen.blit(rect, [0,0])	
-		pygame.display.update(changed_rect_list)
+		#screen.blit(rect, [0,0])	
+		#pygame.display.update(changed_rect_list)
 
-		self.old_frame = frame.copy()
+		y_offset = 128*4*screen_multiplier*screen_multiplier
+		x_offset = 4*screen_multiplier
+		im = rect
+                a = array(im)
+		#for y in range(0,32*screen_multiplier,screen_multiplier):
+		for y in range(0,32):
+			#for x in range(0,128*screen_multiplier,screen_multiplier):
+			for x in range(0,128):
+				#frame_x = x/screen_multiplier
+				#frame_y = y/screen_multiplier
+				#dot = frame.get_dot(frame_x,frame_y)
+				dot = frame.get_dot(x,y)
+				color_val = dot*16
+				index = y*y_offset + x*x_offset
+                		a[index:index+4] = (color_val,color_val,color_val,0)
+		del a
+		screen.blit(rect, [0,0])	
+		pygame.display.update()
+
+
+		#self.old_frame = frame.copy()
