@@ -5,24 +5,37 @@ import os
 import game
 
 class Frame(pinproc.DMDBuffer):
-	"""DMD frame/bitmap."""
+	"""DMD frame/bitmap.
+	
+	Subclass of :class:`pinproc.DMDBuffer`.
+	"""
+	
+	width = 0
+	"""Width of the frame in dots."""
+	height = 0
+	"""Height of the frame in dots."""
+	
 	def __init__(self, width, height):
+		"""Initializes the frame to the given `width` and `height`."""
 		super(Frame, self).__init__(width, height)
 		self.width = width
 		self.height = height
 
 	def copy_rect(dst, dst_x, dst_y, src, src_x, src_y, width, height, op="copy"):
+		"""Static method which performs some type checking before calling :meth:`pinproc.DMDBuffer.copy_to_rect`."""
 		if not (issubclass(type(dst), pinproc.DMDBuffer) and issubclass(type(src), pinproc.DMDBuffer)):
 			raise ValueError, "Incorrect types"
 		src.copy_to_rect(dst, dst_x, dst_y, src_x, src_y, width, height, op)
 	copy_rect = staticmethod(copy_rect)
 	
 	def copy(self):
+		"""Returns a copy of itself."""
 		frame = Frame(self.width, self.height)
 		frame.set_data(self.get_data())
 		return frame
 	
 	def ascii(self):
+		"""Returns an ASCII representation of itself."""
 		output = ''
 		table = [' ', '.', '.', '.', ',', ',', ',', '-', '-', '=', '=', '=', '*', '*', '#', '#',]
 		for y in range(self.height):
@@ -47,16 +60,23 @@ class Frame(pinproc.DMDBuffer):
 
 
 class Animation(object):
-	"""A set of frames."""
+	"""An ordered collection of :class:`.Frame` objects."""
+	
+	width = None
+	"""Width of each of the animation frames in dots."""
+	height = None
+	"""Height of each of the animation frames in dots."""
+	frames = []
+	"""Ordered collection of :class:`.Frame` objects."""
+	
 	def __init__(self):
+		"""Initializes the animation."""
 		super(Animation, self).__init__()
-		self.width = None
-		self.height = None
-		self.frames = []
+
 	def load(self, filename):
 		"""Loads a series of frames from a .dmd (DMDAnimator) file.
 		
-		File format is as follows:
+		File format is as follows: ::
 		
 		  4 bytes - header data (unused)
 		  4 bytes - frame_count
@@ -85,6 +105,7 @@ class Animation(object):
 		return self
 
 	def save(self, filename):
+		"""Saves the animation as a .dmd file at the given location, `filename`."""
 		if self.width == None or self.height == None:
 			raise ValueError, "width and height must be set on Animation before it can be saved."
 		header = struct.pack("IIII", 0x00646D64, len(self.frames), self.width, self.height)
@@ -168,25 +189,36 @@ class Font(object):
 class Layer(object):
 	"""
 	Abstract layer object.  
-	Provides a stream of frames through its next_frame() method.
+	Provides a stream of frames through its :meth:`next_frame` method.
 	"""
+	
+	opaque = False
+	"""Determines whether layers below this one will be rendered.  
+	If `True`, the :class:`.DisplayController` will not render any layers after this one 
+	(such as from modes with lower priorities -- see :class:`dmd.DisplayController` for more information).
+	"""
+	
+	target_x = 0
+	""""""
+	target_y = 0
+	""""""
+	target_x_offset = 0
+	""""""
+	target_y_offset = 0
+	""""""
+	enabled = True
+	"""If `False`, :class:`dmd.DisplayController` will ignore this layer."""
+	composite_op = 'copy'
+	"""Composite operation used by :meth:`composite_next` when calling :meth:`Frame.copy_rect`."""
+	transition = None
+	"""Transition which :meth:`composite_next` applies to the result of :meth:`next_frame` prior to compositing upon the output."""
+	
 	def __init__(self, opaque=False):
-		"""
-		Initialize a new Layer object.
-		
-		Keyword arguments:
-		opaque -- Determines whether layers below this one will be rendered.
-		          If True, the DisplayController will not render any layers
-		          after this one (such as from Modes with lower priorities).
-		"""
+		"""Initialize a new Layer object."""
 		super(Layer, self).__init__()
 		self.opaque = opaque
 		self.set_target_position(0, 0)
-		self.target_x_offset = 0
-		self.target_y_offset = 0
-		self.enabled = True
-		self.composite_op = 'copy'
-		self.transition = None
+
 	def set_target_position(self, x, y):
 		"""Sets the location in the final output that this layer will be positioned at."""
 		self.target_x = x
@@ -195,7 +227,7 @@ class Layer(object):
 		"""Returns an instance of a Frame object to be shown, or None if there is no frame."""
 		return None
 	def composite_next(self, target):
-		"""Composites the next frame of this layer onto the given target buffer."""
+		"""Composites the next frame of this layer onto the given target buffer.  Called by :meth:`DisplayController.update`."""
 		src = self.next_frame()
 		if src != None:
 			if self.transition != None:
