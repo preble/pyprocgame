@@ -10,6 +10,6 @@ __all__ = [
 	'trough',
 	'replay',
 	'scoredisplay',
-	'keyboard',
+	'desktop',
 	'highscoreentry',
 	]

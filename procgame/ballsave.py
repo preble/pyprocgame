@@ -81,7 +81,7 @@ class BallSave(Mode):
 
 
 	def eject(self):
-		if self.game.machineType == 'wpc':
+		if self.game.machineType == 'wpc' or self.game.machineType == 'wpc95' or self.game.machineType == 'wpcAlphanumeric':
 			if self.game.switches.trough6.is_open():
 				self.game.coils.trough.pulse(20)
 			else:

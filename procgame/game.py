@@ -18,28 +18,35 @@ class Mode(object):
 	programmer.
 	
 	Modes are essentially a collection of switch even thandlers.  
-	Active modes are held in the GameController object's modes
-	ModeQueue, which dispatches event notifications to modes in
+	Active modes are held in the :class:`game.GameController` object's modes
+	:class:`game.ModeQueue`, which dispatches event notifications to modes in
 	order of priority (highest to lowest).  If a higher priority
 	mode's switch event handler method returns True, the event
 	is not passed down to lower modes.
 	
-	Switch event handlers are detected when Mode.__init__() is
+	Switch event handlers are detected when ``Mode.__init__()`` is
 	called by the subclass.  Various switch event handler formats
 	are recognized:
 	
-	sw_switchName_open(self, sw) -- called when a switch (named 
-	                                switchName) is opened
-	sw_switchName_closed(self, sw) -- closed variant of the above
-	sw_switchName_open_for_1s(self, sw)
-	  -- called when switchName has been open continuously for
-	     one second
-	sw_switchName_closed_for_2s(self, sw)
-	sw_switchName_closed_for_100ms(self, sw)
-	sw_switchName_open_for_500ms(self, sw)
-	  -- variants of the above
+	``sw_switchName_open(self, sw)``
+	  Called when a switch (named switchName) is opened.
+	``sw_switchName_closed(self, sw)``
+	  Closed variant of the above.
+	``sw_switchName_open_for_1s(self, sw)``
+	  Called when switchName has been open continuously for one second
 	
-	Modes can be programatically configured using add_switch_handler().
+	Example variants of the above: ::
+	
+		def sw_switchName_closed_for_2s(self, sw):
+			pass
+		
+		def sw_switchName_closed_for_100ms(self, sw):
+			pass
+		
+		def sw_switchName_open_for_500ms(self, sw):
+			pass
+	
+	Modes can be programatically configured using :meth:`.add_switch_handler`.
 	"""
 	def __init__(self, game, priority):
 		super(Mode, self).__init__()
@@ -70,12 +77,17 @@ class Mode(object):
 		"""Programatically configure a switch event handler.
 		
 		Keyword arguments:
-		name       -- valid switch name
-		event_type -- 'open','closed','active', or 'inactive'
-		delay      -- float number of seconds that the state should be held 
-		              before invoking the handler, or None if it should be
-		              invoked immediately.
-		handler    -- method to call with signature handler(self, switch)
+		
+		``name``
+		  valid switch name
+		``event_type``
+		  'open','closed','active', or 'inactive'
+		``delay``
+		  float number of seconds that the state should be held 
+		  before invoking the handler, or None if it should be
+		  invoked immediately.
+		``handler``
+		  method to call with signature ``handler(self, switch)``
 		"""
 
                 # Convert active/inactive to open/closed based on switch's type
@@ -108,14 +120,20 @@ class Mode(object):
 		"""Schedule the run loop to call the given handler at a later time.
 		
 		Keyword arguments:
-		name -- string name of the event, usually the corresponding switch name
-		event_type -- 'closed', 'open', or None
-		delay      -- number of seconds to wait before calling the handler (float)
-		handler    -- function to be called once delay seconds have elapsed
-		param      -- value to be passed as the first (non-self) argument to handler.
 		
-		If param is None, handler's signature must be handler(self).  Otherwise,
-		it is handler(self, param) to match the switch method handler pattern.
+		``name``
+			String name of the event, usually the corresponding switch name.
+		``event_type``
+			'closed', 'open', or None.
+		``delay``
+			Number of seconds to wait before calling the handler (float).
+		``handler``
+			Function to be called once delay seconds have elapsed.
+		``param``
+			Value to be passed as the first (non-self) argument to handler.
+		
+		If param is None, handler's signature must be ``handler(self)``.  Otherwise,
+		it is ``handler(self, param)`` to match the switch method handler pattern.
 		"""
 		if type(event_type) == str:
 			event_type = {'closed':1, 'open':2}[event_type]
@@ -371,10 +389,10 @@ class GameController(object):
 		self.t0 = time.time()
 		self.config = None
 		self.balls_per_game = 3
-		self.keyboard_events_enabled = False
 		self.logging_enabled = True
 		self.game_data = {}
 		self.user_settings = {}
+		self.get_keyboard_events = None
 	
 	def __enter__(self):
 		pass
@@ -508,8 +526,8 @@ class GameController(object):
 		print "Programming switch rules: ",
 		for switch in self.switches:
 			print("%s," % (switch.name)),
-			self.proc.switch_update_rule(switch.number, 'closed_debounced', {'notifyHost':True}, [])
-			self.proc.switch_update_rule(switch.number, 'open_debounced', {'notifyHost':True}, [])
+			self.proc.switch_update_rule(switch.number, 'closed_debounced', {'notifyHost':True, 'reloadActive':False}, [])
+			self.proc.switch_update_rule(switch.number, 'open_debounced', {'notifyHost':True, 'reloadActive':False}, [])
 		print " ...done!"
 		
 		# Configure the initial switch states:
@@ -584,7 +602,7 @@ class GameController(object):
 
 	def enable_flippers(self, enable):
 		"""Enables or disables the flippers AND bumpers."""
-		if self.machineType == 'wpc':
+		if self.machineType == 'wpc' or self.machineType == 'wpc95' or self.machineType == 'wpcAlphanumeric':
 			print("Programming flippers...")
 			for flipper in self.config['PRFlippers']:
 				main_coil = self.coils[flipper+'Main']
@@ -596,14 +614,14 @@ class GameController(object):
 					drivers += [pinproc.driver_state_pulse(main_coil.state(), 34)]
 					drivers += [pinproc.driver_state_pulse(hold_coil.state(), 0)]
 	
-				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False}, drivers)
+				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
 			
 				drivers = []
 				if enable:
 					drivers += [pinproc.driver_state_disable(main_coil.state())]
 					drivers += [pinproc.driver_state_disable(hold_coil.state())]
 	
-				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False}, drivers)
+				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
 				# Send a disable signal to make sure flipper hold is off.
 				# Otherwise could be stuck on if rules disabled while hold is active.
 				self.coils[flipper+'Hold'].disable()
@@ -618,13 +636,13 @@ class GameController(object):
 				if enable:
 					drivers += [pinproc.driver_state_patter(main_coil.state(), 3, 22, 34)]
 	
-				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False}, drivers)
+				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
 			
 				drivers = []
 				if enable:
 					drivers += [pinproc.driver_state_disable(main_coil.state())]
 	
-				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False}, drivers)
+				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
 				# Send a disable signal to make sure flipper is off.
 				# Otherwise could be stuck on if rules disabled while flipper is pattering.
 				self.coils[flipper+'Main'].disable()
@@ -637,35 +655,35 @@ class GameController(object):
 			if enable:
 				drivers += [pinproc.driver_state_pulse(coil.state(), 20)]
 
-			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False}, drivers)
+			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':True}, drivers)
 
-	def install_switch_rule_coil_disable(self, switch_num, switch_state, coil_name, notify_host, enable):
+	def install_switch_rule_coil_disable(self, switch_num, switch_state, coil_name, notify_host, enable, reload_active = False):
 		coil = self.coils[coil_name];
 		drivers = []
 		if enable:
 			drivers += [pinproc.driver_state_disable(coil.state())]
-		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host}, drivers)
+		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host, 'reloadActive':reload_active}, drivers)
 
-	def install_switch_rule_coil_pulse(self, switch_num, switch_state, coil_name, pulse_duration, notify_host, enable):
+	def install_switch_rule_coil_pulse(self, switch_num, switch_state, coil_name, pulse_duration, notify_host, enable, reload_active = False):
 		coil = self.coils[coil_name];
 		drivers = []
 		if enable:
 			drivers += [pinproc.driver_state_pulse(coil.state(),pulse_duration)]
-		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host}, drivers)
+		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host, 'reloadActive':reload_active}, drivers)
 
-	def install_switch_rule_coil_schedule(self, switch_num, switch_state, coil_name, schedule, schedule_seconds, now, notify_host, enable):
+	def install_switch_rule_coil_schedule(self, switch_num, switch_state, coil_name, schedule, schedule_seconds, now, notify_host, enable, reload_active = False):
 		coil = self.coils[coil_name];
 		drivers = []
 		if enable:
 			drivers += [pinproc.driver_state_schedule(coil.state(),schedule,schedule_seconds,now)]
-		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host}, drivers)
+		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host, 'reloadActive':reload_active}, drivers)
 
-	def install_switch_rule_coil_patter(self, switch_num, switch_state, coil_name, milliseconds_on, milliseconds_off, original_on_time, notify_host, enable):
+	def install_switch_rule_coil_patter(self, switch_num, switch_state, coil_name, milliseconds_on, milliseconds_off, original_on_time, notify_host, enable, reload_active = False):
 		coil = self.coils[coil_name];
 		drivers = []
 		if enable:
 			drivers += [pinproc.driver_state_patter(coil.state(),milliseconds_on,milliseconds_off,original_on_time)]
-		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host}, drivers)
+		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host, 'reloadActive':reload_active}, drivers)
 
 	def process_event(self, event):
 		event_type = event['type']
@@ -708,7 +726,7 @@ class GameController(object):
 			while self.done == False:
 
 				loops += 1
-				if self.keyboard_events_enabled:
+				if self.get_keyboard_events != None:
 					# get_keyboard_events needs to be defined by
 					# the keyboard handler.
 					for event in self.get_keyboard_events():

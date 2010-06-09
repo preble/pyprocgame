@@ -5,24 +5,37 @@ import os
 import game
 
 class Frame(pinproc.DMDBuffer):
-	"""DMD frame/bitmap."""
+	"""DMD frame/bitmap.
+	
+	Subclass of :class:`pinproc.DMDBuffer`.
+	"""
+	
+	width = 0
+	"""Width of the frame in dots."""
+	height = 0
+	"""Height of the frame in dots."""
+	
 	def __init__(self, width, height):
+		"""Initializes the frame to the given `width` and `height`."""
 		super(Frame, self).__init__(width, height)
 		self.width = width
 		self.height = height
 
 	def copy_rect(dst, dst_x, dst_y, src, src_x, src_y, width, height, op="copy"):
+		"""Static method which performs some type checking before calling :meth:`pinproc.DMDBuffer.copy_to_rect`."""
 		if not (issubclass(type(dst), pinproc.DMDBuffer) and issubclass(type(src), pinproc.DMDBuffer)):
 			raise ValueError, "Incorrect types"
 		src.copy_to_rect(dst, dst_x, dst_y, src_x, src_y, width, height, op)
 	copy_rect = staticmethod(copy_rect)
 	
 	def copy(self):
+		"""Returns a copy of itself."""
 		frame = Frame(self.width, self.height)
 		frame.set_data(self.get_data())
 		return frame
 	
 	def ascii(self):
+		"""Returns an ASCII representation of itself."""
 		output = ''
 		table = [' ', '.', '.', '.', ',', ',', ',', '-', '-', '=', '=', '=', '*', '*', '#', '#',]
 		for y in range(self.height):
@@ -32,17 +45,38 @@ class Frame(pinproc.DMDBuffer):
 			output += "\n"
 		return output
 
+	def create_frames_from_grid( self, num_cols, num_rows ):
+		frames = []
+		width = self.width / num_cols
+		height = self.height / num_rows
+	
+		# Use nested loops to step through each column of each row, creating a new frame at each iteration and copying in the appropriate data.
+		for row_index in range(0,num_rows):
+			for col_index in range(0,num_cols):
+				new_frame = Frame(width, height)
+				Frame.copy_rect(dst=new_frame, dst_x=0, dst_y=0, src=self, src_x=width*col_index, src_y=height*row_index, width=width, height=height, op='copy')
+				frames += [new_frame]
+		return frames
+
+
 class Animation(object):
-	"""A set of frames."""
+	"""An ordered collection of :class:`.Frame` objects."""
+	
+	width = None
+	"""Width of each of the animation frames in dots."""
+	height = None
+	"""Height of each of the animation frames in dots."""
+	frames = []
+	"""Ordered collection of :class:`.Frame` objects."""
+	
 	def __init__(self):
+		"""Initializes the animation."""
 		super(Animation, self).__init__()
-		self.width = None
-		self.height = None
-		self.frames = []
+
 	def load(self, filename):
 		"""Loads a series of frames from a .dmd (DMDAnimator) file.
 		
-		File format is as follows:
+		File format is as follows: ::
 		
 		  4 bytes - header data (unused)
 		  4 bytes - frame_count
@@ -71,6 +105,7 @@ class Animation(object):
 		return self
 
 	def save(self, filename):
+		"""Saves the animation as a .dmd file at the given location, `filename`."""
 		if self.width == None or self.height == None:
 			raise ValueError, "width and height must be set on Animation before it can be saved."
 		header = struct.pack("IIII", 0x00646D64, len(self.frames), self.width, self.height)
@@ -257,25 +292,47 @@ class MarkupFrameGenerator:
 
 
 class Layer(object):
-	"""Abstract layer object."""
+	"""
+	Abstract layer object.  
+	Provides a stream of frames through its :meth:`next_frame` method.
+	"""
+	
+	opaque = False
+	"""Determines whether layers below this one will be rendered.  
+	If `True`, the :class:`.DisplayController` will not render any layers after this one 
+	(such as from modes with lower priorities -- see :class:`dmd.DisplayController` for more information).
+	"""
+	
+	target_x = 0
+	""""""
+	target_y = 0
+	""""""
+	target_x_offset = 0
+	""""""
+	target_y_offset = 0
+	""""""
+	enabled = True
+	"""If `False`, :class:`dmd.DisplayController` will ignore this layer."""
+	composite_op = 'copy'
+	"""Composite operation used by :meth:`composite_next` when calling :meth:`Frame.copy_rect`."""
+	transition = None
+	"""Transition which :meth:`composite_next` applies to the result of :meth:`next_frame` prior to compositing upon the output."""
+	
 	def __init__(self, opaque=False):
+		"""Initialize a new Layer object."""
 		super(Layer, self).__init__()
 		self.opaque = opaque
 		self.set_target_position(0, 0)
-		self.target_x_offset = 0
-		self.target_y_offset = 0
-		self.enabled = True
-		self.composite_op = 'copy'
-		self.transition = None
+
 	def set_target_position(self, x, y):
 		"""Sets the location in the final output that this layer will be positioned at."""
 		self.target_x = x
 		self.target_y = y
 	def next_frame(self):
-		"""Returns the frame to be shown, or None if there is no frame."""
+		"""Returns an instance of a Frame object to be shown, or None if there is no frame."""
 		return None
 	def composite_next(self, target):
-		"""Composites the next frame of this layer onto the given target buffer."""
+		"""Composites the next frame of this layer onto the given target buffer.  Called by :meth:`DisplayController.update`."""
 		src = self.next_frame()
 		if src != None:
 			if self.transition != None:
@@ -333,6 +390,32 @@ class LayerTransitionBase(object):
 		   Subclasses should override this method to provide more interesting transition effects.
 		   Base implementation simply returns the from_frame."""
 		return from_frame
+
+class ExpandTransition(LayerTransitionBase):
+	def __init__(self, direction='vertical'):
+		super(ExpandTransition, self).__init__()
+		self.direction = direction
+		self.progress_per_frame = 1.0/11.0
+	def transition_frame(self, from_frame, to_frame):
+		frame = Frame(width=from_frame.width, height=from_frame.height)
+		dst_x, dst_y = 0, 0
+		prog = self.progress
+		if self.in_out == 'out':
+			prog = 1.0 - prog
+		dst_x, dst_y = {
+		 'vertical': (0, frame.height/2-prog*(frame.height/2)),
+		 'horizontal':  (frame.width/2-prog*(frame.width/2), 0),
+		}[self.direction]
+
+		if (self.direction == 'vertical'):
+                	width = frame.width
+			height = prog*frame.height
+		else:
+			width = prog*frame.width
+			height = frame.height
+
+		Frame.copy_rect(dst=frame, dst_x=dst_x, dst_y=dst_y, src=to_frame, src_x=dst_x, src_y=dst_y, width=width, height=height, op='copy')
+		return frame
 
 class SlideOverLayerTransition(LayerTransitionBase):
 	def __init__(self, direction='north'):
@@ -409,7 +492,20 @@ class FrameLayer(Layer):
 	def __init__(self, opaque=False, frame=None):
 		super(FrameLayer, self).__init__(opaque)
 		self.frame = frame
+		self.blink_frames = None # Number of frame times to turn frame on/off
+		self.blink_frames_counter = 0
+		self.frame_old = None
 	def next_frame(self):
+		if self.blink_frames > 0:
+			if self.blink_frames_counter == 0:
+				self.blink_frames_counter = self.blink_frames
+				if self.frame == None:
+					self.frame = self.frame_old
+				else:
+					self.frame_old = self.frame
+					self.frame = None
+			else:
+				self.blink_frames_counter -= 1
 		return self.frame
 
 class AnimatedLayer(Layer):
@@ -450,12 +546,17 @@ class TextLayer(Layer):
 		self.started_at = None
 		self.seconds = None # Number of seconds to show the text for
 		self.frame = None # Frame that text is rendered into.
+		self.frame_old = None
 		self.justify = justify
+		self.blink_frames = None # Number of frame times to turn frame on/off
+		self.blink_frames_counter = 0
 		
-	def set_text(self, text, seconds=None):
+	def set_text(self, text, seconds=None, blink_frames=None):
 		"""Displays the given message for the given number of seconds."""
 		self.started_at = None
 		self.seconds = seconds
+		self.blink_frames = blink_frames
+		self.blink_frames_counter = self.blink_frames
 		if text == None:
 			self.frame = None
 		else:
@@ -475,6 +576,16 @@ class TextLayer(Layer):
 			self.started_at = time.time()
 		if (self.seconds != None) and ((self.started_at + self.seconds) < time.time()):
 			self.frame = None
+		elif self.blink_frames > 0:
+			if self.blink_frames_counter == 0:
+				self.blink_frames_counter = self.blink_frames
+				if self.frame == None:
+					self.frame = self.frame_old
+				else:
+					self.frame_old = self.frame
+					self.frame = None
+			else:
+				self.blink_frames_counter -= 1
 		return self.frame
 	
 	def is_visible(self):
@@ -488,6 +599,8 @@ class ScriptedLayer(Layer):
 		self.script = script
 		self.script_index = 0
 		self.frame_start_time = None
+		self.force_direction = None
+		self.on_complete = None
 	
 	def next_frame(self):
 		# This assumes looping.  TODO: Add code to not loop!
@@ -495,11 +608,19 @@ class ScriptedLayer(Layer):
 			self.frame_start_time = time.time()
 		script_item = self.script[self.script_index]
 		time_on_frame = time.time() - self.frame_start_time
-		if time_on_frame > script_item['seconds']:
-			# Time for the next frame:
-			self.script_index += 1
+		if self.force_direction != None or time_on_frame > script_item['seconds']:
+			if self.force_direction == False:
+				self.script_index -= 1
+			else:
+				self.script_index += 1
+
+			# Only force one item.
+			self.force_direction = None
+
 			if self.script_index == len(self.script):
 				self.script_index = 0
+				if self.on_complete != None:
+					self.on_complete()
 			script_item = self.script[self.script_index]
 			self.frame_start_time = time.time()
 		layer = script_item['layer']
@@ -509,6 +630,9 @@ class ScriptedLayer(Layer):
 			return self.buffer
 		else:
 			return None
+
+	def force_next(self, forward=True):
+		self.force_direction = forward
 			
 
 class GroupedLayer(Layer):
@@ -544,6 +668,7 @@ class DisplayController:
 		self.width = width
 		self.height = height
 		self.capture = None
+		self.alt_frame_handler = None
 		if message_font != None:
 			self.message_layer = TextLayer(width/2, height-2*7, message_font, "center")
 		# Do two updates to get the pump primed:
@@ -560,7 +685,9 @@ class DisplayController:
 		layers = []
 		for mode in self.game.modes.modes:
 			if hasattr(mode, 'layer') and mode.layer != None:
-				layers += [mode.layer]
+				layers.append(mode.layer)
+				if mode.layer.opaque:
+					break # if we have an opaque layer we don't render any lower layers
 		
 		frame = Frame(self.width, self.height)
 		for layer in layers[::-1]: # We reverse the list here so that the top layer gets the last say.
@@ -572,6 +699,8 @@ class DisplayController:
 			
 		if frame != None:
 			self.game.proc.dmd_draw(frame)
+			if self.alt_frame_handler != None:
+				self.alt_frame_handler(frame)
 			if self.capture != None:
 				self.capture.append(frame)
 
