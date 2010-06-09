@@ -48,12 +48,14 @@ def expand_line(str):
 
 class LampShowTrack(object):
 	"""docstring for LampShowTrack"""
+	name = ''
+	schedules = []
+	current_index = 0
+	driver = None
+	
 	def __init__(self, line):
 		super(LampShowTrack, self).__init__()
-		self.name = ''
-		self.schedules = []
 		self.load_from_line(line)
-		self.current_index = 0
 	
 	def load_from_line(self, line):
 		line_re = re.compile('(?P<name>\w+)\s*\| (?P<data>.*)$')
@@ -66,6 +68,7 @@ class LampShowTrack(object):
 		bits = 0
 		bit_count = 0
 		ignore_first = True
+		self.schedules = []
 		for ch in data:
 			bits >>= 1
 			bit_count += 1
@@ -85,6 +88,14 @@ class LampShowTrack(object):
 		print "%s | %s" % (self.name, m.group('data'))
 		print "%s | %s" % (self.name, data)
 
+	def resolve_driver_with_game(self, game):
+		if self.name.startswith('coil:'):
+			self.driver = game.coils[self.name[5:]]
+		if self.name.startswith('lamp:'):
+			self.driver = self.game.lamps[self.name[5:]]
+		else: # lamps are the default:
+			self.driver = self.game.lamps[self.name]
+
 	def reset(self):
 		self.schedules = []
 		self.current_index = 0
@@ -102,8 +113,8 @@ class LampShowTrack(object):
 		return self.current_index >= len(self.schedules)
 
 class LampShow(object):
-	
 	"""docstring for LampShow"""
+	
 	def __init__(self, game):
 		super(LampShow, self).__init__()
 		self.game = game
@@ -117,6 +128,11 @@ class LampShow(object):
 		self.last_time = -.5
 		
 	def load(self, filename):
+		"""Reads lines from the given filename in to create tracks within the lampshow.
+		Lines that start with a '#' are ignored as comments.  
+		
+		See :class:`lamps.LampShowTrack` for a description of the line format.
+		"""
 		f = open(filename, 'r')
 		for line in f.readlines():
 			if line[0] != '#':
@@ -133,10 +149,12 @@ class LampShow(object):
 		if (time_diff > 0.500):
 			self.last_time = new_time
 			for tr in self.tracks:
+				if tr.driver == None: # Lazily set drivers.
+					tr.resolve_driver_with_game(self.game)
 				sch = tr.next_schedule()
-				self.game.lamps[tr.name].schedule(schedule=sch, cycle_seconds=1, now=True)
+				tr.driver.schedule(schedule=sch, cycle_seconds=1, now=True)
 		self.game.logging_enabled = logging_was_enabled
-
+	
 	def restart(self):
 		for tr in self.tracks:
 			tr.restart()
