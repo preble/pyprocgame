@@ -20,6 +20,9 @@ class HighScoreEntry(game.Mode):
 		self.layer.opaque = True
 		self.layer.layers = []
 		
+		if type(right_text) == list:
+			right_text = right_text[0] # At some point we want to support rotating through the array members...
+		
 		topthird = dmd.Frame(width=128, height=8)
 		self.font.draw(topthird, left_text, 0, 0)
 		self.font.draw(topthird, right_text, 128-(self.font.size(right_text)[0]), 0)
