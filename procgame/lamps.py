@@ -58,7 +58,7 @@ class LampShowTrack(object):
 		self.load_from_line(line)
 	
 	def load_from_line(self, line):
-		line_re = re.compile('(?P<name>\w+)\s*\| (?P<data>.*)$')
+		line_re = re.compile('(?P<name>\S+)\s*\| (?P<data>.*)$')
 		m = line_re.match(line)
 		if m == None:
 			raise ValueError, "Regexp didn't match on track line: "+line
@@ -91,7 +91,7 @@ class LampShowTrack(object):
 	def resolve_driver_with_game(self, game):
 		if self.name.startswith('coil:'):
 			self.driver = game.coils[self.name[5:]]
-		if self.name.startswith('lamp:'):
+		elif self.name.startswith('lamp:'):
 			self.driver = self.game.lamps[self.name[5:]]
 		else: # lamps are the default:
 			self.driver = self.game.lamps[self.name]
