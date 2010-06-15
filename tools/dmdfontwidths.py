@@ -37,7 +37,6 @@ def main():
 	w = 128
 	h = 32
 	proc.reset(1)
-	proc.dmd_update_config(high_cycles=(375,375,375,375));
 	
 	
 	while True:

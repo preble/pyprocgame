@@ -4,9 +4,9 @@ import time
 import os
 import locale
 from game import *
-from dmd import *
+import dmd
 
-class ScoreLayer(GroupedLayer):
+class ScoreLayer(dmd.GroupedLayer):
 	def __init__(self, width, height, mode):
 		super(ScoreLayer, self).__init__(width, height, mode)
 		self.mode = mode
@@ -19,19 +19,19 @@ class ScoreLayer(GroupedLayer):
 
 class ScoreDisplay(Mode):
 	"""After instantiation the ScoreDisplay.layer should be added to the DisplayController."""
-	def __init__(self, game, priority, left_players_justify="right", font_path="../shared/dmd"):
+	def __init__(self, game, priority, left_players_justify="right"):
 		super(ScoreDisplay, self).__init__(game, priority)
 		self.layer = ScoreLayer(128, 32, self)
-		self.font_common = Font(font_path+"/Font07x5.dmd")
-		self.font_18x12 = Font(font_path+"/Font18x12.dmd")
-		self.font_18x11 = Font(font_path+"/Font18x11.dmd")
-		self.font_18x10 = Font(font_path+"/Font18x10.dmd")
-		self.font_14x10 = Font(font_path+"/Font14x10.dmd")
-		self.font_14x9 = Font(font_path+"/Font14x9.dmd")
-		self.font_14x8 = Font(font_path+"/Font14x8.dmd")
-		self.font_09x5 = Font(font_path+"/Font09x5.dmd")
-		self.font_09x6 = Font(font_path+"/Font09x6.dmd")
-		self.font_09x7 = Font(font_path+"/Font09x7.dmd")
+		self.font_common = dmd.font_named("Font07x5.dmd")
+		self.font_18x12 = dmd.font_named("Font18x12.dmd")
+		self.font_18x11 = dmd.font_named("Font18x11.dmd")
+		self.font_18x10 = dmd.font_named("Font18x10.dmd")
+		self.font_14x10 = dmd.font_named("Font14x10.dmd")
+		self.font_14x9 = dmd.font_named("Font14x9.dmd")
+		self.font_14x8 = dmd.font_named("Font14x8.dmd")
+		self.font_09x5 = dmd.font_named("Font09x5.dmd")
+		self.font_09x6 = dmd.font_named("Font09x6.dmd")
+		self.font_09x7 = dmd.font_named("Font09x7.dmd")
 		self.set_left_players_justify(left_players_justify)
 	
 	def set_left_players_justify(self, left_players_justify):
@@ -85,7 +85,7 @@ class ScoreDisplay(Mode):
 		else:
 			self.update_layer_4p()
 		# Common: Add the "BALL X ... FREE PLAY" footer.
-		common = TextLayer(128/2, 32-6, self.font_common, "center")
+		common = dmd.TextLayer(128/2, 32-6, self.font_common, "center")
 		if self.game.ball == 0:
 			common.set_text("FREE PLAY")
 		else:
@@ -98,7 +98,7 @@ class ScoreDisplay(Mode):
 			score = 0 # Small hack to make *something* show up on startup.
 		else:
 			score = self.game.current_player().score
-		layer = TextLayer(128/2, 5, self.font_for_score_single(score), "center")
+		layer = dmd.TextLayer(128/2, 5, self.font_for_score_single(score), "center")
 		layer.set_text(self.format_score(score))
 		self.layer.layers += [layer]
 
@@ -110,7 +110,7 @@ class ScoreDisplay(Mode):
 			font = self.font_for_score(score=score, is_active_player=is_active_player)
 			pos = self.pos_for_player(player_index=i, is_active_player=is_active_player)
 			justify = self.justify_for_player(player_index=i)
-			layer = TextLayer(pos[0], pos[1], font, justify)
+			layer = dmd.TextLayer(pos[0], pos[1], font, justify)
 			layer.set_text(self.format_score(score))
 			self.layer.layers += [layer]
 		pass

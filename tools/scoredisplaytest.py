@@ -15,7 +15,7 @@ import copy
 locale.setlocale(locale.LC_ALL, "") # Used to put commas in the score.
 
 config_path = "../shared/config/JD.yaml"
-fonts_path = "../shared/dmd/"
+dmd.font_path.append('../shared/dmd')
 
 class ScoreTester(game.Mode):
 	left_players_justify_left = True
