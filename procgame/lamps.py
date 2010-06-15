@@ -92,9 +92,9 @@ class LampShowTrack(object):
 		if self.name.startswith('coil:'):
 			self.driver = game.coils[self.name[5:]]
 		elif self.name.startswith('lamp:'):
-			self.driver = self.game.lamps[self.name[5:]]
+			self.driver = game.lamps[self.name[5:]]
 		else: # lamps are the default:
-			self.driver = self.game.lamps[self.name]
+			self.driver = game.lamps[self.name]
 
 	def reset(self):
 		self.schedules = []
