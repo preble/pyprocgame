@@ -735,6 +735,7 @@ class GameController(object):
 					self.process_event(event)
 				self.modes.tick()
 				self.proc.watchdog_tickle()
+				self.proc.flush()
 		finally:
 			if loops != 0:
 				dt = time.time()-self.t0
