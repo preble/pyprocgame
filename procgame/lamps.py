@@ -110,7 +110,7 @@ class LampShowTrack(object):
 		return self.schedules[self.current_index-1]
 	
 	def is_complete(self):
-		return self.current_index >= len(self.schedules)
+		return self.current_index >= len(self.schedules) - 1
 
 class LampShow(object):
 	"""docstring for LampShow"""
@@ -146,6 +146,7 @@ class LampShow(object):
 		time_diff = new_time - self.last_time
 		logging_was_enabled = self.game.logging_enabled
 		self.game.logging_enabled = False
+		self.game.logging_enabled = True
 		if (time_diff > 0.500):
 			self.last_time = new_time
 			for tr in self.tracks:
