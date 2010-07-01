@@ -111,7 +111,7 @@ class Animation(object):
 		header = struct.pack("IIII", 0x00646D64, len(self.frames), self.width, self.height)
 		if len(header) != 16:
 			raise ValueError, "Packed size not 16 bytes as expected: %d" % (len(header))
-		f = open(filename, 'w')
+		f = open(filename, 'wb')
 		f.write(header)
 		for frame in self.frames:
 			f.write(frame.get_data())
