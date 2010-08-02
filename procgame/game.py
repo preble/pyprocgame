@@ -285,42 +285,80 @@ class AttrCollection(object):
 		return self.__getattr__(index)
 		
 class GameItem(object):
-	"""Base class for Driver and Switch.  Contained in an instance of AttrCollection within the GameController."""
+	"""Base class for :class:`Driver` and :class:`Switch`.  Contained in an instance of :class:`AttrCollection` within the :class:`GameController`."""
+	game = None
+	""":class:`GameController` to which this item belongs."""
+	name = None
+	"""String name of this item."""
+	number = None
+	"""Integer value for this item providing a mapping to the hardware."""
 	def __init__(self, game, name, number):
 		self.game = game
 		self.name = name
 		self.number = number
 
 class Driver(GameItem):
+	"""Represents a driver in a pinball machine, such as a lamp, coil/solenoid, or flasher.
+	
+	Subclass of :class:`GameItem`.
+	"""
+	
+	default_pulse_time = 30
+	"""Default number of milliseconds to pulse this driver.  See :meth:`pulse`."""
+	last_time_changed = 0
+	"""The last :class:`time` that this driver's state was modified."""
+	
 	def __init__(self, game, name, number):
 		GameItem.__init__(self, game, name, number)
-		self.default_pulse_time = 30
-		self.last_time_changed = 0
 	def disable(self):
+		"""Disables (turns off) this driver."""
 		self.game.log("Driver %s - disable" % (self.name))
 		self.game.proc.driver_disable(self.number)
 		self.last_time_changed = time.time()
 	def pulse(self, milliseconds=None):
+		"""Enables this driver for `milliseconds`.
+		
+		If no parameters are provided or `milliseconds` is `None`, :attr:`default_pulse_time` is used."""
 		if milliseconds == None:
 			milliseconds = self.default_pulse_time
 		self.game.log("Driver %s - pulse %d" % (self.name, milliseconds))
 		self.game.proc.driver_pulse(self.number, milliseconds)
 		self.last_time_changed = time.time()
 	def schedule(self, schedule, cycle_seconds, now):
+		"""Schedules this driver to be enabled according to the given `schedule` bitmask."""
 		self.game.log("Driver %s - schedule %08x" % (self.name, schedule))
 		self.game.proc.driver_schedule(number=self.number, schedule=schedule, cycle_seconds=cycle_seconds, now=now)
 		self.last_time_changed = time.time()
 	def enable(self):
+		"""Enables this driver indefinitely.
+		
+		**Never use this method with high voltage drivers such as coils and flashers!**  
+		Instead, use time-limited methods such as :meth:`pulse` and :meth:`schedule`."""
 		self.schedule(0xffffffff, 0, True)
 		self.last_time_changed = time.time()
 	def state(self):
+		"""Returns a dictionary representing this driver's current configuration state."""
 		return self.game.proc.driver_get_state(self.number)
 
 class Switch(GameItem):
+	"""Represents a switch in a pinball machine.
+	
+	Switches are accessed using :attr:`GameController.switches`.
+	
+	Subclass of :class:`GameItem`.
+	"""
+	
+	state = False
+	"""`False` indicates open, `True` is closed.
+	In most applications the :meth:`is_active` and :meth:`is_inactive` methods should be used to determine a switch's state."""
+	last_changed = None
+	""":class:`time` of the last state change of this switch.  `None` if the :class:`GameController` has not yet initialized this switch's state."""
+	type = None
+	"""``'NO'`` (normally open) or ``'NC'`` (normally closed).  Mechanical switches are usually NO, while opto switches are almost always NC.  
+	This is used to determine whether a switch is active ("in contact with the ball") without ruleset code needing to be concerned with the details of the switch hardware."""
+	
 	def __init__(self, game, name, number, type='NO'):
 		GameItem.__init__(self, game, name, number)
-		self.state = False
-		self.last_changed = None
 		self.type = type
 	def set_state(self, state):
 		self.state = state
@@ -334,11 +372,15 @@ class Switch(GameItem):
 		else:
 			return False
 	def is_active(self, seconds = None):
+		"""`True` if the ball is activating this switch, or if this switch is somehow being activated.
+		If `seconds` is not `None` (the default), only returns `True` if the switch has been active for that number of seconds."""
 		if self.type == 'NO':
 			return self.is_state(state=True, seconds=seconds)
 		else:
 			return self.is_state(state=False, seconds=seconds)
 	def is_inactive(self, seconds = None):
+		"""`True` if the ball is not activating this switch
+		If `seconds` is not `None` (the default), only returns `True` if the switch has not been active for that number of seconds."""
 		if self.type == 'NC':
 			return self.is_state(state=True, seconds=seconds)
 		else:
@@ -348,11 +390,14 @@ class Switch(GameItem):
 	def is_closed(self, seconds = None):
 		return self.is_state(state=True, seconds=seconds)
 	def time_since_change(self):
+		"""Number of seconds that this switch has been in its current state.
+		This value is reset to 0 by the :class:`GameController` *after* the switch event has been processed by the active :class:`Mode` instances."""
 		if self.last_changed == None:
 			return 0.0
 		else:
 			return time.time() - self.last_changed
 	def reset_timer(self):
+		"""Resets the value returned by :meth:`time_since_change` to 0.0.  Normally this is called by the :class:`GameController`, but it can be triggered manually if needed."""
 		self.last_changed = time.time()
 	def state_str(self):
 		if self.is_closed():
@@ -373,26 +418,51 @@ class Player(object):
 
 class GameController(object):
 	"""Core object comprising modes, coils, lamps, switches."""
+	
+	machineType = None
+	"""Machine type used to configure :attr:`proc` in this class's initializer."""
+	proc = None
+	"""A :class:`pinproc.PinPROC` instance, created in the initializer with machine type :attr:`machineType`."""
+	modes = None
+	"""An instance of :class:`ModeQueue`, which manages the presently active modes."""
+	
+	coils = AttrCollection()
+	"""An :class:`AttrCollection` of :class:`Driver` objects.  Populated by :meth:`load_config`."""
+	lamps = AttrCollection()
+	"""An :class:`AttrCollection` of :class:`Driver` objects.  Populated by :meth:`load_config`."""
+	switches = AttrCollection()
+	"""An :class:`AttrCollection` of :class:`Switch` objects.  Populated by :meth:`load_config`."""
+	
+	ball = 0
+	""""""
+	players = []
+	""""""
+	old_players = []
+	""""""
+	current_player_index = 0
+	""""""
+	t0 = None
+	""""""
+	config = None
+	""""""
+	balls_per_game = 3
+	""""""
+	logging_enabled = True
+	""""""
+	game_data = {}
+	""""""
+	user_settings = {}
+	""""""
+	get_keyboard_events = None
+	""""""
+	
 	def __init__(self, machineType):
 		super(GameController, self).__init__()
 		self.machineType = machineType
 		self.proc = pinproc.PinPROC(self.machineType)
 		self.proc.reset(1)
 		self.modes = ModeQueue(self)
-		self.coils = AttrCollection()
-		self.lamps = AttrCollection()
-		self.switches = AttrCollection()
-		self.ball = 0
-		self.players = []
-		self.old_players = []
-		self.current_player_index = 0
 		self.t0 = time.time()
-		self.config = None
-		self.balls_per_game = 3
-		self.logging_enabled = True
-		self.game_data = {}
-		self.user_settings = {}
-		self.get_keyboard_events = None
 	
 	def __enter__(self):
 		pass
