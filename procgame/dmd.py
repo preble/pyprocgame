@@ -3,6 +3,7 @@ import struct
 import time
 import os
 import game
+import config
 
 class Frame(pinproc.DMDBuffer):
 	"""DMD frame/bitmap.
@@ -60,14 +61,14 @@ class Frame(pinproc.DMDBuffer):
 
 
 class Animation(object):
-	"""An ordered collection of :class:`.Frame` objects."""
+	"""An ordered collection of :class:`~procgame.dmd.Frame` objects."""
 	
 	width = None
 	"""Width of each of the animation frames in dots."""
 	height = None
 	"""Height of each of the animation frames in dots."""
 	frames = []
-	"""Ordered collection of :class:`.Frame` objects."""
+	"""Ordered collection of :class:`~procgame.dmd.Frame` objects."""
 	
 	def __init__(self):
 		"""Initializes the animation."""
@@ -129,7 +130,7 @@ class Font(object):
 			self.load(filename)
 		
 	def load(self, filename):
-		"""Loads the font from a .dmd file (see Animation.load()).
+		"""Loads the font from a .dmd file (see :method:`procgame.dmd.Animation.load`).
 		Fonts are stored in .dmd files with frame 0 containing the bitmap data
 		and frame 1 containing the character widths.  96 characters (32..127,
 		ASCII printables) are stored in a 10x10 grid, starting with space ' ' 
@@ -187,10 +188,31 @@ class Font(object):
 		return (x, self.char_size)
 
 
-font_path = ['.']
+font_path = []
+"""Array of paths that will be searched by :meth:`~procgame.dmd.font_named` to locate fonts.
+
+When this module is initialized the pyprocgame global configuration (:attr:`procgame.config.values`)
+``paths.fonts`` key path is used to initialize this array."""
+
+def init_font_path():
+    global font_path
+    try:
+        value = config.value_for_key_path('paths.fonts')
+        if issubclass(type(value), list):
+            font_path.extend(map(os.path.expanduser, value))
+        elif issubclass(type(value), str):
+            font_path.append(os.path.expanduser(value))
+        else:
+            raise Exception, 'Expected string or array for paths.fonts.'
+    except ValueError, e:
+        print e
+
+init_font_path()
+
+
 __font_cache = {}
 def font_named(name):
-	"""Searches the font_path for a font file of the given name and returns an instance if it exists."""
+	"""Searches the :attr:`font_path` for a font file of the given name and returns an instance if it exists."""
 	if name in __font_cache:
 		return __font_cache[name]
 	for path in font_path:
@@ -204,17 +226,17 @@ def font_named(name):
 
 
 class MarkupFrameGenerator:
-	"""Renders a dmd.Frame for given text-based markup.
+	"""Renders a :class:`~procgame.dmd.Frame` for given text-based markup.
 
 		The markup format presently uses three markup tokens: 
-		'#' (for headlines) and '[' and ']' for plain text.  The markup tokens
-		indicate justification.  Lines with no markup or a leading '#' or '['
-		will be left-justified.  Lines with a trailing '#' or ']' will be right-
+		``#`` (for headlines) and ``[`` and ``]`` for plain text.  The markup tokens
+		indicate justification.  Lines with no markup or a leading ``#`` or ``[``
+		will be left-justified.  Lines with a trailing ``#`` or ``]`` will be right-
 		justified.  Lines with both will be centered.
 
 		The width and min_height are specified with instantiation.
 
-		Fonts can be adjusted by assigning the font_plain and font_bold member variables.
+		Fonts can be adjusted by assigning the :attr:`font_plain` and :attr:`font_bold` member variables.
 		"""
 	def __init__(self, width=128, min_height=32):
 		self.width = width
@@ -299,8 +321,8 @@ class Layer(object):
 	
 	opaque = False
 	"""Determines whether layers below this one will be rendered.  
-	If `True`, the :class:`.DisplayController` will not render any layers after this one 
-	(such as from modes with lower priorities -- see :class:`dmd.DisplayController` for more information).
+	If `True`, the :class:`~procgame.dmd.DisplayController` will not render any layers after this one 
+	(such as from modes with lower priorities -- see :class:`~procgame.dmd.DisplayController` for more information).
 	"""
 	
 	target_x = 0
@@ -312,9 +334,9 @@ class Layer(object):
 	target_y_offset = 0
 	""""""
 	enabled = True
-	"""If `False`, :class:`dmd.DisplayController` will ignore this layer."""
+	"""If `False`, :class:`~procgame.dmd.DisplayController` will ignore this layer."""
 	composite_op = 'copy'
-	"""Composite operation used by :meth:`composite_next` when calling :meth:`Frame.copy_rect`."""
+	"""Composite operation used by :meth:`composite_next` when calling :meth:`~procgame.dmdFrame.copy_rect`."""
 	transition = None
 	"""Transition which :meth:`composite_next` applies to the result of :meth:`next_frame` prior to compositing upon the output."""
 	
@@ -636,7 +658,15 @@ class ScriptedLayer(Layer):
 			
 
 class GroupedLayer(Layer):
-	"""docstring for GroupedLayer"""
+	""":class:`.Layer` subclass that composites several sublayers (members of its :attr:`.layers` list attribute) together."""
+	
+	layers = None
+	"""List of layers to be composited together whenever this layer's :meth:`~procgame.dmd.Layer.next_frame` is called.
+	
+	Layers are composited first to last using each layer's
+	:meth:`~procgame.dmd.Layer.composite_next` method.  Compositing is ended after a layer that returns
+	non-``None`` from :meth:`composite_next` is :attr:`~procgame.dmd.Layer.opaque`."""
+	
 	def __init__(self, width, height, layers=None):
 		super(GroupedLayer, self).__init__()
 		self.buffer = Frame(width, height)
@@ -661,14 +691,20 @@ class GroupedLayer(Layer):
 		return self.buffer
 
 class DisplayController:
-	"""DisplayController, on update(), iterates over the game's mode and composites their layer member variable to the output."""
+	"""Manages the process of obtaining DMD frames from active modes and compositing them together for
+	display on the DMD."""
+	
+	capture = None
+	"""If set, frames obtained by :meth:`.update` will be appended to this list."""
+	
+	alt_frame_handler = None
+	"""If set, frames obtained by :meth:`.update` will be sent to this function with the frame as the only parameter."""
+	
 	def __init__(self, game, width=128, height=32, message_font=None):
 		self.game = game
 		self.message_layer = None
 		self.width = width
 		self.height = height
-		self.capture = None
-		self.alt_frame_handler = None
 		if message_font != None:
 			self.message_layer = TextLayer(width/2, height-2*7, message_font, "center")
 		# Do two updates to get the pump primed:
@@ -681,7 +717,11 @@ class DisplayController:
 		self.message_layer.set_text(message, seconds)
 
 	def update(self):
-		"""Update the DMD."""
+		"""Iterates over :attr:`procgame.game.GameController.modes` from lowest to highest
+		and composites a DMD image for this
+		point in time by checking for a ``layer`` attribute on each :class:`~procgame.game.Mode`.
+		If the mode has a layer attribute, that layer's :meth:`~procgame.dmd.Layer.composite_next` method is called
+		to apply that layer's next frame to the frame in progress."""
 		layers = []
 		for mode in self.game.modes.modes:
 			if hasattr(mode, 'layer') and mode.layer != None:

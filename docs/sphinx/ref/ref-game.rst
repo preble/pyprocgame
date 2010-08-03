@@ -1,4 +1,8 @@
-Game Classes
+**************
+game Submodule
+**************
+
+Core Classes
 ============
 
 Driver
