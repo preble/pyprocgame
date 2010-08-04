@@ -2,6 +2,8 @@
 game Submodule
 **************
 
+.. module:: procgame.game
+
 Core Classes
 ============
 

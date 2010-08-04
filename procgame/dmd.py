@@ -119,7 +119,10 @@ class Animation(object):
 		f.close()
 
 class Font(object):
-	"""A DMD bitmap font."""
+	"""Variable-width bitmap font.
+	
+	Fonts can be loaded manually, using :meth:`load`, or with the :func:`font_named` utility function
+	which supports searching a font path."""
 	def __init__(self, filename=None):
 		super(Font, self).__init__()
 		self.__anim = Animation()
@@ -130,11 +133,12 @@ class Font(object):
 			self.load(filename)
 		
 	def load(self, filename):
-		"""Loads the font from a .dmd file (see :method:`procgame.dmd.Animation.load`).
+		"""Loads the font from a ``.dmd`` file (see :meth:`Animation.load`).
 		Fonts are stored in .dmd files with frame 0 containing the bitmap data
 		and frame 1 containing the character widths.  96 characters (32..127,
-		ASCII printables) are stored in a 10x10 grid, starting with space ' ' 
-		in the upper left.
+		ASCII printables) are stored in a 10x10 grid, starting with space (``' '``) 
+		in the upper left at 0, 0.  The character widths are stored in the second frame
+		within the 'raw' bitmap data in bytes 0-95.
 		"""
 		self.__anim.load(filename)
 		if self.__anim.width != self.__anim.height:
@@ -192,27 +196,28 @@ font_path = []
 """Array of paths that will be searched by :meth:`~procgame.dmd.font_named` to locate fonts.
 
 When this module is initialized the pyprocgame global configuration (:attr:`procgame.config.values`)
-``paths.fonts`` key path is used to initialize this array."""
+``fonts.path`` key path is used to initialize this array."""
 
 def init_font_path():
     global font_path
     try:
-        value = config.value_for_key_path('paths.fonts')
+        value = config.value_for_key_path('fonts.path')
         if issubclass(type(value), list):
             font_path.extend(map(os.path.expanduser, value))
         elif issubclass(type(value), str):
             font_path.append(os.path.expanduser(value))
         else:
-            raise Exception, 'Expected string or array for paths.fonts.'
+            raise Exception, 'Expected string or array for fonts.path.'
     except ValueError, e:
-        print e
+        #print e
+        pass
 
 init_font_path()
 
 
 __font_cache = {}
 def font_named(name):
-	"""Searches the :attr:`font_path` for a font file of the given name and returns an instance if it exists."""
+	"""Searches the :attr:`font_path` for a font file of the given name and returns an instance of :class:`Font` if it exists."""
 	if name in __font_cache:
 		return __font_cache[name]
 	for path in font_path:
@@ -222,7 +227,7 @@ def font_named(name):
 			font = dmd.Font(path)
 			__font_cache[name] = font
 			return font
-	raise ValueError, 'Font named "%s" not found; font_path=%s' % (name, font_path)
+	raise ValueError, 'Font named "%s" not found; font_path=%s.  Have you configured fonts.path in config.yaml?' % (name, font_path)
 
 
 class MarkupFrameGenerator:
@@ -238,6 +243,12 @@ class MarkupFrameGenerator:
 
 		Fonts can be adjusted by assigning the :attr:`font_plain` and :attr:`font_bold` member variables.
 		"""
+	
+	font_plain = None
+	"""Font used for plain, non-bold characters."""
+	font_bold = None
+	""""""
+	
 	def __init__(self, width=128, min_height=32):
 		self.width = width
 		self.min_height = min_height
@@ -315,28 +326,29 @@ class MarkupFrameGenerator:
 
 class Layer(object):
 	"""
-	Abstract layer object.  
-	Provides a stream of frames through its :meth:`next_frame` method.
+	The ``Layer`` class is the basis for the pyprocgame display architecture.
+	Subclasses override :meth:`next_frame` to provide a frame for the current moment in time.
+	Handles compositing of provided frames and applying transitions within a :class:`DisplayController` context.
 	"""
 	
 	opaque = False
 	"""Determines whether layers below this one will be rendered.  
-	If `True`, the :class:`~procgame.dmd.DisplayController` will not render any layers after this one 
-	(such as from modes with lower priorities -- see :class:`~procgame.dmd.DisplayController` for more information).
+	If `True`, the :class:`DisplayController` will not render any layers after this one 
+	(such as from modes with lower priorities -- see :class:`DisplayController` for more information).
 	"""
 	
 	target_x = 0
-	""""""
+	"""Base `x` component of the coordinates at which this layer will be composited upon a target buffer."""
 	target_y = 0
-	""""""
+	"""Base `y` component of the coordinates at which this layer will be composited upon a target buffer."""
 	target_x_offset = 0
-	""""""
+	"""Translation component used in addition to :attr:`target_x` as this layer's final compositing position."""
 	target_y_offset = 0
-	""""""
+	"""Translation component used in addition to :attr:`target_y` as this layer's final compositing position."""
 	enabled = True
-	"""If `False`, :class:`~procgame.dmd.DisplayController` will ignore this layer."""
+	"""If `False`, :class:`DisplayController` will ignore this layer."""
 	composite_op = 'copy'
-	"""Composite operation used by :meth:`composite_next` when calling :meth:`~procgame.dmdFrame.copy_rect`."""
+	"""Composite operation used by :meth:`composite_next` when calling :meth:`~pinproc.DMDBuffer.copy_rect`."""
 	transition = None
 	"""Transition which :meth:`composite_next` applies to the result of :meth:`next_frame` prior to compositing upon the output."""
 	
@@ -347,14 +359,18 @@ class Layer(object):
 		self.set_target_position(0, 0)
 
 	def set_target_position(self, x, y):
-		"""Sets the location in the final output that this layer will be positioned at."""
+		"""Setter for :attr:`target_x` and :attr:`target_y`."""
 		self.target_x = x
 		self.target_y = y
 	def next_frame(self):
-		"""Returns an instance of a Frame object to be shown, or None if there is no frame."""
+		"""Returns an instance of a Frame object to be shown, or None if there is no frame.
+		The default implementation returns ``None``; subclasses should implement this method."""
 		return None
 	def composite_next(self, target):
-		"""Composites the next frame of this layer onto the given target buffer.  Called by :meth:`DisplayController.update`."""
+		"""Composites the next frame of this layer onto the given target buffer.
+		Called by :meth:`DisplayController.update`.
+		Generally subclasses should not override this method; implementing :meth:`next_frame` is recommended instead.
+		"""
 		src = self.next_frame()
 		if src != None:
 			if self.transition != None:
@@ -375,20 +391,36 @@ class TransitionOutHelperMode(game.Mode):
 		self.game.modes.remove(self)
 
 class LayerTransitionBase(object):
-	"""Transition that """
+	"""Transition base class."""
+
+	progress = 0.0
+	"""Transition progress from 0.0 (100% from frame, 0% to frame) to 1.0 (0% from frame, 100% to frame).
+	Updated by :meth:`next_frame`."""
+	
+	progress_per_frame = 1.0/60.0
+	"""Progress increment for each frame.  Defaults to 1/60, or 60fps."""
+	
+	progress_mult = 0 # not moving, -1 for B to A, 1 for A to B .... not documented as play/pause manipulates.
+	
+	completed_handler = None
+	"""Function to be called once the transition has completed."""
+	
+	in_out = 'in'
+	"""If ``'in'`` the transition is moving from `from` to `to`; if ``'out'`` the transition is moving
+	from `to` to `from`."""
+
 	def __init__(self):
 		super(LayerTransitionBase, self).__init__()
-		self.progress = 0.0
-		self.progress_per_frame = 1.0/60.0 # default to 60fps
-		self.progress_mult = 0 # not moving, -1 for B to A, 1 for A to B
-		self.completed_handler = None
-		self.in_out = 'in'
+	
 	def start(self):
+		"""Start the transition."""
 		self.reset()
 		self.progress_mult = 1
 	def pause(self):
+		"""Pauses the transition at the current position."""
 		self.progress_mult = 0
 	def reset(self):
+		"""Reset the transition to the beginning."""
 		self.progress_mult = 0
 		self.progress = 0
 	def next_frame(self, from_frame, to_frame):
@@ -511,12 +543,15 @@ class CrossFadeTransition(LayerTransitionBase):
 		return from_frame
 
 class FrameLayer(Layer):
+	"""Displays a single frame."""
+	
+	blink_frames = None # Number of frame times to turn frame on/off
+	blink_frames_counter = 0
+	frame_old = None
+	
 	def __init__(self, opaque=False, frame=None):
 		super(FrameLayer, self).__init__(opaque)
 		self.frame = frame
-		self.blink_frames = None # Number of frame times to turn frame on/off
-		self.blink_frames_counter = 0
-		self.frame_old = None
 	def next_frame(self):
 		if self.blink_frames > 0:
 			if self.blink_frames_counter == 0:
@@ -614,7 +649,22 @@ class TextLayer(Layer):
 		return self.frame != None
 
 class ScriptedLayer(Layer):
-	"""Displays a set of layers based on a simple script (dictionary)."""
+	"""Displays a set of layers based on a simple script.
+	
+	**Script Format**
+	
+	The script is an list of dictionaries.  Each dictionary contains two keys: ``seconds`` and
+	``layer``.  ``seconds`` is the number of seconds that ``layer`` will be displayed before 
+	advancing to the next script element.
+	
+	If ``layer`` is ``None``, no frame will be returned by this layer for the duration of that script
+	element.
+	
+	Example script::
+	
+	  [{'seconds':3.0, 'layer':self.game_over_layer}, {'seconds':3.0, 'layer':None}]
+	
+	"""
 	def __init__(self, width, height, script):
 		super(ScriptedLayer, self).__init__()
 		self.buffer = Frame(width, height)
@@ -654,18 +704,19 @@ class ScriptedLayer(Layer):
 			return None
 
 	def force_next(self, forward=True):
+		"""Advances to the next script element in the given direction."""
 		self.force_direction = forward
 			
 
 class GroupedLayer(Layer):
-	""":class:`.Layer` subclass that composites several sublayers (members of its :attr:`.layers` list attribute) together."""
+	""":class:`.Layer` subclass that composites several sublayers (members of its :attr:`layers` list attribute) together."""
 	
 	layers = None
-	"""List of layers to be composited together whenever this layer's :meth:`~procgame.dmd.Layer.next_frame` is called.
+	"""List of layers to be composited together whenever this layer's :meth:`~Layer.next_frame` is called.
 	
 	Layers are composited first to last using each layer's
 	:meth:`~procgame.dmd.Layer.composite_next` method.  Compositing is ended after a layer that returns
-	non-``None`` from :meth:`composite_next` is :attr:`~procgame.dmd.Layer.opaque`."""
+	non-``None`` from :meth:`~Layer.composite_next` is :attr:`~Layer.opaque`."""
 	
 	def __init__(self, width, height, layers=None):
 		super(GroupedLayer, self).__init__()
@@ -692,7 +743,24 @@ class GroupedLayer(Layer):
 
 class DisplayController:
 	"""Manages the process of obtaining DMD frames from active modes and compositing them together for
-	display on the DMD."""
+	display on the DMD.
+	
+	**Using DisplayController**
+	
+	1. Add a :class:`DisplayController` instance to your :class:`~procgame.game.GameController` subclass::
+	
+	    class Game(game.GameController):
+	      def __init__(self, machineType):
+	        super(Game, self).__init__(machineType)
+	        self.dmd = dmd.DisplayController(self, width=128, height=32,
+	                                         message_font=font_tiny7)
+	
+	2. In your subclass's :meth:`~procgame.game.GameController.dmd_event` call :meth:`DisplayController.update`::
+	
+	    def dmd_event(self):
+	        self.dmd.update()
+	
+	"""
 	
 	capture = None
 	"""If set, frames obtained by :meth:`.update` will be appended to this list."""

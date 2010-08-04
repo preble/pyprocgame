@@ -2,13 +2,13 @@ import os
 import yaml
 
 values = None
-"""Configuration data structure loaded from ~/.pyprocgame/config.yaml."""
+"""The configuration data structure loaded from :file:`~/.pyprocgame/config.yaml` when this submodule is loaded."""
 
 def value_for_key_path(keypath):
     """Returns the value at the given keypath within :attr:`values`.  
     A key path is a list of components delimited by dots (periods).  The components are interpreted
     as dictionary keys within the structure.
-    For example, the key path 'a.b' would yield 'c' with the following dictionary:
+    For example, the key path ``'a.b'`` would yield ``'c'`` with the following :attr:`values` dictionary: ::
     
         {'a':{'b':'c'}}
     """
