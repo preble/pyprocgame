@@ -39,6 +39,9 @@ def fade_fade(l):
 	else:
 		return a + ' ' + b
 def expand_line(str):
+	"""Expands special characters ``<>[]`` within *str* and returns the dots-and-spaces representation.  
+	Used by :class:`LampShowTrack`.
+	"""
 	str = re.sub('(\[[\- ]*\])', lambda m: '.'*len(m.group(1)), str)
 	str = re.sub('(\<[\- ]*\])', lambda m: fade_in(len(m.group(1)))[:-1] + '.', str)
 	str = re.sub('(\[[\- ]*\>)', lambda m: '.'+fade_out(len(m.group(1)))[1:], str)
@@ -47,11 +50,69 @@ def expand_line(str):
 # End of Pattern functions
 
 class LampShowTrack(object):
-	"""docstring for LampShowTrack"""
+	"""A series of schedules to be applied to a driver over a period of time, usually in concert with other tracks
+	to make up a :class:`LampShow`.
+	
+	Tracks are initialized from a string with three parts:
+	
+		1. An identifier describing the driver to be manipulated by this track.  
+		   If the identifier has a ``lamp:`` prefix the text following it is interpreted as a lamp name 
+		   (member of :attr:`~procgame.game.GameController.lamps`); ``coil:`` corresponds to members of :attr:`~procgame.game.GameController.coils`.
+		   If neither of these prefixes is present then the name is assumbed to be a lamp name.
+		2. A pipe character (``|``).
+		3. A sequence of characters describing the lighting/activation pattern for the driver.
+		   In the simplest case such a string would be a series of dots/periods (``'.'``) and spaces.
+	
+	For example, a lamp show track describing a lamp (named Bonus5X) that would blink on and off might be::
+	
+	    lamp:Bonus5X | ....    ....    ....    ....
+	
+	Each character in a track represents 1/32nd of a second.  This corresponds to the 32 schedule bits of a :class:`~procgame.game.Driver`.
+	
+	Special characters may be used in place of dots as shorthand for effects such as fades or simply holding a driver on.
+	This makes constructing and tuning large shows much less time-consuming.  Four characters may be used:
+	
+		| ``[`` -- open with a "hold on"
+		| ``]`` -- close with a "hold on"
+		| ``<`` -- open with a fade-in
+		| ``>`` -- close with a fade-out
+	
+	Each open must be balanced with a close, although it need not be of the same type.  
+	For example, to fade on a lamp and then keep it on::
+	
+		lamp:Bonus5X |    <                  ][                 ]
+	
+	This is translated (by :func:`expand_line`) to something similar to this::
+	
+		lamp:Bonus5X |    .  .  .. .. ... .......................
+	
+	Or, to pulse a flasher in a fade-in-fade-out pattern::
+	
+		lamp:Flasher2 |       <                     >
+	
+	These special characters may be mixed with the simpler dots and spaces, but there must always be spaces between
+	the open and close characters.  Note that the fade effect is not exactly a fade, but rather turning the driver
+	on and off very rapidly to simulate the lamp getting brighter or darker.
+	
+	.. warning::
+	
+		Care must be used when constructing lamp shows controlling coils.  Never hold a coil or flasher active
+		for an extended period of time.  Otherwise the game will blow a fuse, burn a coil/flasher, or worse.  When constructing
+		large lamp shows be careful not to activate too many lamps simultaneously so as to avoid drawing excessive current.
+	
+	"""
+	
 	name = ''
+	"""Name of this track which corresponds to a driver."""
+	
 	schedules = []
+	"""Sequence of 32-bit schedule values."""
+	
 	current_index = 0
+	"""Index into the :attr:`schedules` list."""
+	
 	driver = None
+	"""The :class:`~procgame.game.Driver` correspopnding to this track."""
 	
 	def __init__(self, line):
 		super(LampShowTrack, self).__init__()
@@ -97,10 +158,12 @@ class LampShowTrack(object):
 			self.driver = game.lamps[self.name]
 
 	def reset(self):
+		"""Clears the contents of this track."""
 		self.schedules = []
 		self.current_index = 0
 
 	def restart(self):
+		"""Restarts this track at the beginning."""
 		self.current_index = 0
 	
 	def next_schedule(self):
@@ -110,10 +173,12 @@ class LampShowTrack(object):
 		return self.schedules[self.current_index-1]
 	
 	def is_complete(self):
+		"""True if this track's schedules have all been used."""
 		return self.current_index >= len(self.schedules) - 1
 
 class LampShow(object):
-	"""docstring for LampShow"""
+	"""Manages loading and playing a lamp show consisting of several lamps (or other drivers), 
+	each of which is a track (:class:`LampShowTrack`, to be precise)."""
 	
 	def __init__(self, game):
 		super(LampShow, self).__init__()
@@ -121,6 +186,7 @@ class LampShow(object):
 		self.reset()
 
 	def reset(self):
+		"""Clears out all of the tracks in this lamp show."""
 		#for tr in self.tracks:
 		#	tr.reset()	
 		self.tracks = []
@@ -128,10 +194,17 @@ class LampShow(object):
 		self.last_time = -.5
 		
 	def load(self, filename):
-		"""Reads lines from the given filename in to create tracks within the lampshow.
-		Lines that start with a '#' are ignored as comments.  
+		"""Reads lines from the given ``filename`` in to create tracks within the lamp show.  A lamp show 
+		generally consists of several lines of text, one for each driver, spaced so as to show a textual
+		representation of the lamp activity over time.
 		
-		See :class:`lamps.LampShowTrack` for a description of the line format.
+		Lines that start with a '#' are ignored as comments.  An example (and very short) lamp show follows::
+		
+			lamp:Left   | ..      ..
+			lamp:Center |   ..  ..  ..
+			lamp:Right  |     ..      ..
+		
+		See :class:`LampShowTrack` for a complete description of the track line format.
 		"""
 		f = open(filename, 'r')
 		for line in f.readlines():
@@ -139,6 +212,7 @@ class LampShow(object):
 				self.tracks.append(LampShowTrack(line))
 		
 	def tick(self):
+		"""Instructs the lamp show to advance based on the system clock and update the drivers associated with its tracks."""
 		if self.t0 == None:
 			self.t0 = time.time()
 		new_time = (time.time() - self.t0)
@@ -157,25 +231,30 @@ class LampShow(object):
 		self.game.logging_enabled = logging_was_enabled
 	
 	def restart(self):
+		"""Restart the show from the beginning."""
 		for tr in self.tracks:
 			tr.restart()
 		#self.t0 = None
 		#self.last_seconds = -1
 	
 	def is_complete(self):
+		"""``True`` if each of the tracks has completed."""
 		for tr in self.tracks:
 			if tr.is_complete() == False:
 				return False
 		return True
 
 class LampShowMode(Mode):
-	"""Keeps track of ball save timer."""
+	""":class:`~procgame.game.Mode` subclass that manages a single :class:`LampShow`, 
+	updating it in the :meth:`~procgame.game.Mode.mode_tick` method.
+	"""
 	def __init__(self, game):
 		super(LampShowMode, self).__init__(game, 3)
 		self.lampshow = LampShow(self.game)
 		self.show_over = True
 
 	def load(self, filename, repeat=False, callback='None'):
+		"""Load a new lamp show."""
 		self.callback = callback
 		self.repeat = repeat
 		self.lampshow.reset()
@@ -183,6 +262,7 @@ class LampShowMode(Mode):
 		self.restart()
 
 	def restart(self):
+		"""Restart the lamp show."""
 		self.lampshow.restart()
 		self.show_over = False
 
@@ -199,10 +279,16 @@ class LampShowMode(Mode):
 			self.lampshow.tick()
 
 class LampController(object):
-	"""docstring for TestGame"""
+	"""Controller object that encapsulates a :class:`LampShow` and helps to restore lamp drivers to their prior state."""
+	
+	shows = {}
+	"""Dictionary of :class:`LampShow` objects."""
+	
+	show = None
+	""":class:`LampShowMode` that must be added to the mode queue."""
+	
 	def __init__(self, game):
 		self.game = game
-		self.shows = {}
 		self.show = LampShowMode(self.game)
 		self.show_playing = False
 		self.saved_state_dicts = {}

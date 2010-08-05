@@ -9,14 +9,15 @@
 pyprocgame
 ==========
 
-pyprocgame is a Python-based pinball software development framework for use with the P-ROC hardware.  Read more about it in the :doc:`intro`.
+pyprocgame is a Python-based pinball software development framework for use with the P-ROC hardware.  Read more about it in the :doc:`intro`, then dive into the :doc:`manual`.
 
 *This documentation is a work very much in progress.  URLs subject to change.*
 
 .. toctree::
-	:maxdepth: 3
+	:maxdepth: 2
 
 	intro
+	manual
 	ref-index
 	ref-pinproc
 	tools
