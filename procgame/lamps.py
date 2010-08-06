@@ -97,8 +97,7 @@ class LampShowTrack(object):
 	.. warning::
 	
 		Care must be used when constructing lamp shows controlling coils.  Never hold a coil or flasher active
-		for an extended period of time.  Otherwise the game will blow a fuse, burn a coil/flasher, or worse.  When constructing
-		large lamp shows be careful not to activate too many lamps simultaneously so as to avoid drawing excessive current.
+		for an extended period of time.  Otherwise the game will blow a fuse, burn a coil/flasher, or worse.
 	
 	"""
 	

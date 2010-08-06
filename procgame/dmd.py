@@ -29,6 +29,12 @@ class Frame(pinproc.DMDBuffer):
 		src.copy_to_rect(dst, dst_x, dst_y, src_x, src_y, width, height, op)
 	copy_rect = staticmethod(copy_rect)
 	
+	def subframe(self, x, y, width, height):
+		"""Generates a new frame based on a sub rectangle of this frame."""
+		subframe = Frame(width, height)
+		Frame.copy_rect(subframe, 0, 0, self, x, y, width, height, 'copy')
+		return subframe
+	
 	def copy(self):
 		"""Returns a copy of itself."""
 		frame = Frame(self.width, self.height)
@@ -45,6 +51,29 @@ class Frame(pinproc.DMDBuffer):
 				output += table[dot]
 			output += "\n"
 		return output
+	
+	def create_with_text(lines, palette = {' ':0, '*':15}):
+		"""Create a frame based on text.
+		
+		This class method can be used to generate small sprites within the game's source code::
+		
+			frame = Frame.create_with_text(lines=[ \\
+			    '*+++*', \\
+			    ' *+* ', \\
+			    '  *  '], palette={' ':0, '+':7, '*':15})
+		"""
+		height = len(lines)
+		if height > 0:
+			width = len(lines[0])
+		else:
+			width = 0
+		frame = Frame(width, height)
+		for y in range(height):
+			for x in range(width):
+				char = lines[y][x]
+				frame.set_dot(x, y, palette[char])
+		return frame
+	create_with_text = staticmethod(create_with_text)
 
 	def create_frames_from_grid( self, num_cols, num_rows ):
 		frames = []
