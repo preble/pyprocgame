@@ -4,6 +4,7 @@ import time
 import os
 import game
 import config
+import util
 
 class Frame(pinproc.DMDBuffer):
 	"""DMD frame/bitmap.
@@ -225,18 +226,18 @@ font_path = []
 """Array of paths that will be searched by :meth:`~procgame.dmd.font_named` to locate fonts.
 
 When this module is initialized the pyprocgame global configuration (:attr:`procgame.config.values`)
-``fonts.path`` key path is used to initialize this array."""
+``font_path`` key path is used to initialize this array."""
 
 def init_font_path():
     global font_path
     try:
-        value = config.value_for_key_path('fonts.path')
+        value = config.value_for_key_path('font_path')
         if issubclass(type(value), list):
             font_path.extend(map(os.path.expanduser, value))
         elif issubclass(type(value), str):
             font_path.append(os.path.expanduser(value))
         else:
-            raise Exception, 'Expected string or array for fonts.path.'
+            raise Exception, 'Expected string or array for font_path.'
     except ValueError, e:
         #print e
         pass
@@ -249,14 +250,14 @@ def font_named(name):
 	"""Searches the :attr:`font_path` for a font file of the given name and returns an instance of :class:`Font` if it exists."""
 	if name in __font_cache:
 		return __font_cache[name]
-	for path in font_path:
-		path = os.path.join(path, name)
-		if os.path.isfile(path):
-			import dmd # have to do this to get dmd.Font to work below... odd.
-			font = dmd.Font(path)
-			__font_cache[name] = font
-			return font
-	raise ValueError, 'Font named "%s" not found; font_path=%s.  Have you configured fonts.path in config.yaml?' % (name, font_path)
+	path = util.find_file_in_path(name, font_path)
+	if path:
+		import dmd # have to do this to get dmd.Font to work below... odd.
+		font = dmd.Font(path)
+		__font_cache[name] = font
+		return font
+	else:
+		raise ValueError, 'Font named "%s" not found; font_path=%s.  Have you configured font_path in config.yaml?' % (name, font_path)
 
 
 class MarkupFrameGenerator:
