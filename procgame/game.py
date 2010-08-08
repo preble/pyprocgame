@@ -459,10 +459,25 @@ class GameController(object):
 	def __init__(self, machineType):
 		super(GameController, self).__init__()
 		self.machineType = machineType
-		self.proc = pinproc.PinPROC(self.machineType)
+		self.proc = self.create_pinproc()
 		self.proc.reset(1)
 		self.modes = ModeQueue(self)
 		self.t0 = time.time()
+	
+	def create_pinproc(self):
+		"""Instantiates and returns the class to use as the P-ROC device.
+		This method is called by :class:`GameController`'s init method to populate :attr:`proc`.
+		
+		Checks :mod:`~procgame.config` for the key path ``pinproc_class``.
+		If that key path exists the string is used as the fully qualified class name
+		to instantiate.  The class is then instantiated with one initializer argument,
+		:attr:`machineType`.
+		
+		If that key path does not exist then this method returns an instance of :class:`pinproc.PinPROC`.
+		"""
+		klass_name = config.value_for_key_path('pinproc_class', 'pinproc.PinPROC')
+		klass = util.get_class(klass_name)
+		return klass(self.machineType)
 	
 	def __enter__(self):
 		pass
