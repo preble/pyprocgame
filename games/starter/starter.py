@@ -234,15 +234,12 @@ class BaseGameMode(game.Mode):
 
 
 
-class Game(game.GameController):
+class Game(basicgame.BasicGame):
 	"""docstring for Game"""
 	def __init__(self, machineType):
 		super(Game, self).__init__(machineType)
 		self.sound = procgame.sound.SoundController(self)
 		self.lampctrl = procgame.lamps.LampController(self)
-		self.dmd = dmd.DisplayController(self, width=128, height=32, message_font=font_tiny7)
-		self.desktop = procgame.desktop.Desktop()
-		self.get_keyboard_events = self.desktop.get_keyboard_events
 		self.settings = {}
 
 	def save_settings(self):
@@ -258,8 +255,6 @@ class Game(game.GameController):
 			print("  %s:\t%s" % (sw.name, sw.state_str()))
 
 		self.setup_ball_search()
-
-		self.score_display = scoredisplay.ScoreDisplay(self, 0)
 
 		# Instantiate basic game features
 		self.attract_mode = Attract(self)
@@ -308,7 +303,6 @@ class Game(game.GameController):
 		super(Game, self).reset()
 
 		# Add the basic modes to the mode queue
-		self.modes.add(self.score_display)
 		self.modes.add(self.attract_mode)
 		self.modes.add(self.ball_search)
 		self.modes.add(self.ball_save)
@@ -336,18 +330,10 @@ class Game(game.GameController):
 		self.set_status("Game Over")
 		self.modes.add(self.attract_mode)
 		
-	def dmd_event(self):
-		"""Called by the GameController when a DMD event has been received."""
-		self.dmd.update()
-
 	def set_status(self, text):
 		self.dmd.set_message(text, 3)
 		print(text)
 	
-	def score(self, points):
-		p = self.current_player()
-		p.score += points
-
 	def extra_ball(self):
 		p = self.current_player()
 		p.extra_balls += 1

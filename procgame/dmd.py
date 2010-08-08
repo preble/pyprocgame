@@ -792,11 +792,11 @@ class DisplayController:
 	
 	"""
 	
-	capture = None
-	"""If set, frames obtained by :meth:`.update` will be appended to this list."""
+	frame_handlers = []
+	"""If set, frames obtained by :meth:`.update` will be sent to the functions
+	in this list with the frame as the only parameter.
 	
-	alt_frame_handler = None
-	"""If set, frames obtained by :meth:`.update` will be sent to this function with the frame as the only parameter."""
+	This list is initialized to contain only ``self.game.proc.dmd_draw``."""
 	
 	def __init__(self, game, width=128, height=32, message_font=None):
 		self.game = game
@@ -808,6 +808,7 @@ class DisplayController:
 		# Do two updates to get the pump primed:
 		for x in range(2):
 			self.update()
+		self.frame_handlers.append(self.game.proc.dmd_draw)
 		
 	def set_message(self, message, seconds):
 		if self.message_layer == None:
@@ -836,9 +837,6 @@ class DisplayController:
 			self.message_layer.composite_next(frame)
 			
 		if frame != None:
-			self.game.proc.dmd_draw(frame)
-			if self.alt_frame_handler != None:
-				self.alt_frame_handler(frame)
-			if self.capture != None:
-				self.capture.append(frame)
+			for handler in self.frame_handlers:
+				handler(frame)
 
