@@ -453,8 +453,6 @@ class GameController(object):
 	""""""
 	user_settings = {}
 	""""""
-	get_keyboard_events = None
-	""""""
 	
 	def __init__(self, machineType):
 		super(GameController, self).__init__()
@@ -580,6 +578,10 @@ class GameController(object):
 
 	def dmd_event(self):
 		"""Called by the GameController when a DMD event has been received."""
+		pass
+	
+	def tick(self):
+		"""Called by the GameController once per run loop."""
 		pass
 		
 	def load_config(self, filename):
@@ -776,12 +778,12 @@ class GameController(object):
 		if event_type == 99: # CTRL-C to quit
 			print "CTRL-C detected, quiting..."	
 			self.end_run_loop()
-		elif event_type == 5: # DMD events
+		elif event_type == pinproc.EventTypeDMDFrameDisplayed: # DMD events
 			#print "% 10.3f Frame event" % (time.time()-self.t0)
 			self.dmd_event()
 		else:
 			sw = self.switches[event_value]
-			recvd_state = event_type == 1
+			recvd_state = event_type == pinproc.EventTypeSwitchClosedDebounced
 			if sw.state != recvd_state:
 				sw.set_state(recvd_state)
 				self.log("    %s:\t%s" % (sw.name, sw.state_str()))
@@ -794,14 +796,21 @@ class GameController(object):
 		for mode in reversed(self.modes.modes):
 			 mode.update_lamps()
 
-        def end_run_loop(self):
+	def end_run_loop(self):
 		"""Called by the programmer when he wants the run_loop to end"""
 		self.done = True
 
 	def log(self, line):
+		"""Print a line to the console with the number of seconds elapsed since the game started up."""
 		if self.logging_enabled:
 			print("% 10.3f %s" % (time.time()-self.t0, line))
-
+	
+	def get_events(self):
+		"""Called by :meth:`run_loop` once per cycle to get the events to process during
+		this cycle of the run loop.
+		"""
+		return self.proc.get_events()
+	
 	def run_loop(self):
 		"""Called by the programmer to read and process switch events until interrupted."""
 		loops = 0
@@ -811,13 +820,9 @@ class GameController(object):
 			while self.done == False:
 
 				loops += 1
-				if self.get_keyboard_events != None:
-					# get_keyboard_events needs to be defined by
-					# the keyboard handler.
-					for event in self.get_keyboard_events():
-						self.process_event(event)
-				for event in self.proc.get_events():
+				for event in self.get_events():
 					self.process_event(event)
+				self.tick()
 				self.modes.tick()
 				self.proc.watchdog_tickle()
 				self.proc.flush()
@@ -825,3 +830,5 @@ class GameController(object):
 			if loops != 0:
 				dt = time.time()-self.t0
 				print "\nOverall loop rate: %0.3fHz\n" % (loops/dt)
+
+
