@@ -1,7 +1,9 @@
 from . import GameController
-from ..dmd import DisplayController
+from ..dmd import DisplayController, font_named
 from ..modes import ScoreDisplay
 from ..desktop import Desktop
+from .. import config
+import pinproc
 
 class BasicGame(GameController):
 	""":class:`BasicGame` is a subclass of :class:`~procgame.game.GameController` 
@@ -25,10 +27,14 @@ class BasicGame(GameController):
 	
 	def __init__(self, machine_type):
 		super(BasicGame, self).__init__(machine_type)
-		self.dmd = DisplayController(self, width=128, height=32)
+		self.dmd = DisplayController(self, width=128, height=32, message_font=font_named('Font07x5.dmd'))
 		self.score_display = ScoreDisplay(self, 0)
 		self.desktop = Desktop()
 		self.dmd.frame_handlers.append(self.set_last_frame)
+		key_map_config = config.value_for_key_path(keypath='keyboard_switch_map', default={})
+		for k, v in key_map_config.items():
+			print k, v, pinproc.decode(machine_type, v), machine_type
+			self.desktop.add_key_map(ord(str(k)), pinproc.decode(machine_type, v))
 	
 	def reset(self):
 		"""Calls super's reset and adds the :class:`ScoreDisplay` mode to the mode queue."""
