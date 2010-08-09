@@ -11,7 +11,7 @@ class Scoring_Mode(Mode):
 class BasicDropTargetBank(Mode):
 	"""Basic Drop Target Bank mode."""
 	def __init__(self, game, priority, prefix, letters):
-		game.Mode.__init__(self, game, 8)
+		super(BasicDropTargetBank, self).__init__(game, 8)
 		self.letters = letters
 		self.prefix = prefix
 		self.auto_reset = True
