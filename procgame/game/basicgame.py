@@ -1,9 +1,9 @@
-import game
-import dmd
-import scoredisplay
-import desktop
+from . import GameController
+from ..dmd import DisplayController
+from ..modes import ScoreDisplay
+from ..desktop import Desktop
 
-class BasicGame(game.GameController):
+class BasicGame(GameController):
 	""":class:`BasicGame` is a subclass of :class:`~procgame.game.GameController` 
 	that includes and configures various useful helper classes to provide:
 	
@@ -25,9 +25,9 @@ class BasicGame(game.GameController):
 	
 	def __init__(self, machine_type):
 		super(BasicGame, self).__init__(machine_type)
-		self.dmd = dmd.DisplayController(self, width=128, height=32)
-		self.score_display = scoredisplay.ScoreDisplay(self, 1)
-		self.desktop = desktop.Desktop()
+		self.dmd = DisplayController(self, width=128, height=32)
+		self.score_display = ScoreDisplay(self, 0)
+		self.desktop = Desktop()
 		self.dmd.frame_handlers.append(self.set_last_frame)
 	
 	def reset(self):

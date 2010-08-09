@@ -1,8 +1,8 @@
 import math
-import game
-import dmd
-
-class HighScoreEntry(game.Mode):
+from ..game import Mode
+from .. import dmd
+ 
+class HighScoreEntry(Mode):
 	"""entered_handler should be a function taking 2 parameters: mode and inits."""
 	def __init__(self, game, priority, left_text, right_text, entered_handler):
 		super(HighScoreEntry, self).__init__(game, priority)

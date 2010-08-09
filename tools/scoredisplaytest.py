@@ -31,7 +31,7 @@ class ScoreTester(game.Mode):
 			self.game.score_display.set_left_players_justify("right")
 		return True
 
-class TestGame(basicgame.BasicGame):
+class TestGame(game.BasicGame):
 	"""docstring for TestGame"""
 	
 	def setup(self):

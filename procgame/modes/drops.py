@@ -1,4 +1,4 @@
-from game import *
+from ..game import Mode
 import traceback
 
 class Scoring_Mode(Mode):
@@ -11,7 +11,7 @@ class Scoring_Mode(Mode):
 class BasicDropTargetBank(Mode):
 	"""Basic Drop Target Bank mode."""
 	def __init__(self, game, priority, prefix, letters):
-		Mode.__init__(self, game, 8)
+		game.Mode.__init__(self, game, 8)
 		self.letters = letters
 		self.prefix = prefix
 		self.auto_reset = True

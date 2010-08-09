@@ -1,12 +1,12 @@
 # Experimental code by Adam Preble, September 23, 2009.
 # 
-from game import *
+import game
 import random
 import string
 import math
 import copy
 import re
-
+import time
 
 # Pattern functions:
 def make_pattern(m, repeats):
@@ -243,7 +243,7 @@ class LampShow(object):
 				return False
 		return True
 
-class LampShowMode(Mode):
+class LampShowMode(game.Mode):
 	""":class:`~procgame.game.Mode` subclass that manages a single :class:`LampShow`, 
 	updating it in the :meth:`~procgame.game.Mode.mode_tick` method.
 	"""

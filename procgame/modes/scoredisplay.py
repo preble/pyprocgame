@@ -3,8 +3,8 @@ import struct
 import time
 import os
 import locale
-from game import *
-import dmd
+from ..game import Mode
+from .. import dmd
 
 class ScoreLayer(dmd.GroupedLayer):
 	def __init__(self, width, height, mode):

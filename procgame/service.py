@@ -1,5 +1,5 @@
-from game import *
-from dmd import *
+from game import Mode
+from dmd import TextLayer, GroupedLayer
 
 class ServiceModeSkeleton(Mode):
 	"""Service Mode List base class."""

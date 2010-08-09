@@ -60,9 +60,9 @@ class Desktop():
 		self.add_key_map(K_LSHIFT, 3)
 		self.add_key_map(K_RSHIFT, 1)
 	
-	def add_key_map(self, key, value):
-		"""Maps the given *key* to *value*, where *key* is one of the key constants in :mod:`pygame.locals`."""
-		self.key_map[key] = value
+	def add_key_map(self, key, switch_number):
+		"""Maps the given *key* to *switch_number*, where *key* is one of the key constants in :mod:`pygame.locals`."""
+		self.key_map[key] = switch_number
 	
 	def clear_key_map(self):
 		"""Empties the key map."""

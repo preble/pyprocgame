@@ -8,9 +8,7 @@ import time
 
 # dmdopsdemo.py demonstrates how to use Layer.composite_op.
 
-dmd.font_path.append('../shared/dmd')
-
-class Game(game.GameController):
+class Game(game.BasicGame):
 	"""Very simple game to get our DMD running."""
 	def __init__(self, machineType):
 		super(Game, self).__init__(machineType)

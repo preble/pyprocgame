@@ -1,4 +1,4 @@
-from game import *
+from ..game import Mode
 
 class Replay(Mode):
 	"""docstring for AttractMode"""

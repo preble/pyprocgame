@@ -1,4 +1,4 @@
-from game import *
+from ..game import Mode
 
 class BallSave(Mode):
 	"""Keeps track of ball save timer.  Works in conjection with a trough object."""

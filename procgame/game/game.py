@@ -4,259 +4,20 @@ import Queue
 import yaml
 import time
 import copy
-import re
-import config
+from procgame import config
 from gameitems import *
-import util
+from procgame import util
+from mode import *
 
-class Mode(object):
-	"""Abstraction of a game mode to be subclassed by the game
-	programmer.
-	
-	Modes are essentially a collection of switch even thandlers.  
-	Active modes are held in the :class:`game.GameController` object's modes
-	:class:`game.ModeQueue`, which dispatches event notifications to modes in
-	order of priority (highest to lowest).  If a higher priority
-	mode's switch event handler method returns True, the event
-	is not passed down to lower modes.
-	
-	Switch event handlers are detected when ``Mode.__init__()`` is
-	called by the subclass.  Various switch event handler formats
-	are recognized:
-	
-	``sw_switchName_open(self, sw)``
-	  Called when a switch (named switchName) is opened.
-	``sw_switchName_closed(self, sw)``
-	  Closed variant of the above.
-	``sw_switchName_open_for_1s(self, sw)``
-	  Called when switchName has been open continuously for one second
-	
-	Example variants of the above: ::
-	
-		def sw_switchName_closed_for_2s(self, sw):
-			pass
-		
-		def sw_switchName_closed_for_100ms(self, sw):
-			pass
-		
-		def sw_switchName_open_for_500ms(self, sw):
-			pass
-	
-	Modes can be programatically configured using :meth:`.add_switch_handler`.
-	"""
-	def __init__(self, game, priority):
-		super(Mode, self).__init__()
-		self.game = game
-		self.priority = priority
-		self.__accepted_switches = []
-		self.__delayed = []
-		self.__scan_switch_handlers()
-	
-	def __scan_switch_handlers(self):
-		# Format: sw_popperL_open_for_200ms(self, sw):
-		handler_func_re = re.compile('sw_(?P<name>[a-zA-Z0-9]+)_(?P<state>open|closed|active|inactive)(?P<after>_for_(?P<time>[0-9]+)(?P<units>ms|s))?')
-		for item in dir(self):
-			m = handler_func_re.match(item)
-			if m == None:
-				continue
-			seconds = None
-			if m.group('after') != None:
-				seconds = float(m.group('time'))
-				if m.group('units') == 'ms':
-					seconds /= 1000.0
-
-			handler = getattr(self, item)
-			
-			self.add_switch_handler(name=m.group('name'), event_type=m.group('state'), delay=seconds, handler=handler)
-	
-	def add_switch_handler(self, name, event_type, delay, handler):
-		"""Programatically configure a switch event handler.
-		
-		Keyword arguments:
-		
-		``name``
-		  valid switch name
-		``event_type``
-		  'open','closed','active', or 'inactive'
-		``delay``
-		  float number of seconds that the state should be held 
-		  before invoking the handler, or None if it should be
-		  invoked immediately.
-		``handler``
-		  method to call with signature ``handler(self, switch)``
-		"""
-
-                # Convert active/inactive to open/closed based on switch's type
-		if event_type == 'active':
-			if self.game.switches[name].type == 'NO':
-				adjusted_event_type = 'closed'
-			else:
-				adjusted_event_type = 'open'
-		elif event_type == 'inactive':
-			if self.game.switches[name].type == 'NO':
-				adjusted_event_type = 'open'
-			else:
-				adjusted_event_type = 'closed'
+def config_named(name):
+	if not os.path.isfile(name): # If we cannot find this file easily, try searching the config_path:
+		config_paths = config.value_for_key_path('config_path', ['.'])
+		found_path = util.find_file_in_path(name, config_paths)
+		if found_path:
+			name = found_path
 		else:
-			adjusted_event_type = event_type
-		et = {'closed':1, 'open':2}[adjusted_event_type]
-		sw = None
-		try:
-			sw = self.game.switches[name]
-		except KeyError:
-			print("WARNING: Unknown switch %s for mode method %s in class %s!" % (name, item, self.__class__.__name__))
-			return
-		d = {'name':name, 'type':et, 'delay':delay, 'handler':handler, 'param':sw}
-		self.__accepted_switches += [d]
-	
-	def status_str(self):
-		return self.__class__.__name__
-	
-	def delay(self, name, event_type, delay, handler, param=None):
-		"""Schedule the run loop to call the given handler at a later time.
-		
-		Keyword arguments:
-		
-		``name``
-			String name of the event, usually the corresponding switch name.
-		``event_type``
-			'closed', 'open', or None.
-		``delay``
-			Number of seconds to wait before calling the handler (float).
-		``handler``
-			Function to be called once delay seconds have elapsed.
-		``param``
-			Value to be passed as the first (non-self) argument to handler.
-		
-		If param is None, handler's signature must be ``handler(self)``.  Otherwise,
-		it is ``handler(self, param)`` to match the switch method handler pattern.
-		"""
-		if type(event_type) == str:
-			event_type = {'closed':1, 'open':2}[event_type]
-		self.__delayed += [{'name':name, 'time':time.time()+delay, 'handler':handler, 'type':event_type, 'param':param}]
-		try:
-			self.__delayed.sort(lambda x, y: int((x['time'] - y['time'])*100))
-		except TypeError, ex:
-			# Debugging code:
-			for x in self.__delayed:
-				print(x['name'], x['time'], type(x['time']), x['handler'], x['type'], x['param'])
-			raise ex
-	
-	def cancel_delayed(self, name):
-		"""Removes the given named delays from the delayed list, cancelling their execution."""
-		if type(name) == list:
-			for n in name:
-				self.cancel_delayed(n)
-		else:
-			self.__delayed = filter(lambda x: x['name'] != name, self.__delayed)
-	
-	def handle_event(self, event):
-		# We want to turn this event into a function call.
-		sw_name = self.game.switches[event['value']].name
-		handled = False
-
-		# Filter out all of the delayed events that have been disqualified by this state change:
-		self.__delayed = filter(lambda x: not (sw_name == x['name'] and x['type'] != event['type']), self.__delayed)
-		
-		filt = lambda x: (x['type'] == event['type']) and (x['name'] == sw_name)
-		matches = filter(filt, self.__accepted_switches)
-		for match in matches:
-			if match['delay'] == None:
-				handler = match['handler']
-				result = handler(self.game.switches[match['name']])
-				if result == True:
-					handled = True
-			else:
-				self.delay(name=sw_name, event_type=match['type'], delay=match['delay'], handler=match['handler'], param=match['param'])
-		return handled
-		
-	def mode_started(self):
-		"""Notifies the mode that it is now active on the mode queue.
-		
-		This method should not be invoked directly; it is called by the GameController run loop.
-		"""
-		pass
-	def mode_stopped(self):
-		"""Notofies the mode that it has been removed from the mode queue.
-		
-		This method should not be invoked directly; it is called by the GameController run loop.
-		"""
-		pass
-	def mode_topmost(self):
-		"""Notifies the mode that it is now the topmost mode on the mode queue.
-		
-		This method should not be invoked directly; it is called by the GameController run loop.
-		"""
-		pass
-	def mode_tick(self):
-		"""Called by the GameController run loop during each loop when the mode is running."""
-		pass
-	def dispatch_delayed(self):
-		"""Called by the GameController to dispatch any delayed events."""
-		t = time.time()
-		for item in self.__delayed:
-			if item['time'] <= t:
-				handler = item['handler']
-				if item['param'] != None:
-					handler(item['param'])
-				else:
-					handler()
-		self.__delayed = filter(lambda x: x['time'] > t, self.__delayed)
-	def __str__(self):
-		return "%s  pri=%d" % (type(self).__name__, self.priority)
-	def update_lamps(self):
-		"""Called by the GameController re-apply active lamp schedules"""
-		pass
-
-class ModeQueue(object):
-	"""docstring for ModeQueue"""
-	def __init__(self, game):
-		super(ModeQueue, self).__init__()
-		self.game = game
-		self.modes = []
-		
-	def add(self, mode):
-		if mode in self.modes:
-			raise ValueError, "Attempted to add mode "+str(mode)+", already in mode queue."
-		self.modes += [mode]
-		# Sort by priority, descending:
-		self.modes.sort(lambda x, y: y.priority - x.priority)
-		self.game.log("Added %s, now:\n%s" % (str(mode), str(self)))
-		mode.mode_started()
-		if mode == self.modes[0]:
-			mode.mode_topmost()
-
-	def remove(self, mode):
-		for idx, m in enumerate(self.modes):
-			if m == mode:
-				del self.modes[idx]
-				self.game.log("Removed %s, now:\n%s" % (str(mode), str(self)))
-				mode.mode_stopped()
-				break
-		if len(self.modes) > 0:
-			self.modes[0].mode_topmost()
-
-	def handle_event(self, event):
-		modes = copy.copy(self.modes) # Make a copy so if a mode is added we don't get into a loop.
-		for mode in modes:
-			if mode.handle_event(event):
-				return True
-		return False
-	
-	def tick(self):
-		modes = copy.copy(self.modes) # Make a copy so if a mode is added we don't get into a loop.
-		for mode in modes:
-			mode.dispatch_delayed()
-			mode.mode_tick()
-		
-	def __str__(self):
-		s = ""
-		for mode in self.modes:
-			layer = None
-			if hasattr(mode, 'layer'):
-				layer = mode.layer
-			s += "\t\t#%d %s\t\tlayer=%s\n" % (mode.priority, type(mode).__name__, type(layer).__name__)
-		return s[:-1] # Remove \n
+			return None
+	return yaml.load(open(name, 'r'))
 
 
 class GameController(object):
@@ -432,14 +193,9 @@ class GameController(object):
 		Configures the switches, lamps, and coils members.
 		Enables notifyHost for the open and closed debounced states on each configured switch.
 		"""
-		if not os.path.isfile(filename): # If we cannot find this file easily, try searching the config_path:
-			config_paths = config.value_for_key_path('config_path', ['.'])
-			found_path = util.find_file_in_path(filename, config_paths)
-			if found_path:
-				filename = found_path
-			else:
-				raise ValueError, 'load_config(filename="%s") could not be found. Did you set config_path?' % (filename)
-		self.config = yaml.load(open(filename, 'r'))
+		self.config = config_named(filename)
+		if not self.config:
+			raise ValueError, 'load_config(filename="%s") could not be found. Did you set config_path?' % (name)
 		pairs = [('PRCoils', self.coils, Driver), 
 		         ('PRLamps', self.lamps, Driver), 
 		         ('PRSwitches', self.switches, Switch)]

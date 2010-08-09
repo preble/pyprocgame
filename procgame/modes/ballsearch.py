@@ -1,5 +1,5 @@
-from game import *
-from dmd import *
+from ..game import Mode
+from .. import dmd
 
 class BallSearch(Mode):
 	"""Ball Search mode."""

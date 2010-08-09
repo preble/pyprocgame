@@ -2,9 +2,9 @@ import pinproc
 import struct
 import time
 import os
-import game
-import config
-import util
+from .. import config
+from ..game import Mode # Avoid an import cycle.
+from .. import util
 
 class Frame(pinproc.DMDBuffer):
 	"""DMD frame/bitmap.
@@ -408,7 +408,7 @@ class Layer(object):
 			Frame.copy_rect(dst=target, dst_x=self.target_x+self.target_x_offset, dst_y=self.target_y+self.target_y_offset, src=src, src_x=0, src_y=0, width=src.width, height=src.height, op=self.composite_op)
 		return src
 
-class TransitionOutHelperMode(game.Mode):
+class TransitionOutHelperMode(Mode):
 	def __init__(self, game, priority, transition, layer):
 		super(TransitionOutHelperMode, self).__init__(game=game, priority=priority)
 		self.layer = layer
