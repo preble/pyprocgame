@@ -11,8 +11,8 @@ config_path = "JD.yaml"
 
 class TestGame(game.BasicGame):
 	"""docstring for TestGame"""
-	def __init__(self, machineType):
-		super(TestGame, self).__init__(machineType)
+	def __init__(self, machine_type):
+		super(TestGame, self).__init__(machine_type)
 		
 	def setup(self):
 		"""docstring for setup"""

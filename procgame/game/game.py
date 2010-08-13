@@ -27,10 +27,10 @@ class GameController(object):
 	and controllers.
 	"""
 	
-	machineType = None
+	machine_type = None
 	"""Machine type used to configure :attr:`proc` in this class's initializer."""
 	proc = None
-	"""A :class:`pinproc.PinPROC` instance, created in the initializer with machine type :attr:`machineType`."""
+	"""A :class:`pinproc.PinPROC` instance, created in the initializer with machine type :attr:`machine_type`."""
 	modes = None
 	"""An instance of :class:`ModeQueue`, which manages the presently active modes."""
 	
@@ -62,9 +62,9 @@ class GameController(object):
 	user_settings = {}
 	"""Contains local game configuration, such as the volume."""
 	
-	def __init__(self, machineType):
+	def __init__(self, machine_type):
 		super(GameController, self).__init__()
-		self.machineType = machineType
+		self.machine_type = machine_type
 		self.proc = self.create_pinproc()
 		self.proc.reset(1)
 		self.modes = ModeQueue(self)
@@ -77,13 +77,13 @@ class GameController(object):
 		Checks :mod:`~procgame.config` for the key path ``pinproc_class``.
 		If that key path exists the string is used as the fully qualified class name
 		to instantiate.  The class is then instantiated with one initializer argument,
-		:attr:`machineType`.
+		:attr:`machine_type`.
 		
 		If that key path does not exist then this method returns an instance of :class:`pinproc.PinPROC`.
 		"""
 		klass_name = config.value_for_key_path('pinproc_class', 'pinproc.PinPROC')
 		klass = util.get_class(klass_name)
-		return klass(self.machineType)
+		return klass(self.machine_type)
 	
 	def create_player(self, name):
 		"""Instantiates and returns a new instance of the :class:`Player` class with the
@@ -218,7 +218,7 @@ class GameController(object):
 			print 'Processing section: %s' % (section)
 			for name in sect_dict:
 				item = sect_dict[name]
-				number = pinproc.decode(self.machineType, str(item['number']))
+				number = pinproc.decode(self.machine_type, str(item['number']))
 				if 'type' in item:
 					collection.add(name, klass(self, name, number, type = item['type']))
 				else:
@@ -310,7 +310,7 @@ class GameController(object):
 
 	def enable_flippers(self, enable):
 		"""Enables or disables the flippers AND bumpers."""
-		if self.machineType == 'wpc' or self.machineType == 'wpc95' or self.machineType == 'wpcAlphanumeric':
+		if self.machine_type == 'wpc' or self.machine_type == 'wpc95' or self.machine_type == 'wpcAlphanumeric':
 			print("Programming flippers...")
 			for flipper in self.config['PRFlippers']:
 				main_coil = self.coils[flipper+'Main']
@@ -333,12 +333,12 @@ class GameController(object):
 				# Send a disable signal to make sure flipper hold is off.
 				# Otherwise could be stuck on if rules disabled while hold is active.
 				self.coils[flipper+'Hold'].disable()
-                elif self.machineType == 'sternWhitestar' or self.machineType == 'sternSAM':
+                elif self.machine_type == 'sternWhitestar' or self.machine_type == 'sternSAM':
 			for flipper in self.config['PRFlippers']:
 				print("  programming flipper %s" % (flipper))
 				main_coil = self.coils[flipper+'Main']
 				#switch_num = self.switches[flipper].number
-				switch_num = pinproc.decode(self.machineType, str(self.switches[flipper].number))
+				switch_num = pinproc.decode(self.machine_type, str(self.switches[flipper].number))
 
 				drivers = []
 				if enable:

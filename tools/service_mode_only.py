@@ -151,8 +151,8 @@ class SoundController(object):
 
 class TestGame(game.GameController):
 	"""docstring for TestGame"""
-	def __init__(self, machineType):
-		super(TestGame, self).__init__(machineType)
+	def __init__(self, machine_type):
+		super(TestGame, self).__init__(machine_type)
 		self.sound = SoundController(self)
 		self.dmd = dmd.DisplayController(self, width=128, height=32, message_font=font_tiny7)
 		self.desktop = procgame.desktop.Desktop()
@@ -223,11 +223,11 @@ def main():
 			return
 
 	config = yaml.load(open(yamlpath, 'r'))
-	machineType = config['PRGame']['machineType']
+	machine_type = config['PRGame']['machineType']
 	config = 0
 	game = None
 	try:
-	 	game = TestGame(machineType)
+	 	game = TestGame(machine_type)
 		game.yamlpath = yamlpath
 		game.setup()
 		game.run_loop()

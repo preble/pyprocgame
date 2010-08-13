@@ -100,7 +100,7 @@ class Desktop():
 	
 	screen = None
 	""":class:`pygame.Surface` object representing the screen's surface."""
-	screen_multiplier = 2
+	screen_multiplier = 4
 
 	def setup_window(self):
 		pygame.init()

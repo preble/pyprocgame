@@ -44,7 +44,7 @@ Fortunately you won't need to understand all of those classes in order to build 
 Let's look at a ridiculously simple game implemented with pyprocgame:
 
 	import procgame
-	game = procgame.game.GameController(machineType='wpc')
+	game = procgame.game.GameController(machine_type='wpc')
 	game.load_config('mygame.yaml')
 	game.enable_flippers(enable=True)
 	game.run_loop()
@@ -55,11 +55,11 @@ This particular game isn't much fun, but it's a good way to demonstrate what a p
 
 Our first step is to import the pyprocgame module (called "procgame" in the context of Python).  This particular program assumes that pyprocgame is in your sys.path.  If it's not, you will need to modify sys.path.
 
-	game = procgame.game.GameController(machineType='wpc')
+	game = procgame.game.GameController(machine_type='wpc')
 
 Next we create a new GameController object.  This is the central object in your pinball game.  It maintains collections for all of the switches, lamps and coils, as well as players in the current game.  It also contains a ModeQueue, which we'll cover later.  *If this were an actual full-blown pyprocgame program we would create our own subclass of GameController.*
 
-Note that the connection to the P-ROC hardware is established in the constructor for GameController and the hardware is reset to obtain a known state.  We pass the machineType value as 'wpc' in order to initialize P-ROC to the proper settings for controlling a WPC driver board.
+Note that the connection to the P-ROC hardware is established in the constructor for GameController and the hardware is reset to obtain a known state.  We pass the machine_type value as 'wpc' in order to initialize P-ROC to the proper settings for controlling a WPC driver board.
 
 	game.load_config('mygame.yaml')
 
@@ -116,8 +116,8 @@ This is where the priority of a mode becomes important.  The ModeQueue is essent
 Now that we have a mode, how do we add it to the ModeQueue so that it will receive events?  Let's create a more mature example game by subclassing GameController, assuming our FirstMode class is defined elsewhere in the file:
 
 	class ExampleGame(procgame.game.GameController):
-		def __init__(self, machineType):
-			super(ExampleGame, self).__init__(machineType)
+		def __init__(self, machine_type):
+			super(ExampleGame, self).__init__(machine_type)
 			self.load_config('mygame.yaml')
 			
 		def reset(self):
@@ -126,7 +126,7 @@ Now that we have a mode, how do we add it to the ModeQueue so that it will recei
 			self.modes.add(first_mode)
 			self.enable_flippers(enable=True)
 			
-	game = ExampleGame(machineType='wpc')
+	game = ExampleGame(machine_type='wpc')
 	game.reset()
 	game.run_loop()
 
@@ -192,8 +192,8 @@ There are a lot of different ways one could run a DMD with pyprocgame, but here 
 The DisplayController class makes this pretty easy.  Here's how we incorporate it into our GameController subclass:
 
 	class DemoGame(game.GameController):
-		def __init__(self, machineType):
-			super(DemoGame, self).__init__(machineType)
+		def __init__(self, machine_type):
+			super(DemoGame, self).__init__(machine_type)
 			self.dmd = dmd.DisplayController(self, 128, 32)
 		
 		def dmd_event(self):

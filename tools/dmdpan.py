@@ -37,8 +37,8 @@ class PanningLayer(dmd.Layer):
 
 class Game(game.GameController):
 	"""Very simple game to get our DMD running."""
-	def __init__(self, machineType):
-		super(Game, self).__init__(machineType)
+	def __init__(self, machine_type):
+		super(Game, self).__init__(machine_type)
 		self.dmd = dmd.DisplayController(self, width=128, height=32)
 	def dmd_event(self):
 		"""Called by the GameController when a DMD event has been received."""

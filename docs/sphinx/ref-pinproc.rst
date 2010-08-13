@@ -10,9 +10,9 @@ The :mod:`pinproc` module enables control of the P-ROC hardware from within Pyth
 PinPROC
 -------
 
-.. class:: pinproc.PinPROC(machineType)
+.. class:: pinproc.PinPROC(machine_type)
 
-	Represents the P-ROC hardware interface.  This class is initialized with a string, ``machineType``, which is used for the initial configuration of the P-ROC hardware interface.  Possible values include:
+	Represents the P-ROC hardware interface.  This class is initialized with a string, ``machine_type``, which is used for the initial configuration of the P-ROC hardware interface.  Possible values include:
 	
 	* ``wpc``
 	* ``wpc95``
@@ -21,7 +21,7 @@ PinPROC
 	* ``sternWhitestar``
 	* ``custom``
 	
-	An ``IOError`` is raised if the P-ROC device cannot be found.  A ``ValueError`` is raised if ``machineType`` is invalid.
+	An ``IOError`` is raised if the P-ROC device cannot be found.  A ``ValueError`` is raised if ``machine_type`` is invalid.
 	
 	*Note:* All I/O between the software and the P-ROC hardware is buffered to ensure maximum USB throughput.  This means that driver update commands are only sent to the hardware when the software buffer is full, or when :meth:`flush` is called.  If you are using the :class:`procgame.game.GameController` run loop you do not need to manually flush the buffers, as they are flushed after every run loop cycle.
 
@@ -100,7 +100,7 @@ PinPROC
 		| 5    | A new frame has been displayed on the DMD and there is room in the buffer for another. |
 		+------+----------------------------------------------------------------------------------------+
 		
-		Switch-related event types contain the switch number as the ``value``.
+		This module provides constants for these values; see :ref:`event_type_constants`.  Switch-related event types contain the switch number as the ``value``.
 	
 	.. method:: reset(resetFlags)
 	
@@ -189,6 +189,35 @@ Driver State Dictionary
 +-----------------------+
 | patterEnable          |
 +-----------------------+
+
+
+.. _event_type_constants:
+
+Event Type Constants
+--------------------
+
+.. attribute:: EventTypeSwitchClosedDebounced
+
+.. attribute:: EventTypeSwitchOpenDebounced
+
+.. attribute:: EventTypeSwitchClosedNondebounced
+
+.. attribute:: EventTypeSwitchOpenNondebounced
+
+.. attribute:: EventTypeDMDFrameDisplayed
+
+
+.. _machine_type_constants:
+
+Machine Type Constants
+----------------------
+
+.. attribute:: MachineTypeWPC
+.. attribute:: MachineTypeWPC95
+.. attribute:: MachineTypeWPCAlphanumeric
+.. attribute:: MachineTypeSternSAM
+.. attribute:: MachineTypeSternWhitestar
+.. attribute:: MachineTypeCustom
 
 
 .. _aux-command-functions:
