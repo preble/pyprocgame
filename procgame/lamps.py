@@ -86,9 +86,13 @@ class LampShowTrack(object):
 	
 		lamp:Bonus5X |    .  .  .. .. ... .......................
 	
-	Or, to pulse a flasher in a fade-in-fade-out pattern::
+	Or, to pulse it in a fade-in-fade-out pattern::
 	
-		lamp:Flasher2 |       <                     >
+		lamp:Bonus5X |       <                     >
+	
+	To pulse a flasher rapidly::
+	
+		coil:Flasher2 |       .      .     .     .    .
 	
 	These special characters may be mixed with the simpler dots and spaces, but there must always be spaces between
 	the open and close characters.  Note that the fade effect is not exactly a fade, but rather turning the driver
