@@ -767,8 +767,8 @@ class DisplayController:
 	1. Add a :class:`DisplayController` instance to your :class:`~procgame.game.GameController` subclass::
 	
 	    class Game(game.GameController):
-	      def __init__(self, machineType):
-	        super(Game, self).__init__(machineType)
+	      def __init__(self, machine_type):
+	        super(Game, self).__init__(machine_type)
 	        self.dmd = dmd.DisplayController(self, width=128, height=32,
 	                                         message_font=font_tiny7)
 	

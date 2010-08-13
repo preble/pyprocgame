@@ -81,12 +81,12 @@ class BallSave(Mode):
 
 
 	def eject(self):
-		if self.game.machineType == 'wpc' or self.game.machineType == 'wpc95' or self.game.machineType == 'wpcAlphanumeric':
+		if self.game.machine_type == 'wpc' or self.game.machine_type == 'wpc95' or self.game.machine_type == 'wpcAlphanumeric':
 			if self.game.switches.trough6.is_open():
 				self.game.coils.trough.pulse(20)
 			else:
 				self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
-		elif self.game.machineType == 'sternWhitestar' or self.game.machineType == 'sternSAM':
+		elif self.game.machine_type == 'sternWhitestar' or self.game.machine_type == 'sternSAM':
 			if self.game.switches.trough1.is_open():
 				self.game.coils.trough.pulse(20)
 			else:

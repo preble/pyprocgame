@@ -9,7 +9,7 @@ class FakePinPROC(object):
 	frames_per_second = 60
 	"""Frames per second at which to dispatch :attr:`pinproc.EventTypeDMDFrameDisplayed` events."""
 	
-	def __init__(self, machineType):
+	def __init__(self, machine_type):
 		pass
 	def noop(self, *args, **kwargs):
 		pass

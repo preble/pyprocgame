@@ -2,14 +2,14 @@ import pinproc
 import time
 import math
 
-machineType = 'wpc'
+machine_type = 'wpc'
 
 def pulse(n, t = 20):
 	"""docstring for pulse"""
 	pr.driver_pulse(pinproc.decode(str(n)), t)
 
 def main():
-	pr = pinproc.PinPROC(machineType)
+	pr = pinproc.PinPROC(machine_type)
 	time.sleep(2) # Give P-ROC a second to get going?
 	import pygame
 	try:

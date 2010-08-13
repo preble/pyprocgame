@@ -236,8 +236,8 @@ class BaseGameMode(game.Mode):
 
 class Game(basicgame.BasicGame):
 	"""docstring for Game"""
-	def __init__(self, machineType):
-		super(Game, self).__init__(machineType)
+	def __init__(self, machine_type):
+		super(Game, self).__init__(machine_type)
 		self.sound = procgame.sound.SoundController(self)
 		self.lampctrl = procgame.lamps.LampController(self)
 		self.settings = {}
@@ -358,11 +358,11 @@ def main():
 			return
 
 	config = yaml.load(open(yamlpath, 'r'))
-	machineType = config['PRGame']['machineType']
+	machine_type = config['PRGame']['machineType']
 	config = 0
 	game = None
 	try:
-	 	game = Game(machineType)
+	 	game = Game(machine_type)
 		game.yamlpath = yamlpath
 		game.setup()
 		game.run_loop()
