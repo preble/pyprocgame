@@ -31,7 +31,7 @@ pyprocgame provides a powerful set of classes to help you implement your game.  
 In addition, pyprocgame provides a number of classes to make controlling the dot matrix display (DMD) of your game much easier:
 
 - :class:`~procgame.dmd.DisplayController` -- Manages the DMD by assembling the currently displayed frame from the active modes on the mode queue.
-- :class:`~procgame.scoredisplay.ScoreDisplay` -- Makes providing a classic 4-player score display extremely easy.  ScoreDisplay is implemented as a Mode that generates a DMD Frame on demand (usually to DisplayController).
+- :class:`~procgame.modes.ScoreDisplay` -- Makes providing a classic 4-player score display extremely easy.  ScoreDisplay is implemented as a Mode that generates a DMD Frame on demand (usually to DisplayController).
 - :class:`~procgame.dmd.Frame` -- A single DMD bitmap, usually 128x32.
 - :class:`~procgame.dmd.Animation` -- A collection of DMD frames.
 - :class:`~procgame.dmd.Font` -- A bitmap font for use with the DMD.

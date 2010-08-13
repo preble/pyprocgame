@@ -1,10 +1,17 @@
 __all__ = [
-	'game',
-	'modes',
-	'dmd',
-	'sound',
-	'lamps',
-	'service',
-	'desktop',
 	'config',
+	'desktop',
+	'dmd',
+	'game',
+	'lamps',
+	'modes',
+	'service',
+	'sound',
 	]
+import config
+import desktop
+import game
+import lamps
+import modes
+import service
+import sound

@@ -6,16 +6,17 @@ class Mode(object):
 	"""Abstraction of a game mode to be subclassed by the game
 	programmer.
 	
-	Modes are essentially a collection of switch even thandlers.  
-	Active modes are held in the :class:`game.GameController` object's modes
-	:class:`game.ModeQueue`, which dispatches event notifications to modes in
+	Modes are essentially a collection of switch even thandlers.
+	Active modes are held in :attr:`GameController.modes`, an
+	instance of :class:`ModeQueue`,
+	which dispatches event notifications to modes in
 	order of priority (highest to lowest).  If a higher priority
 	mode's switch event handler method returns True, the event
 	is not passed down to lower modes.
 	
-	Switch event handlers are detected when ``Mode.__init__()`` is
-	called by the subclass.  Various switch event handler formats
-	are recognized:
+	Switch event handlers are detected when the :class:`Mode`
+	initializer is called by the subclass.
+	Various switch event handler formats are recognized:
 	
 	``sw_switchName_open(self, sw)``
 	  Called when a switch (named switchName) is opened.

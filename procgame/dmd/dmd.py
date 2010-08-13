@@ -3,7 +3,6 @@ import struct
 import time
 import os
 from .. import config
-from ..game import Mode # Avoid an import cycle.
 from .. import util
 
 class Frame(pinproc.DMDBuffer):
@@ -407,18 +406,6 @@ class Layer(object):
 				src = self.transition.next_frame(from_frame=target, to_frame=src)
 			Frame.copy_rect(dst=target, dst_x=self.target_x+self.target_x_offset, dst_y=self.target_y+self.target_y_offset, src=src, src_x=0, src_y=0, width=src.width, height=src.height, op=self.composite_op)
 		return src
-
-class TransitionOutHelperMode(Mode):
-	def __init__(self, game, priority, transition, layer):
-		super(TransitionOutHelperMode, self).__init__(game=game, priority=priority)
-		self.layer = layer
-		self.layer.transition = transition
-		self.layer.transition.in_out = 'out'
-		self.layer.transition.completed_handler = self.transition_completed
-	def mode_started(self):
-		self.layer.transition.start()
-	def transition_completed(self):
-		self.game.modes.remove(self)
 
 class LayerTransitionBase(object):
 	"""Transition base class."""

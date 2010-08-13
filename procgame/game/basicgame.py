@@ -9,7 +9,7 @@ class BasicGame(GameController):
 	""":class:`BasicGame` is a subclass of :class:`~procgame.game.GameController` 
 	that includes and configures various useful helper classes to provide:
 	
-	* A :class:`~procgame.scoredisplay.ScoreDisplay` mode/layer at priority 1, available
+	* A :class:`~procgame.modes.ScoreDisplay` mode/layer at priority 1, available
 	  at ``self.score_display``.
 	* A :class:`~procgame.dmd.DisplayController` mode to manage the DMD layers,
 	  at ``self.dmd``.

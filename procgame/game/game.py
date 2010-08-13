@@ -21,7 +21,11 @@ def config_named(name):
 
 
 class GameController(object):
-	"""Core object comprising modes, coils, lamps, switches."""
+	"""Core object representing the game itself.
+	Usually a game developer will create a new game by subclassing this class.
+	Consider subclassing :class:`BasicGame` instead, as it makes use of several helpful modes
+	and controllers.
+	"""
 	
 	machineType = None
 	"""Machine type used to configure :attr:`proc` in this class's initializer."""
@@ -38,25 +42,25 @@ class GameController(object):
 	"""An :class:`AttrCollection` of :class:`Switch` objects.  Populated by :meth:`load_config`."""
 	
 	ball = 0
-	""""""
+	"""The number of the current ball.  A value of 1 represents the first ball; 0 indicates game over."""
 	players = []
-	""""""
+	"""Collection of :class:`Player` objects."""
 	old_players = []
-	""""""
+	"""Copy of :attr:`players` made when :meth:`reset` is called."""
 	current_player_index = 0
-	""""""
+	"""Index in :attr:`players` of the current player."""
 	t0 = None
-	""""""
+	"""Start :class:`time.time` of the game program.  I.e., the time of power-up."""
 	config = None
-	""""""
+	"""YAML game configuration loaded by :meth:`load_config`."""
 	balls_per_game = 3
-	""""""
+	"""Number of balls per game."""
 	logging_enabled = True
-	""""""
+	"""Determines whether :meth:`log` will print the log messages it is sent."""
 	game_data = {}
-	""""""
+	"""Contains high score and audit information.  That is, transient information specific to one game installation."""
 	user_settings = {}
-	""""""
+	"""Contains local game configuration, such as the volume."""
 	
 	def __init__(self, machineType):
 		super(GameController, self).__init__()
@@ -97,6 +101,7 @@ class GameController(object):
 		self.modes.modes = []
 	
 	def current_player(self):
+		"""Returns the current :class:`Player` as described by :attr:`current_player_index`."""
 		if len(self.players) > self.current_player_index:
 			return self.players[self.current_player_index]
 		else:

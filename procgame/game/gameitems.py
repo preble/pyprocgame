@@ -149,12 +149,26 @@ class Switch(GameItem):
 
 
 class Player(object):
-	"""docstring for Player"""
+	"""Represents a player in the game.
+	The game maintains a collection of players in :attr:`GameController.players`."""
+	
+	score = 0
+	"""This player's score."""
+	
+	name = None
+	"""This player's name."""
+
+	extra_balls = 0
+	"""Number of extra balls that this player has earned."""
+	
+	info_record = {}
+	"""Game-specific information."""
+	
+	game_time = 0
+	"""Number of seconds that this player has had the ball in play."""
+	
 	def __init__(self, name):
 		super(Player, self).__init__()
-		self.score = 0
 		self.name = name
-		self.extra_balls = 0
 		self.info_record = {}
-		self.game_time = 0
 
