@@ -56,10 +56,9 @@ class TestGame(game.BasicGame):
 		self.enable_flippers(enable=False)
 
 def main():
-	machineType = 'wpc'
 	game = None
 	try:
-	 	game = TestGame(machineType)
+	 	game = TestGame(pinproc.MachineTypeWPC)
 		game.setup()
 		game.run_loop()
 	finally:
