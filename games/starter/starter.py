@@ -338,19 +338,7 @@ class Game(basicgame.BasicGame):
 		p = self.current_player()
 		p.extra_balls += 1
 
-	def update_player_record(self, key, record):
-		p = self.current_player()
-		p.info_record[key] = record
-
-	def get_player_record(self, key):
-		p = self.current_player()
-		if key in p.info_record:
-			return p.info_record[key]
-		else:
-			return []
-
 	def setup_ball_search(self):
-
 		# No special handlers in starter game.
 		special_handler_modes = []
 		self.ball_search = procgame.ballsearch.BallSearch(self, priority=100, \

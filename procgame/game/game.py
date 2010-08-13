@@ -85,6 +85,14 @@ class GameController(object):
 		klass = util.get_class(klass_name)
 		return klass(self.machineType)
 	
+	def create_player(self, name):
+		"""Instantiates and returns a new instance of the :class:`Player` class with the
+		name *name*.
+		This method is called by :meth:`add_player`.
+		This can be used to supply a custom subclass of :class:`Player`.
+		"""
+		return Player(name)
+	
 	def __enter__(self):
 		pass
 	
@@ -107,8 +115,9 @@ class GameController(object):
 		else:
 			return None
 	
-	def add_player(self, player_class=Player):
-		player = player_class('Player %d' % (len(self.players) + 1))
+	def add_player(self):
+		"""Adds a new player to :attr:`players` and assigns it an appropriate name."""
+		player = self.create_player('Player %d' % (len(self.players) + 1))
 		self.players += [player]
 		return player
 

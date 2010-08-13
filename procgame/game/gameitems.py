@@ -161,14 +161,10 @@ class Player(object):
 	extra_balls = 0
 	"""Number of extra balls that this player has earned."""
 	
-	info_record = {}
-	"""Game-specific information."""
-	
 	game_time = 0
 	"""Number of seconds that this player has had the ball in play."""
 	
 	def __init__(self, name):
 		super(Player, self).__init__()
 		self.name = name
-		self.info_record = {}
 
