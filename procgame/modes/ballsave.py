@@ -1,7 +1,14 @@
 from ..game import Mode
 
 class BallSave(Mode):
-	"""Keeps track of ball save timer.  Works in conjection with a trough object."""
+	"""Manages a game's ball save functionality by Keeping track of ball save timer and the number of balls to be saved.
+
+	Parameters:
+
+		'game': Parent game object.
+		'lamp": Name of lamp to blink while ball save is active.
+		'delayed_start_switch': Optional - Name of switch who's inactive event will cause the ball save timer to start (ie. Shooter Lane).
+	""" 
 	def __init__(self, game, lamp, delayed_start_switch='None'):
 		super(BallSave, self).__init__(game, 3)
 		self.lamp = lamp
@@ -11,21 +18,25 @@ class BallSave(Mode):
 		self.timer = 0
 		if delayed_start_switch != 'None' and delayed_start_switch != 'none':
 			self.add_switch_handler(name=delayed_start_switch, event_type='inactive', delay=1.0, handler=self.delayed_start_handler)
-		self.callback = 'None'
 
-	def mode_started(self):
-		self.game.trough.ball_save_callback = self.launch_callback
-		
+		""" Optional method to be called when a ball is saved.  Should be defined externally."""
+		self.callback = None
+
+		""" Optional method to be called to tell a trough to save balls.  Should be linked externally to an enable method for a trough."""
+		self.trough_enable_ball_save = None
+
 	def mode_stopped(self):
 		self.disable()
 
 	def launch_callback(self):
+		"""Disables the ball save logic when multiple saves are not allowed.  This is typically linked to a Trough object so the trough can notify this logic when a ball is being saved.  If 'self.callback' is externally defined, that method will be called from here."""
 		if not self.allow_multiple_saves:
 			self.disable()
-		if self.callback != 'None':
+		if self.callback:
 			self.callback()
 
 	def start_lamp(self):
+		"""Starts blinking the ball save lamp.  Oftentimes called externally to start blinking the lamp before a ball is plunged."""
 		self.lamp.schedule(schedule=0xFF00FF00, cycle_seconds=0, now=True)
 
 	def update_lamps(self):
@@ -37,6 +48,7 @@ class BallSave(Mode):
 			self.lamp.disable()
 
 	def add(self, add_time, allow_multiple_saves=True):
+		"""Adds time to the ball save timer."""
 		if self.timer >= 1:
 			self.timer += add_time
 			self.update_lamps()
@@ -44,12 +56,16 @@ class BallSave(Mode):
 			self.start(self.num_balls_to_save, add_time, True, allow_multiple_saves)
 
 	def disable(self):
-		self.game.trough.ball_save_active = False
+		"""Disables the ball save logic."""
+		if self.trough_enable_ball_save:
+			self.trough_enable_ball_save(False)
 		self.timer = 0
 		self.lamp.disable()
 
 	def start(self, num_balls_to_save=1, time=12, now=True, allow_multiple_saves=False):
-		self.game.trough.ball_save_active = True
+		"""Activates the ball save logic."""
+		if self.trough_enable_ball_save:
+			self.trough_enable_ball_save(True)
 		self.allow_multiple_saves = allow_multiple_saves
 		self.num_balls_to_save = num_balls_to_save
 		self.timer = time
@@ -64,7 +80,8 @@ class BallSave(Mode):
 		self.timer -= 1
 
 		if self.timer < 1:
-			self.game.trough.ball_save_active = False
+			if self.trough_enable_ball_save:
+				self.trough_enable_ball_save(False)
 
 		if (self.timer >= 1):
 			self.delay(name='ball_save_timer', event_type=None, delay=1, handler=self.timer_countdown)
@@ -74,23 +91,27 @@ class BallSave(Mode):
 	def is_active(self):
 		return self.timer > 0
 
+	def get_num_balls_to_save(self):
+		"""Returns the number of balls that can be saved.  Typically this is linked to a Trough object so the trough can decide if a a draining ball should be saved."""
+		return self.num_balls_to_save
+
 	def saving_ball(self):
 		if not self.allow_multiple_saves:
 			self.timer = 1
 			self.lamp.disable()
 
 
-	def eject(self):
-		if self.game.machineType == 'wpc' or self.game.machineType == 'wpc95' or self.game.machineType == 'wpcAlphanumeric':
-			if self.game.switches.trough6.is_open():
-				self.game.coils.trough.pulse(20)
-			else:
-				self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
-		elif self.game.machineType == 'sternWhitestar' or self.game.machineType == 'sternSAM':
-			if self.game.switches.trough1.is_open():
-				self.game.coils.trough.pulse(20)
-			else:
-				self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
+#	def eject(self):
+#		if self.game.machineType == 'wpc' or self.game.machineType == 'wpc95' or self.game.machineType == 'wpcAlphanumeric':
+#			if self.game.switches.trough6.is_open():
+#				self.game.coils.trough.pulse(20)
+#			else:
+#				self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
+#		elif self.game.machineType == 'sternWhitestar' or self.game.machineType == 'sternSAM':
+#			if self.game.switches.trough1.is_open():
+#				self.game.coils.trough.pulse(20)
+#			else:
+#				self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
 
 	def delayed_start_handler(self, sw):
 		if self.mode_begin:
