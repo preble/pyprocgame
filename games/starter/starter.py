@@ -75,7 +75,7 @@ class Attract(game.Mode):
 	# Perhaps if the trough isn't full after a few ball search attempts, it logs a ball
 	# as lost?	
 	def sw_startButton_active(self, sw):
-		if self.game.trough.is_full():
+		if self.game.trough.is_full:
 			# Remove attract mode from mode queue - Necessary?
 			self.game.modes.remove(self)
 			# Initialize game	
@@ -234,7 +234,7 @@ class BaseGameMode(game.Mode):
 
 
 
-class Game(basicgame.BasicGame):
+class Game(game.BasicGame):
 	"""docstring for Game"""
 	def __init__(self, machine_type):
 		super(Game, self).__init__(machine_type)
@@ -261,7 +261,7 @@ class Game(basicgame.BasicGame):
 		self.base_game_mode = BaseGameMode(self)
 		# Note - Game specific item:
 		# The last parameter should be the name of the game's ball save lamp
-		self.ball_save = procgame.ballsave.BallSave(self, self.lamps.drainShield, 'shooterR')
+		self.ball_save = procgame.modes.BallSave(self, self.lamps.drainShield, 'shooterR')
 
 		trough_switchnames = []
 		# Note - Game specific item:
@@ -276,7 +276,12 @@ class Game(basicgame.BasicGame):
 		# be the switch of the next ball to be ejected.  Some games
 		# number the trough switches in the opposite order; so trough1
 		# might be the proper switchname to user here.
-		self.trough = procgame.trough.Trough(self,trough_switchnames,'trough6','trough', early_save_switchnames, 'shooterR', self.drain_callback)
+		self.trough = procgame.modes.Trough(self,trough_switchnames,'trough6','trough', early_save_switchnames, 'shooterR', self.drain_callback)
+	
+		# Link ball_save to trough
+		self.trough.ball_save_callback = self.ball_save.launch_callback
+		self.trough.num_balls_to_save = self.ball_save.get_num_balls_to_save
+		self.ball_save.trough_enable_ball_save = self.trough.enable_ball_save
 
 		# Setup and instantiate service mode
 		self.sound.register_sound('service_enter', sound_path+"menu_in.wav")
@@ -341,7 +346,7 @@ class Game(basicgame.BasicGame):
 	def setup_ball_search(self):
 		# No special handlers in starter game.
 		special_handler_modes = []
-		self.ball_search = procgame.ballsearch.BallSearch(self, priority=100, \
+		self.ball_search = procgame.modes.BallSearch(self, priority=100, \
                                      countdown_time=10, coils=self.ballsearch_coils, \
                                      reset_switches=self.ballsearch_resetSwitches, \
                                      stop_switches=self.ballsearch_stopSwitches, \
