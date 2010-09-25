@@ -387,6 +387,10 @@ class Layer(object):
 		self.opaque = opaque
 		self.set_target_position(0, 0)
 
+	def reset(self):
+		# To be overridden
+		pass
+
 	def set_target_position(self, x, y):
 		"""Setter for :attr:`target_x` and :attr:`target_y`."""
 		self.target_x = x
@@ -594,19 +598,21 @@ class AnimatedLayer(Layer):
 			self.frames = frames
 		self.frame_time = frame_time # Number of frames each frame should be displayed for before moving to the next.
 		self.frame_time_counter = self.frame_time
+		self.reset()
+	def reset(self):
+		self.frame_pointer = 0
 	def next_frame(self):
 		"""Returns the frame to be shown, or None if there is no frame."""
 		if len(self.frames) == 0:
 			return None
-		frame = self.frames[0] # Get the first frame in this layer's list.
+		frame = self.frames[self.frame_pointer]
 		self.frame_time_counter -= 1
 		if (self.hold == False or len(self.frames) > 1) and (self.frame_time_counter == 0):
-			if self.repeat:
-				f = self.frames[0]
-				del self.frames[0]
-				self.frames += [f]
+			if (self.frame_pointer == len(self.frames)-1):
+				if self.repeat:
+					self.frame_pointer = 0
 			else:
-				del self.frames[0] # Pop off the frame if there are others
+				self.frame_pointer += 1
 		if self.frame_time_counter == 0:
 			self.frame_time_counter = self.frame_time
 		return frame
@@ -718,6 +724,7 @@ class ScriptedLayer(Layer):
 					self.on_complete()
 			script_item = self.script[self.script_index]
 			self.frame_start_time = time.time()
+			script_item['layer'].reset()
 		layer = script_item['layer']
 		if layer != None:
 			self.buffer.clear()
