@@ -22,6 +22,14 @@ pyprocgame is a Python-based pinball software development framework for use with
 	ref-pinproc
 	tools
 
+Release Notes
+=============
+
+.. toctree::
+	:glob:
+	
+	notes/*
+
 Indices and tables
 ==================
 
