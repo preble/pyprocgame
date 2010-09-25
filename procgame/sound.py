@@ -1,3 +1,5 @@
+import random
+
 try:
 	print("Initializing sound...")
 	from pygame import mixer # This call takes a while.
@@ -28,6 +30,8 @@ class SoundController(object):
 		"""Start playing music at the given *key*."""
 		if not self.enabled: return
 		if key in self.music:
+			if len(self.music[key]) > 0:
+				random.shuffle(self.music[key])
 			self.load_music(key)
 			mixer.music.play(loops,start_time)
 
@@ -36,7 +40,7 @@ class SoundController(object):
 		if not self.enabled: return
 		mixer.music.stop()
 
-	def fadeout_music(self, time_ms = 750):
+	def fadeout_music(self, time_ms = 450):
 		""" """
 		if not self.enabled: return
 		mixer.music.fadeout(time_ms)
@@ -44,15 +48,19 @@ class SoundController(object):
 	def load_music(self, key):
 		""" """
 		if not self.enabled: return
-		mixer.music.load(self.music[key])
+		mixer.music.load(self.music[key][0])
 
 	def register_sound(self, key, sound_file):
 		""" """
 		if not self.enabled: return
 		if os.path.isfile(sound_file):
 			self.new_sound = mixer.Sound(str(sound_file))
-               		self.sounds[key] = self.new_sound
-			self.sounds[key].set_volume(self.volume)
+			self.new_sound.set_volume(self.volume)
+			if key in self.sounds:
+				if not self.new_sound in self.sounds[key]:
+					self.sounds[key].append(self.new_sound)
+			else:
+				self.sounds[key] = [self.new_sound]
 		else:
 			print ("Sound registration error: file %s does not exist!" % sound_file)
 
@@ -60,7 +68,11 @@ class SoundController(object):
 		""" """
 		if not self.enabled: return
 		if os.path.isfile(music_file):
-                	self.music[key] = music_file
+			if key in self.music:
+				if not music_file in self.music[key]:
+					self.music[key].append(music_file)
+			else:
+                		self.music[key] = [music_file]
 		else:
 			print ("Music registration error: file %s does not exist!" % music_file)
 
@@ -68,7 +80,9 @@ class SoundController(object):
 		""" """
 		if not self.enabled: return
 		if key in self.sounds:
-			self.sounds[key].play(loops,max_time,fade_ms)
+			if len(self.sounds[key]) > 0:
+				random.shuffle(self.sounds[key])
+			self.sounds[key][0].play(loops,max_time,fade_ms)
 
 	def stop(self,key, loops=0, max_time=0, fade_ms=0):
 		""" """
