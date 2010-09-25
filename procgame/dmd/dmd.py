@@ -699,9 +699,15 @@ class ScriptedLayer(Layer):
 		time_on_frame = time.time() - self.frame_start_time
 		if self.force_direction != None or time_on_frame > script_item['seconds']:
 			if self.force_direction == False:
-				self.script_index -= 1
+				if self.script_index == 0:
+					self.script_index = len(self.script)-1 
+				else:
+					self.script_index -= 1
 			else:
-				self.script_index += 1
+				if self.script_index == len(self.script):
+					self.script_index = 0
+				else:
+					self.script_index += 1
 
 			# Only force one item.
 			self.force_direction = None
