@@ -601,18 +601,24 @@ class AnimatedLayer(Layer):
 		self.reset()
 	def reset(self):
 		self.frame_pointer = 0
+		self.complete = False
 	def next_frame(self):
 		"""Returns the frame to be shown, or None if there is no frame."""
-		if len(self.frames) == 0:
+		if self.complete:
 			return None
+
 		frame = self.frames[self.frame_pointer]
 		self.frame_time_counter -= 1
 		if (self.hold == False or len(self.frames) > 1) and (self.frame_time_counter == 0):
 			if (self.frame_pointer == len(self.frames)-1):
 				if self.repeat:
 					self.frame_pointer = 0
+				else:
+					self.complete = True
+					frame = None
 			else:
 				self.frame_pointer += 1
+
 		if self.frame_time_counter == 0:
 			self.frame_time_counter = self.frame_time
 		return frame
