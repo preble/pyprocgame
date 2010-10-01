@@ -101,7 +101,8 @@ class Mode(object):
 			print("WARNING: Unknown switch %s for mode method %s in class %s!" % (name, item, self.__class__.__name__))
 			return
 		d = {'name':name, 'type':et, 'delay':delay, 'handler':handler, 'param':sw}
-		self.__accepted_switches += [d]
+		if d not in self.__accepted_switches:
+			self.__accepted_switches += [d]
 	
 	def status_str(self):
 		return self.__class__.__name__
