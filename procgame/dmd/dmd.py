@@ -622,6 +622,41 @@ class AnimatedLayer(Layer):
 			self.frame_time_counter = self.frame_time
 		return frame
 
+
+class FrameQueueLayer(Layer):
+	"""Queue of frames displayed sequentially, as an animation.  Optionally holds the last frame on-screen.
+	Destroys the frame list as it displays frames.  In that respect this class implements the old behavior
+	of :class:`AnimatedLayer`.
+	"""
+	def __init__(self, opaque=False, hold=True, repeat=False, frame_time=1, frames=None):
+		super(FrameQueueLayer, self).__init__(opaque)
+		self.hold = hold
+		self.repeat = repeat
+		if frames == None:
+			self.frames = list()
+		else:
+			self.frames = frames
+		self.frame_time = frame_time # Number of frames each frame should be displayed for before moving to the next.
+		self.frame_time_counter = self.frame_time
+	
+	def next_frame(self):
+		"""Returns the frame to be shown, or None if there is no frame."""
+		if len(self.frames) == 0:
+			return None
+		frame = self.frames[0] # Get the first frame in this layer's list.
+		self.frame_time_counter -= 1
+		if (self.hold == False or len(self.frames) > 1) and (self.frame_time_counter == 0):
+			if self.repeat:
+				f = self.frames[0]
+				del self.frames[0]
+				self.frames += [f]
+			else:
+				del self.frames[0] # Pop off the frame if there are others
+		if self.frame_time_counter == 0:
+			self.frame_time_counter = self.frame_time
+		return frame
+
+
 class TextLayer(Layer):
 	"""Layer that displays text."""
 	def __init__(self, x, y, font, justify="left", opaque=False):
