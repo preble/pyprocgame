@@ -3,6 +3,7 @@ __all__ = [
 	'desktop',
 	'dmd',
 	'game',
+	'highscore',
 	'lamps',
 	'modes',
 	'service',
@@ -11,6 +12,7 @@ __all__ = [
 import config
 import desktop
 import game
+import highscore
 import lamps
 import modes
 import service
