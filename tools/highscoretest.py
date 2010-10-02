@@ -38,7 +38,7 @@ class BaseGameMode(game.Mode):
 class Attract(game.Mode):
 	def mode_started(self):
 		# Create a ScriptedLayer with frames for each of the high scores:
-		script = list()
+		script = [{'seconds':2.0, 'layer':None}]
 		for frame in highscore.generate_highscore_frames(self.game.highscore_categories):
 			layer = dmd.FrameLayer(frame=frame)
 			script.append({'seconds':2.0, 'layer':layer})
