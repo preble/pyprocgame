@@ -52,6 +52,7 @@ class SoundController(object):
 
 	def register_sound(self, key, sound_file):
 		""" """
+		print ("Registering sound - key: %s, file: %s" % (key, sound_file))
 		if not self.enabled: return
 		if os.path.isfile(sound_file):
 			self.new_sound = mixer.Sound(str(sound_file))
@@ -88,7 +89,7 @@ class SoundController(object):
 		""" """
 		if not self.enabled: return
 		if key in self.sounds:
-			self.sounds[key].stop()
+			self.sounds[key][0].stop()
 
 	def volume_up(self):
 		""" """
