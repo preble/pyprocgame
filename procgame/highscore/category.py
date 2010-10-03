@@ -23,9 +23,6 @@ class HighScoreCategory:
 	
 	"""
 
-	default_scores = [HighScore(score=5000000,inits='GSS'),HighScore(score=4000000,inits='ASP'),HighScore(score=3000000,inits='JRP'),HighScore(score=2000000,inits='JAG'),HighScore(score=1000000,inits='JTW')]
-	"""List of populated :class:`HighScore` objects representing the default high scores for this category."""
-
 	titles = ['Grand Champion', 'High Score #1', 'High Score #2', 'High Score #3', 'High Score #4']
 	"""There must be a title for each high score slot desired for this category."""
 
@@ -36,7 +33,7 @@ class HighScoreCategory:
 			for d in game.game_data[self.game_data_key]:
 				self.scores.append(HighScore().from_dict(d))
 		else:
-			self.scores = list(self.default_scores)
+			game.log('WARNING: HighScoreCategory.load_from_game(): game_data_key %s not found in game_data.' % (self.game_data_key))
 
 		for score in self.scores:
 			score.key = None # No key for existing scores.

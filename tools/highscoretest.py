@@ -58,12 +58,19 @@ class TestGame(game.BasicGame):
 		self.highscore_categories = []
 		
 		cat = highscore.HighScoreCategory()
+		# because we don't have a game_data template:
+		cat.scores = [highscore.HighScore(score=5000000,inits='GSS'),\
+					  highscore.HighScore(score=4000000,inits='ASP'),\
+					  highscore.HighScore(score=3000000,inits='JRP'),\
+					  highscore.HighScore(score=2000000,inits='JAG'),\
+					  highscore.HighScore(score=1000000,inits='JTW')]
 		cat.game_data_key = 'ClassicHighScoreData'
 		self.highscore_categories.append(cat)
 		
 		cat = highscore.HighScoreCategory()
 		cat.game_data_key = 'LoopsHighScoreData'
-		cat.default_scores = [highscore.HighScore(score=5,inits='GSS')]
+		# because we don't have a game_data template:
+		cat.scores = [highscore.HighScore(score=5,inits='GSS')]
 		cat.titles = ['Loop Champ']
 		cat.score_suffix_singular = ' loop'
 		cat.score_suffix_plural = ' loops'
