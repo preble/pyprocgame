@@ -317,11 +317,18 @@ class GameController(object):
 				hold_coil = self.coils[flipper+'Hold']
 				switch_num = self.switches[flipper].number
 
+				# Check to see if the flipper should be activated now.
+				if enable:
+					if self.switches[flipper].is_active():
+						self.coils[flipper+'Main'].pulse(34)
+						self.coils[flipper+'Hold'].pulse(0)
+				else:
+					self.coils[flipper+'Hold'].disable()
+
 				drivers = []
 				if enable:
 					drivers += [pinproc.driver_state_pulse(main_coil.state(), 34)]
 					drivers += [pinproc.driver_state_pulse(hold_coil.state(), 0)]
-	
 				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
 			
 				drivers = []
@@ -330,15 +337,20 @@ class GameController(object):
 					drivers += [pinproc.driver_state_disable(hold_coil.state())]
 	
 				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
-				# Send a disable signal to make sure flipper hold is off.
-				# Otherwise could be stuck on if rules disabled while hold is active.
-				self.coils[flipper+'Hold'].disable()
                 elif self.machine_type == 'sternWhitestar' or self.machine_type == 'sternSAM':
 			for flipper in self.config['PRFlippers']:
 				print("  programming flipper %s" % (flipper))
 				main_coil = self.coils[flipper+'Main']
 				#switch_num = self.switches[flipper].number
 				switch_num = pinproc.decode(self.machine_type, str(self.switches[flipper].number))
+
+				# Check to see if the flipper should be activated now.
+				if enable:
+					if self.switches[flipper].is_active():
+						self.coils[flipper+'Main'].patter(3, 22, 34)
+				else:
+					self.coils[flipper+'Main'].disable()
+
 
 				drivers = []
 				if enable:
@@ -351,9 +363,6 @@ class GameController(object):
 					drivers += [pinproc.driver_state_disable(main_coil.state())]
 	
 				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
-				# Send a disable signal to make sure flipper is off.
-				# Otherwise could be stuck on if rules disabled while flipper is pattering.
-				self.coils[flipper+'Main'].disable()
 	
 		for bumper in self.config['PRBumpers']:
 			switch_num = self.switches[bumper].number
