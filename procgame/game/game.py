@@ -203,7 +203,7 @@ class GameController(object):
 		pass
 		
 	def load_config(self, filename):
-		"""Reads the YAML configuration file into memory.
+		"""Reads the YAML machine configuration file into memory.
 		Configures the switches, lamps, and coils members.
 		Enables notifyHost for the open and closed debounced states on each configured switch.
 		"""
@@ -247,9 +247,14 @@ class GameController(object):
 		self.num_balls_total = sect_dict['numBalls']
 
 	def load_settings(self, template_filename, user_filename):
-		"""Reads the YAML configuration file into memory.
-		Configures the switches, lamps, and coils members.
-		Enables notifyHost for the open and closed debounced states on each configured switch."""
+		"""Loads the YAML game settings configuration file.  The game settings
+		describe operator configuration options, such as balls per game and
+		replay levels.
+		The *template_filename* provides default values for the game;
+		*user_filename* contains the values set by the user.
+		
+		See also: :meth:`write_settings`
+		"""
 		self.user_settings = {}
 		self.settings = yaml.load(open(template_filename, 'r'))
 		if os.path.exists(user_filename):
@@ -270,9 +275,13 @@ class GameController(object):
 						self.user_settings[section][item] = self.settings[section][item]['options'][0]
 
 	def load_game_data(self, template_filename, user_filename):
-		"""Reads the YAML configuration file into memory.
-		Configures the switches, lamps, and coils members.
-		Enables notifyHost for the open and closed debounced states on each configured switch."""
+		"""Loads the YAML game data configuration file.  This file contains
+		transient information such as audits, high scores and other statistics.
+		The *template_filename* provides default values for the game;
+		*user_filename* contains the values set by the user.
+		
+		See also: :meth:`write_game_data`
+		"""
 		self.game_data = {}
 		self.game_template_data = yaml.load(open(template_filename, 'r'))
 		if os.path.exists(user_filename):
@@ -295,14 +304,14 @@ class GameController(object):
 							self.game_data[section][item][entry] = self.game_template_data[section][item][entry]	
 
 	def write_settings(self, filename):
-		"""Reads the YAML configuration file into memory."""
+		"""Writes the game settings to *filename*.  See :meth:`load_settings`."""
 		if os.path.exists(filename):
 			os.remove(filename)
 		stream = file(filename, 'w')
 		yaml.dump(self.user_settings, stream)
 
 	def write_game_data(self, filename):
-		"""Reads the YAML configuration file into memory."""
+		"""Writes the game data to *filename*.  See :meth:`load_game_data`."""
 		if os.path.exists(filename):
 			os.remove(filename)
 		stream = file(filename, 'w')
