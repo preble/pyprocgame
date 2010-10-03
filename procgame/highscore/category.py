@@ -40,7 +40,6 @@ class HighScoreCategory:
 
 	def save_to_game(self, game):
 		"""Saves :attr:`scores` to *game* using :attr:`game_data_key`."""
-		self.scores = self.scores[0:len(self.titles)]
 		save_scores = map(lambda s: s.to_dict(), self.scores)
 		game.game_data[self.game_data_key] = save_scores
 
@@ -68,14 +67,15 @@ class CategoryDrivenDataHelper:
 		"""Uses the name as the key."""
 		hs = HighScore(score=score, inits=None, name=name, key=name)
 		category.scores.append(hs)
+		category.scores = sorted(category.scores, reverse=True) # Reverse to sort from high to low.
+		category.scores = category.scores[0:len(category.titles)]
 
 	def prompts(self):
 		prompts = list()
 		# Create keyed_prompts:
 		keyed_prompts = {}
 		for category in self.categories:
-			category.scores = sorted(category.scores, reverse=True) # Reverse to sort from high to low.
-			for index, score in enumerate(category.scores[0:len(category.titles)]):
+			for index, score in enumerate(category.scores):
 				if score.inits == None:
 					new_title = category.titles[index]
 					if score.key in keyed_prompts:
