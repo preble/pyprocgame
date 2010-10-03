@@ -269,6 +269,10 @@ class GroupedLayer(Layer):
 		else:
 			self.layers = layers
 
+	def reset(self):
+		for layer in self.layers:
+			layer.reset()
+
 	def next_frame(self):
 		self.buffer.clear()
 		composited_count = 0
