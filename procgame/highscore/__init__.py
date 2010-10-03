@@ -27,6 +27,7 @@ def generate_highscore_frames(categories):
 				score_str += category.score_suffix_singular
 			else:
 				score_str += category.score_suffix_plural
-			frame = markup.frame_for_markup(markup='[%s]\n#%s#\n[%s]' % (category.titles[index], score.inits, score_str))
+			text = '[%s]\n#%s#\n[%s]' % (category.titles[index], score.inits, score_str)
+			frame = markup.frame_for_markup(markup=text, y_offset=4)
 			frames.append(frame)
 	return frames
