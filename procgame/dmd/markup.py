@@ -25,13 +25,16 @@ class MarkupFrameGenerator:
 		self.frame = None
 		self.font_plain = font_named('Font07x5.dmd')
 		self.font_bold = font_named('Font09Bx7.dmd')
-	def frame_for_markup(self, markup):
+	def frame_for_markup(self, markup, y_offset=0):
 		"""Returns a Frame with the given markup rendered within it.
-			The frame width is fixed, but the height will be adjusted
-			to fit the contents while respecting min_height."""
+		The frame width is fixed, but the height will be adjusted
+		to fit the contents while respecting min_height.
+		
+		The Y offset can be configured supplying *y_offset*.
+		"""
 		lines = markup.split('\n')
 		for draw in [False, True]:
-			y = 0
+			y = y_offset
 			for line in lines:
 				if line.startswith('#') and line.endswith('#'): # centered headline!
 					y = self.__draw_text(y=y, text=line[1:-1], font=self.font_bold, justify='center', draw=draw)

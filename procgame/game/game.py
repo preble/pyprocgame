@@ -255,7 +255,7 @@ class GameController(object):
 		The *template_filename* provides default values for the game;
 		*user_filename* contains the values set by the user.
 		
-		See also: :meth:`write_settings`
+		See also: :meth:`save_settings`
 		"""
 		self.user_settings = {}
 		self.settings = yaml.load(open(template_filename, 'r'))
@@ -276,43 +276,32 @@ class GameController(object):
 					else:
 						self.user_settings[section][item] = self.settings[section][item]['options'][0]
 
-	def load_game_data(self, template_filename, user_filename):
-		"""Loads the YAML game data configuration file.  This file contains
-		transient information such as audits, high scores and other statistics.
-		The *template_filename* provides default values for the game;
-		*user_filename* contains the values set by the user.
-		
-		See also: :meth:`write_game_data`
-		"""
-		self.game_data = {}
-		self.game_template_data = yaml.load(open(template_filename, 'r'))
-		if os.path.exists(user_filename):
-			self.game_data = yaml.load(open(user_filename, 'r'))
-		
-		for section in self.game_template_data:
-			if not section in self.game_data:
-				self.game_data[section] = {}
-			if section == 'Audits':
-				for entry in self.game_template_data[section]:
-					if not entry in self.game_data[section]:
-						self.game_data[section][entry] = self.game_template_data[section][entry]	
-
-			else:
-				for item in self.game_template_data[section]:
-					if not item in self.game_data[section]:
-						self.game_data[section][item] = {}
-					for entry in self.game_template_data[section][item]:
-						if not entry in self.game_data[section][item]:
-							self.game_data[section][item][entry] = self.game_template_data[section][item][entry]	
-
-	def write_settings(self, filename):
+	def save_settings(self, filename):
 		"""Writes the game settings to *filename*.  See :meth:`load_settings`."""
 		if os.path.exists(filename):
 			os.remove(filename)
 		stream = file(filename, 'w')
 		yaml.dump(self.user_settings, stream)
 
-	def write_game_data(self, filename):
+	def load_game_data(self, template_filename, user_filename):
+		"""Loads the YAML game data configuration file.  This file contains
+		transient information such as audits, high scores and other statistics.
+		The *template_filename* provides default values for the game;
+		*user_filename* contains the values set by the user.
+		
+		See also: :meth:`save_game_data`
+		"""
+		self.game_data = {}
+		template = yaml.load(open(template_filename, 'r'))
+		if os.path.exists(user_filename):
+			self.game_data = yaml.load(open(user_filename, 'r'))
+		
+		if template:
+			for key, value in template.iteritems():
+				if key not in self.game_data:
+					self.game_data[key] = copy.deepcopy(value)
+	
+	def save_game_data(self, filename):
 		"""Writes the game data to *filename*.  See :meth:`load_game_data`."""
 		if os.path.exists(filename):
 			os.remove(filename)
