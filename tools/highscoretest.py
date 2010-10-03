@@ -38,10 +38,13 @@ class BaseGameMode(game.Mode):
 class Attract(game.Mode):
 	def mode_started(self):
 		# Create a ScriptedLayer with frames for each of the high scores:
-		script = [{'seconds':2.0, 'layer':None}]
+		script = [{'seconds':2.0, 'layer':self.game.score_display.layer, 'transition':dmd.PushLayerTransition()}]
 		for frame in highscore.generate_highscore_frames(self.game.highscore_categories):
 			layer = dmd.FrameLayer(frame=frame)
-			script.append({'seconds':2.0, 'layer':layer})
+			layer.set_target_position(0, 4)
+			script.append({'seconds':2.0, 'layer':layer, 'transition':dmd.PushLayerTransition()})
+		script[0]['transition'].direction = 'east'
+		script[1]['transition'].direction = 'west'
 		self.layer = dmd.ScriptedLayer(width=128, height=32, script=script)
 
 class TestGame(game.BasicGame):

@@ -167,20 +167,31 @@ class ScriptedLayer(Layer):
 	"""
 	def __init__(self, width, height, script):
 		super(ScriptedLayer, self).__init__()
-		self.buffer = Frame(width, height)
+		self.buffer0 = Frame(width, height)
+		self.buffer1 = Frame(width, height)
 		self.script = script
 		self.script_index = 0
 		self.frame_start_time = None
 		self.force_direction = None
 		self.on_complete = None
+		self.is_new_script_item = True
+		self.last_layer = None
 	
 	def next_frame(self):
 		# This assumes looping.  TODO: Add code to not loop!
 		if self.frame_start_time == None:
 			self.frame_start_time = time.time()
+		
 		script_item = self.script[self.script_index]
+		
 		time_on_frame = time.time() - self.frame_start_time
+		
+		# If we are being forced to the next frame, or if the current script item has expired:
 		if self.force_direction != None or time_on_frame > script_item['seconds']:
+			
+			self.last_layer = script_item['layer']
+			
+			# Update the script index:
 			if self.force_direction == False:
 				if self.script_index == 0:
 					self.script_index = len(self.script)-1 
@@ -191,23 +202,48 @@ class ScriptedLayer(Layer):
 					self.script_index = 0
 				else:
 					self.script_index += 1
-
+			
 			# Only force one item.
 			self.force_direction = None
-
+			
+			# If we are at the end of the script, reset to the beginning:
 			if self.script_index == len(self.script):
 				self.script_index = 0
 				if self.on_complete != None:
 					self.on_complete()
+			
+			# Assign the new script item:
 			script_item = self.script[self.script_index]
 			self.frame_start_time = time.time()
-			script_item['layer'].reset()
+			layer = script_item['layer']
+			if layer:
+				layer.reset()
+			self.is_new_script_item = True
+		
+		# Composite the current script item's layer:
 		layer = script_item['layer']
+		
+		transition = None
+		if 'transition' in script_item:
+			transition = script_item['transition']
+		if transition:
+			if self.is_new_script_item:
+				transition.start()
+		
+		self.is_new_script_item = False
+		
 		if layer != None:
-			self.buffer.clear()
-			layer.composite_next(self.buffer)
-			return self.buffer
+			self.buffer0.clear()
+			layer.composite_next(self.buffer0)
+			
+			if transition and self.last_layer:
+				self.buffer1.clear()
+				self.last_layer.composite_next(self.buffer1)
+				return transition.next_frame(from_frame=self.buffer1, to_frame=self.buffer0)
+			else:
+				return self.buffer0
 		else:
+			# If this script item has None set for its layer, return None (transparent):
 			return None
 
 	def force_next(self, forward=True):
