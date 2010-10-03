@@ -729,7 +729,11 @@ class ScriptedLayer(Layer):
 					self.on_complete()
 			script_item = self.script[self.script_index]
 			self.frame_start_time = time.time()
-			script_item['layer'].reset()
+
+			# Check for a None object before calling reset.
+			if script_item['layer']:
+				script_item['layer'].reset()
+
 		layer = script_item['layer']
 		if layer != None:
 			self.buffer.clear()
@@ -760,6 +764,10 @@ class GroupedLayer(Layer):
 			self.layers = list()
 		else:
 			self.layers = layers
+
+	def reset(self):
+		for layer in self.layers:
+			layer.reset()
 
 	def next_frame(self):
 		self.buffer.clear()
