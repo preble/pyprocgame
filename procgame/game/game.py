@@ -12,6 +12,8 @@ from mode import *
 def config_named(name):
 	if not os.path.isfile(name): # If we cannot find this file easily, try searching the config_path:
 		config_paths = config.value_for_key_path('config_path', ['.'])
+		if issubclass(type(config_paths), str):
+			config_paths = [config_paths]
 		found_path = util.find_file_in_path(name, config_paths)
 		if found_path:
 			name = found_path
