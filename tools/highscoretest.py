@@ -35,17 +35,26 @@ class BaseGameMode(game.Mode):
 			self.game.reset()
 			return True
 
+
 class Attract(game.Mode):
 	def mode_started(self):
 		# Create a ScriptedLayer with frames for each of the high scores:
-		script = [{'seconds':2.0, 'layer':self.game.score_display.layer, 'transition':dmd.PushLayerTransition()}]
+		script = []
+		
+		# Cheating a bit here to make the score display have a transition, since it it always on:
+		script.append({'seconds':3.0, 'layer':self.game.score_display.layer})
+		self.game.score_display.layer.transition = dmd.PushLayerTransition(direction='south')
+		
 		for frame in highscore.generate_highscore_frames(self.game.highscore_categories):
 			layer = dmd.FrameLayer(frame=frame)
-			layer.set_target_position(0, 4)
-			script.append({'seconds':2.0, 'layer':layer, 'transition':dmd.PushLayerTransition()})
-		script[0]['transition'].direction = 'east'
-		script[1]['transition'].direction = 'west'
+			layer.transition = dmd.PushLayerTransition(direction='south')
+			script.append({'seconds':2.0, 'layer':layer})
+		
 		self.layer = dmd.ScriptedLayer(width=128, height=32, script=script)
+		
+		# Opaque allows transitions between scripted layer 'frames' to work:
+		self.layer.opaque=True
+
 
 class TestGame(game.BasicGame):
 	

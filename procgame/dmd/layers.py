@@ -167,8 +167,7 @@ class ScriptedLayer(Layer):
 	"""
 	def __init__(self, width, height, script):
 		super(ScriptedLayer, self).__init__()
-		self.buffer0 = Frame(width, height)
-		self.buffer1 = Frame(width, height)
+		self.buffer = Frame(width, height)
 		self.script = script
 		self.script_index = 0
 		self.frame_start_time = None
@@ -224,24 +223,22 @@ class ScriptedLayer(Layer):
 		layer = script_item['layer']
 		
 		transition = None
-		if 'transition' in script_item:
-			transition = script_item['transition']
-		if transition:
+		if layer and layer.transition:
 			if self.is_new_script_item:
-				transition.start()
+				layer.transition.start()
 		
 		self.is_new_script_item = False
 		
-		if layer != None:
-			self.buffer0.clear()
-			layer.composite_next(self.buffer0)
+		if layer:
+			self.buffer.clear()
 			
-			if transition and self.last_layer:
-				self.buffer1.clear()
-				self.last_layer.composite_next(self.buffer1)
-				return transition.next_frame(from_frame=self.buffer1, to_frame=self.buffer0)
-			else:
-				return self.buffer0
+			# If the layer is opaque we can composite the last layer onto our buffer
+			# first.  This will allow us to do transitions between script 'frames'.
+			if self.last_layer and self.opaque:
+				self.last_layer.composite_next(self.buffer)
+			
+			layer.composite_next(self.buffer)
+			return self.buffer
 		else:
 			# If this script item has None set for its layer, return None (transparent):
 			return None
@@ -249,7 +246,7 @@ class ScriptedLayer(Layer):
 	def force_next(self, forward=True):
 		"""Advances to the next script element in the given direction."""
 		self.force_direction = forward
-			
+
 
 class GroupedLayer(Layer):
 	""":class:`.Layer` subclass that composites several sublayers (members of its :attr:`layers` list attribute) together."""
