@@ -221,9 +221,6 @@ class LampShow(object):
 		new_time = (time.time() - self.t0)
 		seconds = int(new_time)
 		time_diff = new_time - self.last_time
-		logging_was_enabled = self.game.logging_enabled
-		self.game.logging_enabled = False
-		self.game.logging_enabled = True
 		if (time_diff > 0.500):
 			self.last_time = new_time
 			for tr in self.tracks:
@@ -231,7 +228,6 @@ class LampShow(object):
 					tr.resolve_driver_with_game(self.game)
 				sch = tr.next_schedule()
 				tr.driver.schedule(schedule=sch, cycle_seconds=1, now=True)
-		self.game.logging_enabled = logging_was_enabled
 	
 	def restart(self):
 		"""Restart the show from the beginning."""
