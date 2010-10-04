@@ -81,9 +81,9 @@ class ExpandTransition(LayerTransitionBase):
 		Frame.copy_rect(dst=frame, dst_x=dst_x, dst_y=dst_y, src=to_frame, src_x=dst_x, src_y=dst_y, width=width, height=height, op='copy')
 		return frame
 
-class SlideOverLayerTransition(LayerTransitionBase):
+class SlideOverTransition(LayerTransitionBase):
 	def __init__(self, direction='north'):
-		super(SlideOverLayerTransition, self).__init__()
+		super(SlideOverTransition, self).__init__()
 		self.direction = direction
 		self.progress_per_frame = 1.0/15.0
 	def transition_frame(self, from_frame, to_frame):
@@ -101,9 +101,9 @@ class SlideOverLayerTransition(LayerTransitionBase):
 		Frame.copy_rect(dst=frame, dst_x=dst_x, dst_y=dst_y, src=to_frame, src_x=0, src_y=0, width=from_frame.width, height=from_frame.height, op='copy')
 		return frame
 
-class PushLayerTransition(LayerTransitionBase):
+class PushTransition(LayerTransitionBase):
 	def __init__(self, direction='north'):
-		super(PushLayerTransition, self).__init__()
+		super(PushTransition, self).__init__()
 		self.direction = direction
 		self.progress_per_frame = 1.0/15.0
 	def transition_frame(self, from_frame, to_frame):
