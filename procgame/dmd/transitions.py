@@ -93,8 +93,8 @@ class SlideOverTransition(LayerTransitionBase):
 		if self.in_out == 'in':
 			prog = 1.0 - prog
 		dst_x, dst_y = {
-		 'north': (0, -prog*frame.height),
-		 'south': (0,  prog*frame.height),
+		 'north': (0,  prog*frame.height),
+		 'south': (0, -prog*frame.height),
 		 'east':  (-prog*frame.width, 0),
 		 'west':  ( prog*frame.width, 0),
 		}[self.direction]
@@ -116,8 +116,8 @@ class PushTransition(LayerTransitionBase):
 		else:
 			prog1 = 1.0 - prog1
 		dst_x, dst_y, dst_x1, dst_y1 = {
-		 'north': (0, -prog*frame.height,  0,  prog1*frame.height),
-		 'south': (0,  prog*frame.height,  0, -prog1*frame.height),
+		 'north': (0,  prog*frame.height,  0, -prog1*frame.height),
+		 'south': (0, -prog*frame.height,  0,  prog1*frame.height),
 		 'east':  (-prog*frame.width, 0,    prog1*frame.width, 0),
 		 'west':  ( prog*frame.width, 0,   -prog1*frame.width, 0),
 		}[self.direction]
