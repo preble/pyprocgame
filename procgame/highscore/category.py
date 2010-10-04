@@ -15,16 +15,19 @@ class HighScoreCategory:
 	"""Plural suffix to append to string representations of high scores in this category, such as ``points``.
 	Used by :func:`generate_highscore_frames`."""
 
-	score_for_player = lambda category, player: player.score
-	"""Method used to fetch the high score *score* value for a given category and player.
+	score_for_player = None
+	"""Method used to fetch the high score *score* value for a given :class:`~procgame.game.Player`.
 	The default value is::
 	
-	    lambda category, player: player.score
+	    lambda player: player.score
 	
 	"""
 
 	titles = ['Grand Champion', 'High Score #1', 'High Score #2', 'High Score #3', 'High Score #4']
 	"""There must be a title for each high score slot desired for this category."""
+	
+	def __init__(self):
+		self.score_for_player = lambda player: player.score
 
 	def load_from_game(self, game):
 		"""Loads :attr:`scores` from *game* using :attr:`game_data_key`."""
