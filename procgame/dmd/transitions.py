@@ -125,6 +125,33 @@ class PushLayerTransition(LayerTransitionBase):
 		Frame.copy_rect(dst=frame, dst_x=dst_x1, dst_y=dst_y1, src=from_frame, src_x=0, src_y=0, width=from_frame.width, height=from_frame.height, op='copy')
 		return frame
 
+class WipeTransition(LayerTransitionBase):
+	def __init__(self, direction='north'):
+		super(WipeTransition, self).__init__()
+		self.direction = direction
+		self.progress_per_frame = 1.0/15.0
+	def transition_frame(self, from_frame, to_frame):
+		frame = Frame(width=from_frame.width, height=from_frame.height)
+		prog0 = self.progress
+		prog1 = self.progress
+		if self.in_out == 'out':
+			prog0 = 1.0 - prog0
+		else:
+			prog1 = 1.0 - prog1
+		src_x, src_y = {
+		 'north': (0,  prog1*frame.height),
+		 'south': (0,  prog0*frame.height),
+		 'east':  (prog0*frame.width, 0),
+		 'west':  (prog1*frame.width, 0),
+		}[self.direction]
+		if self.direction in ['east', 'south']:
+			from_frame, to_frame = to_frame, from_frame
+		src_x = int(round(src_x))
+		src_y = int(round(src_y))
+		Frame.copy_rect(dst=frame, dst_x=0, dst_y=0, src=from_frame, src_x=0, src_y=0, width=from_frame.width, height=from_frame.height, op='copy')
+		Frame.copy_rect(dst=frame, dst_x=src_x, dst_y=src_y, src=to_frame, src_x=src_x, src_y=src_y, width=from_frame.width-src_x, height=from_frame.height-src_y, op='copy')
+		return frame
+
 class CrossFadeTransition(LayerTransitionBase):
 	"""Performs a cross-fade between two layers.  As one fades out the other one fades in."""
 	def __init__(self, width, height):
