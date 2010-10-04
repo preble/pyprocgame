@@ -152,6 +152,40 @@ class WipeTransition(LayerTransitionBase):
 		Frame.copy_rect(dst=frame, dst_x=src_x, dst_y=src_y, src=to_frame, src_x=src_x, src_y=src_y, width=from_frame.width-src_x, height=from_frame.height-src_y, op='copy')
 		return frame
 
+
+class ObscuredWipeTransition(LayerTransitionBase):
+	def __init__(self, obscuring_frame, composite_op, direction='north'):
+		super(ObscuredWipeTransition, self).__init__()
+		self.composite_op = composite_op
+		self.direction = direction
+		self.progress_per_frame = 1.0/15.0
+		self.obs_frame = obscuring_frame
+	
+	def transition_frame(self, from_frame, to_frame):
+		frame = Frame(width=from_frame.width, height=from_frame.height)
+		prog0 = self.progress
+		prog1 = self.progress
+		if self.in_out == 'out':
+			prog0 = 1.0 - prog0
+		else:
+			prog1 = 1.0 - prog1
+		# TODO: Improve the src_x/y so that it moves at the same speed as ovr_x/y, with the midpoint.
+		src_x, src_y, ovr_x, ovr_y = {
+		 'north': (0,  prog1*frame.height,   0,  frame.height-prog0*(self.obs_frame.height+2*frame.height)),
+		 'south': (0,  prog0*frame.height,   0,  frame.height-prog1*(self.obs_frame.height+2*frame.height)),
+		 'east':  (prog0*frame.width, 0,     frame.width-prog1*(self.obs_frame.width+2*frame.width), 0),
+		 'west':  (prog1*frame.width, 0,     frame.width-prog0*(self.obs_frame.width+2*frame.width), 0),
+		}[self.direction]
+		if self.direction in ['east', 'south']:
+			from_frame, to_frame = to_frame, from_frame
+		src_x = int(round(src_x))
+		src_y = int(round(src_y))
+		Frame.copy_rect(dst=frame, dst_x=0, dst_y=0, src=from_frame, src_x=0, src_y=0, width=from_frame.width, height=from_frame.height, op='copy')
+		Frame.copy_rect(dst=frame, dst_x=src_x, dst_y=src_y, src=to_frame, src_x=src_x, src_y=src_y, width=from_frame.width-src_x, height=from_frame.height-src_y, op='copy')
+		Frame.copy_rect(dst=frame, dst_x=ovr_x, dst_y=ovr_y, src=self.obs_frame, src_x=0, src_y=0, width=self.obs_frame.width, height=self.obs_frame.height, op=self.composite_op)
+		return frame
+
+
 class CrossFadeTransition(LayerTransitionBase):
 	"""Performs a cross-fade between two layers.  As one fades out the other one fades in."""
 	def __init__(self, width, height):
