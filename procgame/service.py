@@ -89,12 +89,15 @@ class ServiceMode(ServiceModeList):
 		self.name = 'Service Mode'
 		self.tests = Tests(self.game, self.priority+1, font, extra_tests)
 		self.items = [self.tests]
+		print self.game.game_data
 		if len(self.game.settings) > 0: 
 			self.settings = Settings(self.game, self.priority+1, font, 'Settings', self.game.settings)
 			self.items.append(self.settings)
-		if len(self.game.game_data) > 0: 
-			self.statistics = Statistics(self.game, self.priority+1, font, 'Statistics', self.game.game_data)
-			self.items.append(self.statistics)
+
+
+#		if len(self.game.game_data) > 0: 
+#			self.statistics = Statistics(self.game, self.priority+1, font, 'Statistics', self.game.game_data)
+#			self.items.append(self.statistics)
 
 class Tests(ServiceModeList):
 	"""Service Mode."""
