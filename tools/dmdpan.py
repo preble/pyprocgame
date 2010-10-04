@@ -40,14 +40,11 @@ class PanningLayer(dmd.Layer):
 		self.origin = (self.origin[0] + self.translate[0], self.origin[1] + self.translate[1])
 		return self.buffer
 
-class Game(game.GameController):
+class Game(game.BasicGame):
 	"""Very simple game to get our DMD running."""
 	def __init__(self, machine_type):
 		super(Game, self).__init__(machine_type)
-		self.dmd = dmd.DisplayController(self, width=128, height=32)
-	def dmd_event(self):
-		"""Called by the GameController when a DMD event has been received."""
-		self.dmd.update()
+
 	def pan(self, frame, origin, translate):
 		mode = game.Mode(self, 9)
 		mode.layer = PanningLayer(width=128, height=32, frame=frame, origin=origin, translate=translate)
