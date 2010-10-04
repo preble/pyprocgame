@@ -15,7 +15,7 @@ class Game(game.BasicGame):
 
 	def pan(self, frame, origin, translate):
 		mode = game.Mode(self, 9)
-		mode.layer = PanningLayer(width=128, height=32, frame=frame, origin=origin, translate=translate)
+		mode.layer = dmd.PanningLayer(width=128, height=32, frame=frame, origin=origin, translate=translate)
 		self.modes.add(mode)
 
 def main():
