@@ -45,19 +45,20 @@ class InitialEntryMode(Mode):
 		
 		script = []
 		for text in left_text:
-			frame = dmd.Frame(width=128/2, height=8)
+			frame = dmd.Frame(width=128, height=8)
 			self.font.draw(frame, text, 0, 0)
 			script.append({'seconds':seconds_per_text, 'layer':dmd.FrameLayer(frame=frame)})
-		topthird_left_layer = dmd.ScriptedLayer(width=128/2, height=8, script=script)
+		topthird_left_layer = dmd.ScriptedLayer(width=128, height=8, script=script)
+		topthird_left_layer.composite_op = 'blacksrc'
 		self.layer.layers += [topthird_left_layer]
 		
 		script = []
 		for text in right_text:
-			frame = dmd.Frame(width=128/2, height=8)
-			self.font.draw(frame, text, 128/2-(self.font.size(text)[0]), 0)
+			frame = dmd.Frame(width=128, height=8)
+			self.font.draw(frame, text, 128-(self.font.size(text)[0]), 0)
 			script.append({'seconds':seconds_per_text, 'layer':dmd.FrameLayer(frame=frame)})
-		topthird_right_layer = dmd.ScriptedLayer(width=128/2, height=8, script=script)
-		topthird_right_layer.set_target_position(128/2, 0)
+		topthird_right_layer = dmd.ScriptedLayer(width=128, height=8, script=script)
+		topthird_right_layer.composite_op = 'blacksrc'
 		self.layer.layers += [topthird_right_layer]
 		
 		self.inits_frame = dmd.Frame(width=128, height=10)

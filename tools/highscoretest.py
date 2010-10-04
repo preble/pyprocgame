@@ -43,11 +43,11 @@ class Attract(game.Mode):
 		
 		# Cheating a bit here to make the score display have a transition, since it it always on:
 		script.append({'seconds':3.0, 'layer':self.game.score_display.layer})
-		self.game.score_display.layer.transition = dmd.PushLayerTransition(direction='south')
+		self.game.score_display.layer.transition = dmd.PushTransition(direction='south')
 		
 		for frame in highscore.generate_highscore_frames(self.game.highscore_categories):
 			layer = dmd.FrameLayer(frame=frame)
-			layer.transition = dmd.PushLayerTransition(direction='south')
+			layer.transition = dmd.PushTransition(direction='south')
 			script.append({'seconds':2.0, 'layer':layer})
 		
 		self.layer = dmd.ScriptedLayer(width=128, height=32, script=script)
