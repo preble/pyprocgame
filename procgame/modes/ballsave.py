@@ -61,6 +61,7 @@ class BallSave(Mode):
 			self.trough_enable_ball_save(False)
 		self.timer = 0
 		self.lamp.disable()
+		#self.callback = None
 
 	def start(self, num_balls_to_save=1, time=12, now=True, allow_multiple_saves=False):
 		"""Activates the ball save logic."""
