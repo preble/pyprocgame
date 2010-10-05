@@ -2,7 +2,6 @@ __all__ = [
 	'ballsave',
 	'ballsearch',
 	'drops'
-	'highscoreentry',
 	'replay',
 	'scoredisplay',
 	'trough',
@@ -10,7 +9,6 @@ __all__ = [
 from ballsave import *
 from ballsearch import *
 from drops import *
-from highscoreentry import *
 from replay import *
 from scoredisplay import *
 from trough import *

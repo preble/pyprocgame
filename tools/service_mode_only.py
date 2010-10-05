@@ -70,7 +70,10 @@ class Attract(game.Mode):
 			lamp.disable()
 		return True
 
-	def sw_exit_closed(self, sw):
+		if self.game.machine_type != 'whitestar':
+			self.add_switch_handler(name='exit', event_type='closed', delay=None, handler=self.exit_closed)
+
+	def exit_closed(self, sw):
 		return True
 
 	def sw_down_closed(self, sw):
