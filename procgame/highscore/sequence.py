@@ -110,6 +110,14 @@ class EntrySequenceManager(game.Mode):
 
 	logic = None
 	"""Set this attribute to an instance of :class:`HighScoreLogic`."""
+	
+	ready_handler = None
+	"""Method taking two objects: this class instance and the :class:`EntryPrompt` to be shown next.
+	The implementor must call :meth:`prompt` in order to present the initials entry mode, otherwise
+	the sequence will not proceed.  If this attribute is not set then initials entry mode will be
+	shown immediately.
+	This allows for special displays or interaction before each initials prompt.
+	"""
 
 	finished_handler = None
 	"""Method taking one parameter, the mode (this object instance)."""
@@ -122,10 +130,18 @@ class EntrySequenceManager(game.Mode):
 		if len(self.prompts) > 0:
 			self.active_prompt = self.prompts[0]
 			del self.prompts[0]
-			self.prompt_for_initials(left_text=self.active_prompt.left, right_text=self.active_prompt.right)
+			if self.ready_handler:
+				self.ready_handler(self, self.active_prompt)
+			else:
+				self.prompt()
 		else:
 			if self.finished_handler != None:
 				self.finished_handler(mode=self)
+	
+	def prompt(self):
+		"""To be called externally if using the :attr:`ready_handler`, once that handler has been called.
+		Presents the initials entry mode."""
+		self.prompt_for_initials(left_text=self.active_prompt.left, right_text=self.active_prompt.right)
 
 	def prompt_for_initials(self, left_text, right_text):
 		self.highscore_entry = InitialEntryMode(game=self.game, priority=5, left_text=left_text, right_text=right_text, entered_handler=self.highscore_entered)
