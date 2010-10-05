@@ -83,14 +83,14 @@ class CategoryDrivenDataHelper:
 					new_title = category.titles[index]
 					if score.key in keyed_prompts:
 						existing = keyed_prompts[score.key]
-						existing['right'].append(new_title)
+						existing.right.append(new_title)
 					else:
-						keyed_prompts[score.key] = {'left':score.name, 'right':[new_title]}
+						keyed_prompts[score.key] = EntryPrompt(left=score.name, right=[new_title])
 		# Process keyed_prompts into prompts:
 		for key in keyed_prompts:
-			d = keyed_prompts[key]
-			d.update({'key':key})
-			prompts.append(d)
+			prompt = keyed_prompts[key]
+			prompt.key = key
+			prompts.append(prompt)
 		return prompts
 
 	def set_inits_by_key(self, key, inits):

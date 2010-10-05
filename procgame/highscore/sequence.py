@@ -3,16 +3,32 @@ from .. import game
 
 import time
 
+
+class EntryPrompt:
+	"""Used by :class:`HighScoreLogic` subclasses' :meth:`HighScoreLogic.prompts` methods
+	to communicate which scores need to be prompted for.
+	"""
+	
+	key = None
+	"""Object that will be used to identify this prompt when :meth:`HighScoreLogic.store_initials` is called."""
+	
+	left = None
+	"""String or array of strings to be displayed on the left side of :class:`InitialEntryMode`."""
+	
+	right = None
+	"""String or array of strings to be displayed on the right side of :class:`InitialEntryMode`."""
+	
+	def __init__(self, key=None, left=None, right=None):
+		self.key = key
+		self.left = left
+		self.right = right
+
+
 class HighScoreLogic:
 	"""Interface used by :class:`EntrySequenceManager` to abstract away the details of high score entry and storage."""
 
 	def prompts(self):
-		"""Return a list of prompts to be presented to the player, in order.
-		Each prompt is a dictionary with the following keys:
-
-		*key* -- Object that will be used to identify this prompt when :meth:`store_initials` is called.
-		*left*
-		*right*
+		"""Return a list of :class:`EntryPrompt` objects to be presented to the player, in order.
 		"""
 		return list()
 	def store_initials(self, key, inits):
@@ -75,8 +91,6 @@ class HighScore:
 		else:
 			return c
 
-
-
 class EntrySequenceManager(game.Mode):
 	"""A :class:`~procgame.game.Mode` subclass that manages the presentation of :class:`InitialEntryMode`
 	in order to prompt the player(s) for new high scores.
@@ -108,7 +122,7 @@ class EntrySequenceManager(game.Mode):
 		if len(self.prompts) > 0:
 			self.active_prompt = self.prompts[0]
 			del self.prompts[0]
-			self.prompt_for_initials(left_text=self.active_prompt['left'], right_text=self.active_prompt['right'])
+			self.prompt_for_initials(left_text=self.active_prompt.left, right_text=self.active_prompt.right)
 		else:
 			if self.finished_handler != None:
 				self.finished_handler(mode=self)
@@ -118,6 +132,6 @@ class EntrySequenceManager(game.Mode):
 		self.game.modes.add(self.highscore_entry)
 
 	def highscore_entered(self, mode, inits):
-		self.logic.store_initials(key=self.active_prompt['key'], inits=inits)
+		self.logic.store_initials(key=self.active_prompt.key, inits=inits)
 		self.game.modes.remove(self.highscore_entry) # same as *mode*
 		self.next()

@@ -88,6 +88,12 @@ CategoryLogic
 .. autoclass:: procgame.highscore.CategoryLogic
 	:members:
 
+EntryPrompt
+-----------
+
+.. autoclass:: procgame.highscore.EntryPrompt
+	:members:
+
 HighScore
 ---------
 
