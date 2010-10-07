@@ -111,7 +111,8 @@ class SoundController(object):
 		self.volume = new_volume
 		mixer.music.set_volume (new_volume + self.music_volume_offset)
 		for key in self.sounds:
-			self.sounds[key].set_volume(self.volume)
+			for sound in self.sounds[key]:
+				sound.set_volume(self.volume)
 
 	def beep(self):
 		if not self.enabled: return
