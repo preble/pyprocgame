@@ -76,7 +76,7 @@ class ServiceModeList(ServiceModeSkeleton):
 		self.game.modes.add(self.item)
 		return True
 
-	def exit(self, sw):
+	def exit(self):
 		self.item.disable()
 		self.game.modes.remove(self)
 		return True
