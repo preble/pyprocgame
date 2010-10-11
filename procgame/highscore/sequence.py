@@ -87,7 +87,7 @@ class HighScore:
 	def __cmp__(self, other):
 		c = cmp(self.score, other.score)
 		if c == 0:
-			return cmp(self.date, other.date)
+			return cmp(other.date, self.date)
 		else:
 			return c
 
