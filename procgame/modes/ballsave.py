@@ -65,14 +65,14 @@ class BallSave(Mode):
 
 	def start(self, num_balls_to_save=1, time=12, now=True, allow_multiple_saves=False):
 		"""Activates the ball save logic."""
-		if self.trough_enable_ball_save:
-			self.trough_enable_ball_save(True)
 		self.allow_multiple_saves = allow_multiple_saves
 		self.num_balls_to_save = num_balls_to_save
 		self.timer = time
 		self.update_lamps()
 		if now and self.timer <= 0:
 			self.delay(name='ball_save_timer', event_type=None, delay=1, handler=self.timer_countdown)
+			if self.trough_enable_ball_save:
+				self.trough_enable_ball_save(True)
 		else:
 			self.mode_begin = 1
 			self.timer_hold = time
@@ -80,12 +80,10 @@ class BallSave(Mode):
 	def timer_countdown(self):
 		self.timer -= 1
 
-		if self.timer < 1:
-			if self.trough_enable_ball_save:
-				self.trough_enable_ball_save(False)
-
 		if (self.timer >= 1):
 			self.delay(name='ball_save_timer', event_type=None, delay=1, handler=self.timer_countdown)
+		else:
+			self.disable()
 
 		self.update_lamps()
 
@@ -101,23 +99,13 @@ class BallSave(Mode):
 			self.timer = 1
 			self.lamp.disable()
 
-
-	def eject(self):
-		if self.game.machine_type == 'wpc' or self.game.machine_type == 'wpc95' or self.game.machine_type == 'wpcAlphanumeric':
-			if self.game.switches.trough6.is_open():
-				self.game.coils.trough.pulse(20)
-			else:
-				self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
-		elif self.game.machine_type == 'sternWhitestar' or self.game.machine_type == 'sternSAM':
-			if self.game.switches.trough1.is_open():
-				self.game.coils.trough.pulse(20)
-			else:
-				self.delay(name='ball_save_eject', event_type=None, delay=1, handler=self.eject)
-
 	def delayed_start_handler(self, sw):
 		if self.mode_begin:
 			self.timer = self.timer_hold
 			self.mode_begin = 0
 			self.update_lamps()
+			self.cancel_delayed('ball_save_timer')
 			self.delay(name='ball_save_timer', event_type=None, delay=1, handler=self.timer_countdown)
+			if self.trough_enable_ball_save:
+				self.trough_enable_ball_save(True)
 
