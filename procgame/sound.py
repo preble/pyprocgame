@@ -84,6 +84,9 @@ class SoundController(object):
 			if len(self.sounds[key]) > 0:
 				random.shuffle(self.sounds[key])
 			self.sounds[key][0].play(loops,max_time,fade_ms)
+			return self.sounds[key][0].get_length()
+		else:
+			return 0
 
 	def stop(self,key, loops=0, max_time=0, fade_ms=0):
 		""" """
