@@ -42,7 +42,15 @@ class BallSearch(Mode):
 			self.cancel_delayed
 			schedule_search = 1
 			for switch in self.stop_switches:
-				if self.game.switches[str(switch)].is_closed():
+
+				# Don't restart the search countdown if a ball
+				# is resting on a stop_switch.  First,
+				# build the appropriate function call into
+				# the switch, and then call it using getattr()
+				sw = self.game.switches[str(switch)]
+				state_str = str(self.stop_switches[switch])
+				m = getattr(sw, 'is_%s' % (state_str))
+				if m():
 					schedule_search = 0
 
 			if schedule_search:
