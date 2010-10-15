@@ -69,7 +69,8 @@ class BallSave(Mode):
 		self.num_balls_to_save = num_balls_to_save
 		self.timer = time
 		self.update_lamps()
-		if now and self.timer <= 0:
+		if now:
+			self.cancel_delayed('ball_save_timer')
 			self.delay(name='ball_save_timer', event_type=None, delay=1, handler=self.timer_countdown)
 			if self.trough_enable_ball_save:
 				self.trough_enable_ball_save(True)
