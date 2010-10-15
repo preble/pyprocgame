@@ -175,8 +175,8 @@ class BaseGameMode(game.Mode):
 			self.ball_starting = False
 			ball_save_time = 10
 			self.game.ball_save.start(num_balls_to_save=1, time=ball_save_time, now=True, allow_multiple_saves=False)
-		else:
-			self.game.ball_save.disable()
+		#else:
+		#	self.game.ball_save.disable()
 
 	# Note: Game specific item
 	# Set the switch name to the launch button on your game.
