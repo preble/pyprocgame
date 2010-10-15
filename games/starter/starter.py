@@ -23,12 +23,11 @@ class Attract(game.Mode):
 	"""docstring for AttractMode"""
 	def __init__(self, game):
 		super(Attract, self).__init__(game, 1)
-		self.press_start = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("Press Start")
-		self.proc_banner = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("pyprocgame")
-		self.game_title = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("Starter")
+		self.press_start = dmd.TextLayer(128/2, 7, font_jazz18, "center", opaque=True).set_text("Press Start")
+		self.proc_banner = dmd.TextLayer(128/2, 7, font_jazz18, "center", opaque=True).set_text("pyprocgame")
+		self.game_title = dmd.TextLayer(128/2, 7, font_jazz18, "center", opaque=True).set_text("Starter")
 		self.splash = dmd.FrameLayer(opaque=True, frame=dmd.Animation().load(fonts_path+'Splash.dmd').frames[0])
 		self.layer = dmd.ScriptedLayer(128, 32, [{'seconds':2.0, 'layer':self.splash}, {'seconds':2.0, 'layer':self.proc_banner}, {'seconds':2.0, 'layer':self.game_title}, {'seconds':2.0, 'layer':self.press_start}, {'seconds':2.0, 'layer':None}])
-		self.layer.opaque = True
 
 	def mode_topmost(self):
 		pass
