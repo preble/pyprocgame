@@ -1,4 +1,5 @@
 import random
+import time
 
 try:
 	print("Initializing sound...")
@@ -25,6 +26,7 @@ class SoundController(object):
 		self.music = {}
 		self.music_volume_offset = 0
 		self.set_volume(0.5)
+        	self.voice_end_time = 0
 
 	def play_music(self, key, loops=0, start_time=0.0):
 		"""Start playing music at the given *key*."""
@@ -85,6 +87,23 @@ class SoundController(object):
 				random.shuffle(self.sounds[key])
 			self.sounds[key][0].play(loops,max_time,fade_ms)
 			return self.sounds[key][0].get_length()
+		else:
+			return 0
+
+	def play_voice(self,key, loops=0, max_time=0, fade_ms=0):
+		""" """
+		if not self.enabled: return 0
+		current_time = time.time()
+
+		# Make sure previous voice call is finished.
+		if current_time < self.voice_end_time: return 0
+		if key in self.sounds:
+			if len(self.sounds[key]) > 0:
+				random.shuffle(self.sounds[key])
+			self.sounds[key][0].play(loops,max_time,fade_ms)
+			duration = self.sounds[key][0].get_length() * (loops+1)
+			self.voice_end_time = current_time + duration
+			return duration
 		else:
 			return 0
 
