@@ -67,7 +67,7 @@ class BallSave(Mode):
 		"""Activates the ball save logic."""
 		self.allow_multiple_saves = allow_multiple_saves
 		self.num_balls_to_save = num_balls_to_save
-		self.timer = time
+		if time > self.timer: self.timer = time
 		self.update_lamps()
 		if now:
 			self.cancel_delayed('ball_save_timer')
@@ -80,7 +80,6 @@ class BallSave(Mode):
 
 	def timer_countdown(self):
 		self.timer -= 1
-
 		if (self.timer >= 1):
 			self.delay(name='ball_save_timer', event_type=None, delay=1, handler=self.timer_countdown)
 		else:
