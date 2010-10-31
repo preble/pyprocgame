@@ -53,3 +53,14 @@ BasicGame
 .. autoclass:: procgame.game.BasicGame
 	:members:
 
+
+Constants
+=========
+
+.. data:: procgame.game.SwitchContinue
+
+	Used as a return value from a :class:`~procgame.game.Mode` switch handler to indicate that lower priority modes should receive this switch event.
+
+.. data:: procgame.game.SwitchStop
+
+	Used as a return value from a :class:`~procgame.game.Mode` switch handler to indicate that lower priority modes should not receive this switch event.
