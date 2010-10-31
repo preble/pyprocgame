@@ -139,8 +139,6 @@ class Trough(Mode):
 
 				if temp_num_balls == num_current_machine_balls or \
 				   temp_num_balls == num_trough_balls_if_ball_ending:
-					#print "trough - trough full now"
-                			#print "Ball Start time: % 10.3f" % self.ball_start_time
 					self.num_balls_in_play = 0
 					if self.drain_callback:
 						self.drain_callback()
@@ -150,8 +148,6 @@ class Trough(Mode):
 				# fails, and those situations are still occuring.
 				elif temp_num_balls == \
 				     num_trough_balls_if_multiball_ending:
-					print
-					print "trough - trough full now"
 					self.num_balls_in_play = 1
 					if self.drain_callback:
 						self.drain_callback()
