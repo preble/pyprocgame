@@ -48,7 +48,7 @@ class Frame(pinproc.DMDBuffer):
 		for y in range(self.height):
 			for x in range(self.width):
 				dot = self.get_dot(x, y)
-				output += table[dot]
+				output += table[dot & 0xf]
 			output += "\n"
 		return output
 	
