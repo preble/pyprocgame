@@ -1,196 +1,158 @@
 import sys
 import os
-sys.path.append(sys.path[0]+'/..') # Set the path so we can find procgame.  We are assuming (stupidly?) that the first member is our directory.
-import procgame
-import pinproc
-from procgame import *
-from threading import Thread
-import random
-import string
-import time
 import locale
-import math
-import copy
+import time
 import yaml
+sys.path.append(sys.path[0]+'/..') # Set the path so we can find procgame.  We are assuming (stupidly?) that the first member is our directory.
+from procgame import *
 
 locale.setlocale(locale.LC_ALL, "") # Used to put commas in the score.
 
-config_path = "../shared/config/JD.yaml"
-fonts_path = "../shared/dmd/"
+config_path = "JD.yaml"
 
-class HighScoreEntry(game.Mode):
-	def __init__(self, game, priority, player, place):
-		super(HighScoreEntry, self).__init__(game, priority)
-		
-		self.char_back = '<'
-		self.char_done = '='
-		
-		self.init_font = dmd.Font(fonts_path+'Font09Bx7.dmd')
-		self.font = dmd.Font(fonts_path+'Font07x5.dmd')
-		self.letters_font = dmd.Font(fonts_path+'Font07x5.dmd')
-		
-		self.layer = dmd.GroupedLayer(128, 32)
-		self.layer.opaque = True
-		self.layer.layers = []
-		
-		topthird = dmd.Frame(width=128, height=8)
-		self.font.draw(topthird, player, 0, 0)
-		place_text = "High Score #%d" % (place)
-		self.font.draw(topthird, place_text, 128-(self.font.size(place_text)[0]), 0)
-		topthird_layer = dmd.FrameLayer(opaque=False, frame=topthird)
-		topthird_layer.set_target_position(0, 0)
-		self.layer.layers += [topthird_layer]
+class BallEnder(game.Mode):
+	"""The exit switch is used to end each ball."""
+	def sw_exit_active(self, sw):
+		self.game.current_player().score += 350000
+		self.game.end_ball()
 
-		self.inits_frame = dmd.Frame(width=128, height=10)
-		inits_layer = dmd.FrameLayer(opaque=False, frame=self.inits_frame)
-		inits_layer.set_target_position(0, 11)
-		self.layer.layers += [inits_layer]
-		
-		self.lowerhalf_layer = dmd.AnimatedLayer(opaque=False, hold=True)
-		self.lowerhalf_layer.set_target_position(0, 24)
-		self.layer.layers += [self.lowerhalf_layer]
-		
-		self.letters = []
-		for idx in range(26):
-			self.letters += [chr(ord('A')+idx)]
-		self.letters += [' ', '.', self.char_back, self.char_done]
-		self.current_letter_index = 0
-		self.inits = self.letters[self.current_letter_index]
-		self.animate_to_index(0)
-	
-	def mode_started(self):
-		pass
-		
-	def mode_stopped(self):
-		pass
-				
-	def animate_to_index(self, new_index, inc = 0):
-		letter_spread = 10
-		letter_width = 7
-		if inc < 0:
-			rng = range(inc * letter_spread, 1)
-		elif inc > 0:
-			rng = range(inc * letter_spread)[::-1]
-		else:
-			rng = [0]
-		#print rng
-		for x in rng:
-			frame = dmd.Frame(width=128, height=10)
-			for offset in range(-7, 8):
-				index = new_index - offset
-				#print "Index %d  len=%d" % (index, len(self.letters))
-				if index < 0:
-					index = len(self.letters) + index
-				elif index >= len(self.letters):
-					index = index - len(self.letters)
-				(w, h) = self.font.size(self.letters[index])
-				#print "Drawing %d w=%d" % (index, w)
-				self.letters_font.draw(frame, self.letters[index], 128/2 - offset * letter_spread - letter_width/2 + x, 0)
-			frame.fill_rect(64-5, 0, 1, 10, 1)
-			frame.fill_rect(64+5, 0, 1, 10, 1)
-			self.lowerhalf_layer.frames += [frame]
-		self.current_letter_index = new_index
-		
-		# Prune down the frames list so we don't get too far behind while animating
-		x = 0
-		while len(self.lowerhalf_layer.frames) > 15 and x < (len(self.lowerhalf_layer.frames)-1):
-			del self.lowerhalf_layer.frames[x]
-			x += 2
-		
-		# Now draw the top right panel, with the selected initials in order:
-		self.inits_frame.clear()
-		init_spread = 8
-		x_offset = self.inits_frame.width/2 - len(self.inits) * init_spread / 2
-		for x in range(len(self.inits)):
-			self.init_font.draw(self.inits_frame, self.inits[x], x * init_spread + x_offset, 0)
-		self.inits_frame.fill_rect((len(self.inits)-1) * init_spread + x_offset, 9, 8, 1, 1)
-		
-	def letter_increment(self, inc):
-		new_index = (self.current_letter_index + inc)
-		if new_index < 0:
-			new_index = len(self.letters) + new_index
-		elif new_index >= len(self.letters):
-			new_index = new_index - len(self.letters)
-		#print("letter_increment %d + %d = %d" % (self.current_letter_index, inc, new_index))
-		self.inits = self.inits[:-1] + self.letters[new_index]
-		self.animate_to_index(new_index, inc)
-	
-	def letter_accept(self):
-		# TODO: Add 'back'/erase/end
-		letter = self.letters[self.current_letter_index]
-		if letter == self.char_back:
-			if len(self.inits) > 0:
-				self.inits = self.inits[:-1]
-		elif letter == self.char_done:
-			pass # We are done!
-		else:
-			self.inits += letter
-		self.letter_increment(0)
-	
-	def sw_flipperLwL_active(self, sw):
-		self.periodic_left()
-		return False
-	def sw_flipperLwL_inactive(self, sw):
-		self.cancel_delayed('periodic_movement')
-		
-	def sw_flipperLwR_active(self, sw):
-		self.periodic_right()
-		return False
-	def sw_flipperLwR_inactive(self, sw):
-		self.cancel_delayed('periodic_movement')
-		
-	def periodic_left(self):
-		self.letter_increment(-1)
-		self.delay(name='periodic_movement', event_type=None, delay=0.2, handler=self.periodic_left)
-	def periodic_right(self):
-		self.letter_increment(1)
-		self.delay(name='periodic_movement', event_type=None, delay=0.2, handler=self.periodic_right)
-		
+class BaseGameMode(game.Mode):
+	"""A minimal game mode to enable starting a game."""
 	def sw_startButton_active(self, sw):
-		self.letter_accept()
-		return False
+		if self.game.ball == 0:
+			self.game.start_game()
+			self.game.add_player()
+			self.game.start_ball()
+		elif self.game.ball == 1:
+			p = self.game.add_player()
+			self.game.set_status(p.name + " added!")
+		else:
+			self.game.set_status("Hold for 2s to reset.")
 
-class TestGame(game.GameController):
-	"""docstring for TestGame"""
-	def __init__(self, machineType):
-		super(TestGame, self).__init__(machineType)
-		self.dmd = dmd.DisplayController(self, width=128, height=32)
-		self.keyboard_handler = procgame.keyboard.KeyboardHandler()
-		self.keyboard_events_enabled = True
-		self.get_keyboard_events = self.keyboard_handler.get_keyboard_events
+	def sw_startButton_active_for_2s(self, sw):
+		if self.game.ball > 1:
+			self.game.set_status("Reset!")
+			self.game.reset()
+			return True
+
+
+class Attract(game.Mode):
+	def mode_started(self):
+		# Create a ScriptedLayer with frames for each of the high scores:
+		script = []
+		
+		# Cheating a bit here to make the score display have a transition, since it it always on:
+		script.append({'seconds':3.0, 'layer':self.game.score_display.layer})
+		self.game.score_display.layer.transition = dmd.PushTransition(direction='south')
+		
+		for frame in highscore.generate_highscore_frames(self.game.highscore_categories):
+			layer = dmd.FrameLayer(frame=frame)
+			layer.transition = dmd.PushTransition(direction='south')
+			script.append({'seconds':2.0, 'layer':layer})
+		
+		self.layer = dmd.ScriptedLayer(width=128, height=32, script=script)
+		
+		# Opaque allows transitions between scripted layer 'frames' to work:
+		self.layer.opaque=True
+
+
+class TestGame(game.BasicGame):
+	
+	highscore_categories = None
+	
+	def __init__(self, machine_type):
+		super(TestGame, self).__init__(machine_type)
 		
 	def setup(self):
-		"""docstring for setup"""
 		self.load_config(config_path)
-		self.highscore_entry = HighScoreEntry(self, 1, "Player 1", 2)
+		self.desktop.add_key_map(ord('q'), self.switches.exit.number)
+		
+		self.highscore_categories = []
+		
+		cat = highscore.HighScoreCategory()
+		# because we don't have a game_data template:
+		cat.scores = [highscore.HighScore(score=5000000,inits='GSS'),\
+					  highscore.HighScore(score=4000000,inits='ASP'),\
+					  highscore.HighScore(score=3000000,inits='JRP'),\
+					  highscore.HighScore(score=2000000,inits='JAG'),\
+					  highscore.HighScore(score=1000000,inits='JTW')]
+		cat.game_data_key = 'ClassicHighScoreData'
+		self.highscore_categories.append(cat)
+		
+		cat = highscore.HighScoreCategory()
+		cat.game_data_key = 'LoopsHighScoreData'
+		# because we don't have a game_data template:
+		cat.scores = [highscore.HighScore(score=5,inits='GSS')]
+		cat.titles = ['Loop Champ']
+		cat.score_suffix_singular = ' loop'
+		cat.score_suffix_plural = ' loops'
+		self.highscore_categories.append(cat)
+		
+		for category in self.highscore_categories:
+			category.load_from_game(self)
+		
 		self.reset()
 		
 	def reset(self):
 		super(TestGame, self).reset()
-		self.modes.add(self.highscore_entry)
+		self.modes.add(BaseGameMode(game=self, priority=1))
+		self.modes.add(BallEnder(game=self, priority=1))
 		# Make sure flippers are off, especially for user initiated resets.
 		self.enable_flippers(enable=False)
+		self.add_attract()
+	
+	def game_started(self):
+		self.modes.remove(self.attract)
+		self.attract = None
+	
+	def game_ended(self):
+		seq_manager = highscore.EntrySequenceManager(game=self, priority=2)
+		seq_manager.ready_handler = self.highscore_entry_ready_to_prompt
+		seq_manager.finished_handler = self.highscore_entry_finished
 		
-	def dmd_event(self):
-		"""Called by the GameController when a DMD event has been received."""
-		self.dmd.update()
-
-	def score(self, points):
-		p = self.current_player()
-		p.score += points
+		seq_manager.logic = highscore.CategoryLogic(game=self, categories=self.highscore_categories)
+		self.modes.add(seq_manager)
+	
+	def add_attract(self):
+		self.attract = Attract(game=self, priority=8)
+		self.modes.add(self.attract)
+	
+	def highscore_entry_ready_to_prompt(self, mode, prompt):
+		banner_mode = game.Mode(game=self, priority=8)
+		markup = dmd.MarkupFrameGenerator()
+		markup.font_plain = dmd.font_named('Font09Bx7.dmd')
+		markup.font_bold = dmd.font_named('Font13Bx9.dmd')
+		text = '[Great Score]\n#%s#' % (prompt.left.upper()) # we know that the left is the player name
+		frame = markup.frame_for_markup(markup=text, y_offset=0)
+		frame_layer = dmd.FrameLayer(frame=frame)
+		frame_layer.blink_frames = 10
+		banner_mode.layer = dmd.ScriptedLayer(width=128, height=32, script=[{'seconds':3.0, 'layer':frame_layer}])
+		banner_mode.layer.on_complete = lambda: self.highscore_banner_complete(banner_mode=banner_mode, highscore_entry_mode=mode)
+		self.modes.add(banner_mode)
+	
+	def highscore_banner_complete(self, banner_mode, highscore_entry_mode):
+		self.modes.remove(banner_mode)
+		highscore_entry_mode.prompt()
+	
+	def highscore_entry_finished(self, mode):
+		self.modes.remove(mode)
+		self.add_attract()
+	
+	def set_status(self, text):
+		self.dmd.set_message(text, 3)
+		print(text)
+	
 
 def main():
-	config = yaml.load(open(config_path, 'r'))
-	machineType = config['PRGame']['machineType']
-	#machineType = 'wpc'
-	print machineType
-	config = 0
-	game = None
+	config = game.config_named(config_path)
+	machine_type = config['PRGame']['machineType']
+	del config
+	test_game = None
 	try:
-	 	game = TestGame(machineType)
-		game.setup()
-		game.run_loop()
+	 	test_game = TestGame(machine_type)
+		test_game.setup()
+		test_game.run_loop()
 	finally:
-		del game
+		del test_game
 
 if __name__ == '__main__': main()

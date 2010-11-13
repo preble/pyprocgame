@@ -1,1 +1,19 @@
-__all__ = ['game', 'modes', 'dmd', 'sound', 'lamps', 'ballsearch', 'service', 'ballsave', 'trough', 'replay', 'scoredisplay', 'keyboard']
+__all__ = [
+	'config',
+	'desktop',
+	'dmd',
+	'game',
+	'highscore',
+	'lamps',
+	'modes',
+	'service',
+	'sound',
+	]
+import config
+import desktop
+import game
+import highscore
+import lamps
+import modes
+import service
+import sound

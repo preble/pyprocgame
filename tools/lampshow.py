@@ -144,11 +144,11 @@ def main():
         # to create.
          
         config = yaml.load(open(yamlpath, 'r'))
-        machineType = config['PRGame']['machineType']
+        machine_type = config['PRGame']['machineType']
 	config = 0
-        print("Machine type is %s"%(machineType))
+        print("Machine type is %s"%(machine_type))
 	
-	g = game.GameController(str(machineType))
+	g = game.GameController(str(machine_type))
 	g.load_config(yamlpath)
 	
 	show = LampShow(game=g)

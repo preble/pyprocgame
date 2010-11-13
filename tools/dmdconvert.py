@@ -75,13 +75,21 @@ def load_and_append(anim, filename):
 	if filename.endswith('.gif'):
 		anim.frames += gif_frames(src)
 	else:
-		reduced = src.convert("L") #.quantize(palette=pal_im).convert("P", palette=Image.ADAPTIVE, colors=4)#
+		alpha = None
+		try:
+			alpha = Image.fromstring('L', src.size, src.tostring('raw', 'A'))
+		except:
+			pass # No alpha channel available?
+		
+		reduced = src.convert("L")
 		
 		frame = procgame.dmd.Frame(w, h)
 		
 		for x in range(w):
 			for y in range(h):
 				color = int((reduced.getpixel((x,y))/255.0)*15)
+				if alpha:
+					color += int((alpha.getpixel((x,y))/255.0)*15) << 4
 				frame.set_dot(x=x, y=y, value=color)
 		
 		anim.frames += [frame]

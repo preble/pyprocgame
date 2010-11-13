@@ -1,5 +1,5 @@
-from game import *
-from dmd import *
+from game import Mode
+from dmd import TextLayer, GroupedLayer
 
 class ServiceModeSkeleton(Mode):
 	"""Service Mode List base class."""
@@ -10,7 +10,7 @@ class ServiceModeSkeleton(Mode):
 		self.item_layer = TextLayer(128/2, 12, font, "center")
 		self.instruction_layer = TextLayer(1, 25, font, "left")
 		self.layer = GroupedLayer(128, 32, [self.title_layer, self.item_layer, self.instruction_layer])
-		self.no_exit_switch = game.machineType == 'sternWhitestar'
+		self.no_exit_switch = game.machine_type == 'sternWhitestar'
 
 	def mode_started(self):
 		self.title_layer.set_text(str(self.name))
@@ -76,7 +76,7 @@ class ServiceModeList(ServiceModeSkeleton):
 		self.game.modes.add(self.item)
 		return True
 
-	def exit(self, sw):
+	def exit(self):
 		self.item.disable()
 		self.game.modes.remove(self)
 		return True
@@ -89,12 +89,15 @@ class ServiceMode(ServiceModeList):
 		self.name = 'Service Mode'
 		self.tests = Tests(self.game, self.priority+1, font, extra_tests)
 		self.items = [self.tests]
+		print self.game.game_data
 		if len(self.game.settings) > 0: 
 			self.settings = Settings(self.game, self.priority+1, font, 'Settings', self.game.settings)
 			self.items.append(self.settings)
-		if len(self.game.game_data) > 0: 
-			self.statistics = Statistics(self.game, self.priority+1, font, 'Statistics', self.game.game_data)
-			self.items.append(self.statistics)
+
+
+#		if len(self.game.game_data) > 0: 
+#			self.statistics = Statistics(self.game, self.priority+1, font, 'Statistics', self.game.game_data)
+#			self.items.append(self.statistics)
 
 class Tests(ServiceModeList):
 	"""Service Mode."""
@@ -167,7 +170,7 @@ class SwitchTest(ServiceModeSkeleton):
 		super(SwitchTest, self).__init__(game, priority,font)
 		self.name = "Switch Test"
 		for switch in self.game.switches:
-			if self.game.machineType == 'sternWhitestar':
+			if self.game.machine_type == 'sternWhitestar':
 				add_handler = 1
 			elif switch != self.game.switches.exit:
 				add_handler = 1
@@ -254,7 +257,7 @@ class SwitchTest(ServiceModeSkeleton):
 		super(SwitchTest, self).__init__(game, priority,font)
 		self.name = "Switch Test"
 		for switch in self.game.switches:
-			if self.game.machineType == 'sternWhitestar':
+			if self.game.machine_type == 'sternWhitestar':
 				add_handler = 1
 			elif switch != self.game.switches.exit:
 				add_handler = 1
@@ -292,7 +295,7 @@ class SettingsEditor(ServiceModeList):
 		self.title_layer = TextLayer(1, 1, font, "left")
 		self.item_layer = TextLayer(128/2, 12, font, "center")
 		self.instruction_layer = TextLayer(1, 25, font, "left")
-		self.no_exit_switch = game.machineType == 'sternWhitestar'
+		self.no_exit_switch = game.machine_type == 'sternWhitestar'
 		#self.title_layer.set_text('Settings')
 		self.name = name
 		self.items = []

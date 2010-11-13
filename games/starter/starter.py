@@ -23,12 +23,11 @@ class Attract(game.Mode):
 	"""docstring for AttractMode"""
 	def __init__(self, game):
 		super(Attract, self).__init__(game, 1)
-		self.press_start = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("Press Start")
-		self.proc_banner = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("pyprocgame")
-		self.game_title = dmd.TextLayer(128/2, 7, font_jazz18, "center").set_text("Starter")
+		self.press_start = dmd.TextLayer(128/2, 7, font_jazz18, "center", opaque=True).set_text("Press Start")
+		self.proc_banner = dmd.TextLayer(128/2, 7, font_jazz18, "center", opaque=True).set_text("pyprocgame")
+		self.game_title = dmd.TextLayer(128/2, 7, font_jazz18, "center", opaque=True).set_text("Starter")
 		self.splash = dmd.FrameLayer(opaque=True, frame=dmd.Animation().load(fonts_path+'Splash.dmd').frames[0])
 		self.layer = dmd.ScriptedLayer(128, 32, [{'seconds':2.0, 'layer':self.splash}, {'seconds':2.0, 'layer':self.proc_banner}, {'seconds':2.0, 'layer':self.game_title}, {'seconds':2.0, 'layer':self.press_start}, {'seconds':2.0, 'layer':None}])
-		self.layer.opaque = True
 
 	def mode_topmost(self):
 		pass
@@ -75,7 +74,7 @@ class Attract(game.Mode):
 	# Perhaps if the trough isn't full after a few ball search attempts, it logs a ball
 	# as lost?	
 	def sw_startButton_active(self, sw):
-		if self.game.trough.is_full():
+		if self.game.trough.is_full:
 			# Remove attract mode from mode queue - Necessary?
 			self.game.modes.remove(self)
 			# Initialize game	
@@ -175,8 +174,8 @@ class BaseGameMode(game.Mode):
 			self.ball_starting = False
 			ball_save_time = 10
 			self.game.ball_save.start(num_balls_to_save=1, time=ball_save_time, now=True, allow_multiple_saves=False)
-		else:
-			self.game.ball_save.disable()
+		#else:
+		#	self.game.ball_save.disable()
 
 	# Note: Game specific item
 	# Set the switch name to the launch button on your game.
@@ -234,16 +233,12 @@ class BaseGameMode(game.Mode):
 
 
 
-class Game(game.GameController):
+class Game(game.BasicGame):
 	"""docstring for Game"""
-	def __init__(self, machineType):
-		super(Game, self).__init__(machineType)
+	def __init__(self, machine_type):
+		super(Game, self).__init__(machine_type)
 		self.sound = procgame.sound.SoundController(self)
 		self.lampctrl = procgame.lamps.LampController(self)
-		self.dmd = dmd.DisplayController(self, width=128, height=32, message_font=font_tiny7)
-		self.keyboard_handler = procgame.keyboard.KeyboardHandler()
-		self.keyboard_events_enabled = True
-		self.get_keyboard_events = self.keyboard_handler.get_keyboard_events
 		self.settings = {}
 
 	def save_settings(self):
@@ -260,14 +255,12 @@ class Game(game.GameController):
 
 		self.setup_ball_search()
 
-		self.score_display = scoredisplay.ScoreDisplay(self, 0)
-
 		# Instantiate basic game features
 		self.attract_mode = Attract(self)
 		self.base_game_mode = BaseGameMode(self)
 		# Note - Game specific item:
 		# The last parameter should be the name of the game's ball save lamp
-		self.ball_save = procgame.ballsave.BallSave(self, self.lamps.drainShield, 'shooterR')
+		self.ball_save = procgame.modes.BallSave(self, self.lamps.drainShield, 'shooterR')
 
 		trough_switchnames = []
 		# Note - Game specific item:
@@ -282,7 +275,12 @@ class Game(game.GameController):
 		# be the switch of the next ball to be ejected.  Some games
 		# number the trough switches in the opposite order; so trough1
 		# might be the proper switchname to user here.
-		self.trough = procgame.trough.Trough(self,trough_switchnames,'trough6','trough', early_save_switchnames, 'shooterR', self.drain_callback)
+		self.trough = procgame.modes.Trough(self,trough_switchnames,'trough6','trough', early_save_switchnames, 'shooterR', self.drain_callback)
+	
+		# Link ball_save to trough
+		self.trough.ball_save_callback = self.ball_save.launch_callback
+		self.trough.num_balls_to_save = self.ball_save.get_num_balls_to_save
+		self.ball_save.trough_enable_ball_save = self.trough.enable_ball_save
 
 		# Setup and instantiate service mode
 		self.sound.register_sound('service_enter', sound_path+"menu_in.wav")
@@ -309,7 +307,6 @@ class Game(game.GameController):
 		super(Game, self).reset()
 
 		# Add the basic modes to the mode queue
-		self.modes.add(self.score_display)
 		self.modes.add(self.attract_mode)
 		self.modes.add(self.ball_search)
 		self.modes.add(self.ball_save)
@@ -337,38 +334,18 @@ class Game(game.GameController):
 		self.set_status("Game Over")
 		self.modes.add(self.attract_mode)
 		
-	def dmd_event(self):
-		"""Called by the GameController when a DMD event has been received."""
-		self.dmd.update()
-
 	def set_status(self, text):
 		self.dmd.set_message(text, 3)
 		print(text)
 	
-	def score(self, points):
-		p = self.current_player()
-		p.score += points
-
 	def extra_ball(self):
 		p = self.current_player()
 		p.extra_balls += 1
 
-	def update_player_record(self, key, record):
-		p = self.current_player()
-		p.info_record[key] = record
-
-	def get_player_record(self, key):
-		p = self.current_player()
-		if key in p.info_record:
-			return p.info_record[key]
-		else:
-			return []
-
 	def setup_ball_search(self):
-
 		# No special handlers in starter game.
 		special_handler_modes = []
-		self.ball_search = procgame.ballsearch.BallSearch(self, priority=100, \
+		self.ball_search = procgame.modes.BallSearch(self, priority=100, \
                                      countdown_time=10, coils=self.ballsearch_coils, \
                                      reset_switches=self.ballsearch_resetSwitches, \
                                      stop_switches=self.ballsearch_stopSwitches, \
@@ -385,11 +362,11 @@ def main():
 			return
 
 	config = yaml.load(open(yamlpath, 'r'))
-	machineType = config['PRGame']['machineType']
+	machine_type = config['PRGame']['machineType']
 	config = 0
 	game = None
 	try:
-	 	game = Game(machineType)
+	 	game = Game(machine_type)
 		game.yamlpath = yamlpath
 		game.setup()
 		game.run_loop()
