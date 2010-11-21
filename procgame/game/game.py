@@ -322,8 +322,8 @@ class GameController(object):
 					if self.switches[flipper].is_active():
 						self.coils[flipper+'Main'].pulse(34)
 						self.coils[flipper+'Hold'].pulse(0)
-				else:
-					self.coils[flipper+'Hold'].disable()
+					else: self.coils[flipper+'Hold'].disable()
+				else: self.coils[flipper+'Hold'].disable()
 
 				drivers = []
 				if enable:
@@ -348,9 +348,8 @@ class GameController(object):
 				if enable:
 					if self.switches[flipper].is_active():
 						self.coils[flipper+'Main'].patter(3, 22, 34)
-				else:
-					self.coils[flipper+'Main'].disable()
-
+					else: self.coils[flipper+'Main'].disable()
+				else: self.coils[flipper+'Main'].disable()
 
 				drivers = []
 				if enable:
