@@ -2,6 +2,10 @@ import time
 import re
 import copy
 
+# Documented in game.rst:
+SwitchStop = True
+SwitchContinue = False
+
 class Mode(object):
 	"""Abstraction of a game mode to be subclassed by the game
 	programmer.
@@ -11,7 +15,8 @@ class Mode(object):
 	instance of :class:`ModeQueue`,
 	which dispatches event notifications to modes in
 	order of priority (highest to lowest).  If a higher priority
-	mode's switch event handler method returns True, the event
+	mode's switch event handler method returns
+	:data:`~procgame.game.SwitchStop`, the event
 	is not passed down to lower modes.
 	
 	Switch event handlers are detected when the :class:`Mode`
@@ -234,9 +239,8 @@ class ModeQueue(object):
 	def handle_event(self, event):
 		modes = copy.copy(self.modes) # Make a copy so if a mode is added we don't get into a loop.
 		for mode in modes:
-			if mode.handle_event(event):
-				return True
-		return False
+			if mode.handle_event(event) == SwitchStop:
+				break
 	
 	def tick(self):
 		modes = copy.copy(self.modes) # Make a copy so if a mode is added we don't get into a loop.

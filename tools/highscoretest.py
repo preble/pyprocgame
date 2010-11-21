@@ -107,6 +107,7 @@ class TestGame(game.BasicGame):
 	
 	def game_ended(self):
 		seq_manager = highscore.EntrySequenceManager(game=self, priority=2)
+		seq_manager.ready_handler = self.highscore_entry_ready_to_prompt
 		seq_manager.finished_handler = self.highscore_entry_finished
 		
 		seq_manager.logic = highscore.CategoryLogic(game=self, categories=self.highscore_categories)
@@ -115,6 +116,23 @@ class TestGame(game.BasicGame):
 	def add_attract(self):
 		self.attract = Attract(game=self, priority=8)
 		self.modes.add(self.attract)
+	
+	def highscore_entry_ready_to_prompt(self, mode, prompt):
+		banner_mode = game.Mode(game=self, priority=8)
+		markup = dmd.MarkupFrameGenerator()
+		markup.font_plain = dmd.font_named('Font09Bx7.dmd')
+		markup.font_bold = dmd.font_named('Font13Bx9.dmd')
+		text = '[Great Score]\n#%s#' % (prompt.left.upper()) # we know that the left is the player name
+		frame = markup.frame_for_markup(markup=text, y_offset=0)
+		frame_layer = dmd.FrameLayer(frame=frame)
+		frame_layer.blink_frames = 10
+		banner_mode.layer = dmd.ScriptedLayer(width=128, height=32, script=[{'seconds':3.0, 'layer':frame_layer}])
+		banner_mode.layer.on_complete = lambda: self.highscore_banner_complete(banner_mode=banner_mode, highscore_entry_mode=mode)
+		self.modes.add(banner_mode)
+	
+	def highscore_banner_complete(self, banner_mode, highscore_entry_mode):
+		self.modes.remove(banner_mode)
+		highscore_entry_mode.prompt()
 	
 	def highscore_entry_finished(self, mode):
 		self.modes.remove(mode)

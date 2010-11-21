@@ -3,7 +3,7 @@ pyprocgame 0.9 Release Notes
 
 The following change notes are a summary of changes between git hash
 `8482d6009a3b81f8624e <http://github.com/preble/pyprocgame/commit/8482d6009a3b81f8624ef620a60126aafdcad8d2>`_ and 
-`59b488918f6313d2e7df <http://github.com/preble/pyprocgame/commit/59b488918f6313d2e7df5b1da0c3d33b32e0b6a9>`_:
+`8a769c077d1c184f5dcd <http://github.com/preble/pyprocgame/commit/8a769c077d1c184f5dcd76cfb0e1275318695095>`_:
 
 General & Game
 --------------
@@ -18,6 +18,8 @@ General & Game
   - :class:`procgame.highscoreentry.HighScoreEntry` moved to :class:`procgame.modes.HighScoreEntry`
 
   Most of the changes can be seen in commit `c06a031d1505c30a86b4 <http://github.com/preble/pyprocgame/commit/c06a031d1505c30a86b424ee8073ce6036010f2e>`_.
+
+- :class:`~procgame.game.Mode` switch handlers should now return :data:`procgame.game.SwitchStop` or :data:`~procgame.game.SwitchContinue`, instead of `True` or `False`.  Although the values are the same the meaning is much clearer.
 
 - Added :class:`procgame.game.BasicGame`, a new subclass of :class:`procgame.game.GameController` that comes with helpful classes like :class:`procgame.modes.ScoreDisplay` already installed.  Recommended for new game development.
 
@@ -37,6 +39,8 @@ General & Game
 
 - Renamed *machineType* variables to the more Pythonic *machine_type*.
 
+- Renamed :meth:`procgame.game.GameController.write_settings` to :meth:`~procgame.game.GameController.save_settings`.  Renamed :meth:`~procgame.game.GameController.write_game_data` to :meth:`~procgame.game.GameController.save_game_data`.
+
 DMD
 ---
 
@@ -48,7 +52,17 @@ DMD
 
 - Fixed a case where the :attr:`procgame.dmd.Layer.opaque` property was not checked by :meth:`procgame.dmd.DisplayController.update`.
 
-- Added :meth:`procgame.dmd.ScriptedLayer.force_next`.
+- Added :meth:`procgame.dmd.ScriptedLayer.force_next`.  Added transitions to :class:`procgame.dmd.ScriptedLayer` (experimental).
+
+- :class:`procgame.dmd.AnimatedLayer` changed to no longer destructively edit the frames list.  Added :class:`procgame.dmd.FrameQueueLayer`, which does destructively edit the frames list.
+
+- dmdconvert.py now sets upper four bits of each DMD dot to the source image's alpha channel value, if present.
+
+- Added :mod:`procgame.highscore` module, with new :class:`procgame.highscore.EntrySequenceManager`.
+
+- Added `y_offset` parameter to :meth:`procgame.dmd.MarkupFrameGenerator.frame_for_markup`.
+
+- Added :class:`procgame.dmd.PanningLayer`.
 
 - Added support for coils to :class:`procgame.lamps.LampShowTrack` and fixed a bug (thanks Koen) in name processing.
 

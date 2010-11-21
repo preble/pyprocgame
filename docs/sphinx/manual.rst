@@ -106,7 +106,7 @@ We subclass :class:`~procgame.game.Mode` to create our own useful modes.  Let's 
 	
 	  def sw_startButton_active(self, sw):
 	    print("Start!")
-	    return True
+	    return procgame.game.SwitchStop
 
 Here we have defined a class, :class:`FirstMode`, which subclasses the procgame :class:`~procgame.game.Mode` class.  The :class:`~procgame.game.Mode` constructor takes 2 parameters.  ``game`` is a reference to an instance of our own :class:`~procgame.game.GameController` subclass, and ``priority`` governs the order in which this mode will receive events, relative to the others – more on that later.
 
@@ -114,9 +114,12 @@ Next we define a method with a rather distinctive name: ``sw_startButton_active(
 
 Similarly, a method named ``sw_trainWreck_inactive()`` would be called when the trainWreck switch had changed to an inactive state.  The switch name in these method names must correspond to a switch name in the YAML configuration; otherwise a warning message will be printed when instantiating the class.  More on switch even handlers (including responding to events after a delay) later.
 
-Our switch handler in this case is very simple.  It prints out a message and returns ``True``.  Each switch event handler must return ``True`` or ``False``.  A return value of ``True`` instructs :class:`~procgame.game.ModeQueue` to stop processing this event; a return value of ``False`` tells the :class:`~procgame.game.ModeQueue` to allow this switch event to be sent to other active modes.
+Our switch handler in this case is very simple.  It prints out a message and returns :data:`procgame.game.SwitchStop`.  Each switch event handler must return :data:`~procgame.game.SwitchStop` or :data:`~procgame.game.SwitchContinue`.  A return value of stop instructs :class:`~procgame.game.ModeQueue` to stop processing this event; a return value of continue tells the :class:`~procgame.game.ModeQueue` to allow this switch event to be sent to other active modes.  If you do not explicitly return a value from a switch handler method the behavior will be the same as if :data:`~procgame.game.SwitchContinue` had been returned.
 
-This is where the priority of a mode becomes important.  The :class:`~procgame.game.ModeQueue` is essentially a priority queue: the highest-priority modes receive switch events first.  If the switch handler returns ``False`` the switch event is then sent to lower priority modes.  In this way you can use a high priority mode to give switches on the playfield to have special meaning during any number of modes, without having to handle that special case alongside the code for the more normal meaning of the switch.  Or you can easily have a switch result in multiple mode triggers.
+.. note::
+	Previously switch handlers returned ``True`` or ``False`` to indicate :data:`~procgame.game.SwitchStop` or :data:`~procgame.game.SwitchContinue`, respectively.  This practice has been superseded by these constants for clarity.  They are backward compatible.
+
+This is where the priority of a mode becomes important.  The :class:`~procgame.game.ModeQueue` is essentially a priority queue: the highest-priority modes receive switch events first.  If the switch handler returns continue the switch event is then sent to lower priority modes.  In this way you can use a high priority mode to give switches on the playfield to have special meaning during any number of modes, without having to handle that special case alongside the code for the more normal meaning of the switch.  Or you can easily have a switch result in multiple mode triggers.
 
 
 Mode Management
