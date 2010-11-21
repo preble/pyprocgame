@@ -64,6 +64,7 @@ class BasicGame(GameController):
 		"""Called once per run loop.
 		
 		Displays the last-received DMD frame on the desktop."""
+		super(BasicGame, self).tick()
 		self.show_last_frame()
 
 	def score(self, points):

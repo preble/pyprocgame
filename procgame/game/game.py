@@ -221,7 +221,10 @@ class GameController(object):
 			for name in sect_dict:
 				item = sect_dict[name]
 				number = pinproc.decode(self.machine_type, str(item['number']))
-				if 'type' in item:
+				if 'bus' in item and item['bus'] == 'AuxPort':	
+					polarity = self.machine_type == 'sternWhitestar' or self.machine_type == 'sternSAM'
+					collection.add(name, AuxDriver(self, name, number, polarity))
+				elif 'type' in item:
 					collection.add(name, klass(self, name, number, type = item['type']))
 				else:
 					collection.add(name, klass(self, name, number))
@@ -439,6 +442,10 @@ class GameController(object):
 		this cycle of the run loop.
 		"""
 		return self.proc.get_events()
+
+	def tick_drivers(self):
+		for coil in self.coils:
+			coil.tick()
 	
 	def run_loop(self):
 		"""Called by the programmer to read and process switch events until interrupted."""
@@ -452,6 +459,7 @@ class GameController(object):
 				for event in self.get_events():
 					self.process_event(event)
 				self.tick()
+				self.tick_drivers()
 				self.modes.tick()
 				self.proc.watchdog_tickle()
 				self.proc.flush()
