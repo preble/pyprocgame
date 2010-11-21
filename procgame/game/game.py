@@ -215,19 +215,39 @@ class GameController(object):
 		pairs = [('PRCoils', self.coils, Driver), 
 		         ('PRLamps', self.lamps, Driver), 
 		         ('PRSwitches', self.switches, Switch)]
+		new_aux_drivers = []
+		polarity = self.machine_type == 'sternWhitestar' or self.machine_type == 'sternSAM'
+
 		for section, collection, klass in pairs:
 			sect_dict = self.config[section]
 			print 'Processing section: %s' % (section)
 			for name in sect_dict:
 				item = sect_dict[name]
 				number = pinproc.decode(self.machine_type, str(item['number']))
+				print "Item %s from %d" % (name,number)
 				if 'bus' in item and item['bus'] == 'AuxPort':	
-					polarity = self.machine_type == 'sternWhitestar' or self.machine_type == 'sternSAM'
 					collection.add(name, AuxDriver(self, name, number, polarity))
+					new_aux_drivers += [number]
 				elif 'type' in item:
 					collection.add(name, klass(self, name, number, type = item['type']))
 				else:
 					collection.add(name, klass(self, name, number))
+
+		# In the P-ROC, AuxDrivers will conflict with regular drivers on the same group.
+		# So if any AuxDrivers were added, the regular drivers in that group must be changed
+		# to AuxDrivers as well.
+		for aux_driver in new_aux_drivers:
+			base_group_number = aux_driver/8
+			for collection in [self.coils, self.lamps]:
+				items_to_remove = []
+				for item in collection:
+					if item.number/8 == base_group_number:
+						items_to_remove += [{name:item.name,number:item.number}]
+				for item in items_to_remove:
+					print "Removing %s from %s" % (item[name],str(collection))
+					collection.remove(item[name], item[number])
+					print "Adding %s to AuxDrivers" % (item[name])
+					collection.add(item[name], AuxDriver(self, item[name], item[number], polarity))
 
 	        sect_dict = self.config['PRBallSave']
 		self.ballsearch_coils = sect_dict['pulseCoils']

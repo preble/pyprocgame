@@ -16,11 +16,20 @@ class AttrCollection(object):
 	def add(self, item, value):
 		self.__items_by_name[item] = value
 		self.__items_by_number[value.number] = value
+	def remove(self, name, number):
+		del self.__items_by_name[name]
+		del self.__items_by_number[number]
 	def __iter__(self):
 	        for item in self.__items_by_number.itervalues():
 	            yield item
 	def __getitem__(self, index):
 		return self.__getattr__(index)
+
+	def has_key(self, attr):
+		if type(attr) == str:
+			return self.__items_by_name.has_key(attr)
+		else:
+			return self.__items_by_number.has_key(attr)
 		
 class GameItem(object):
 	"""Base class for :class:`Driver` and :class:`Switch`.  Contained in an instance of :class:`AttrCollection` within the :class:`GameController`."""
@@ -184,6 +193,7 @@ class AuxDriver(Driver):
 	def __init__(self, game, name, number, polarity):
 		super(AuxDriver, self).__init__(game, name, number)
 		self.polarity = polarity
+		self.curr_value = not (self.curr_state ^ polarity)
 
 	def disable(self):
 		"""Disables (turns off) this driver."""
