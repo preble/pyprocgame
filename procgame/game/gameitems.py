@@ -218,11 +218,11 @@ class AuxDriver(Driver):
 		self.function = 'schedule'
 		self.function_active = True
 		self.schedule_val = schedule
-		if cycle_seconds == 0: self.time = 0
-		else: self.time = time.time() + cycle_seconds
+		if cycle_seconds == 0: self.time_ms = 0
+		else: self.time_ms = time.time() + cycle_seconds
 		self.game.log("AuxDriver %s - schedule %08x" % (self.name, schedule))
 		self.change_state(schedule & 0x1)
-		self.next_action_time = time.time() + 0.03125
+		self.next_action_time_ms = time.time() + 0.03125
 
 	def enable(self):
 		"""Enables this driver indefinitely.
@@ -244,24 +244,25 @@ class AuxDriver(Driver):
 
 	def tick(self):
 		if self.function_active:
-			if time.time() >= self.time:
+			if time.time() >= self.time_ms:
 				self.disable()
 			elif self.function == 'pulse':
 				if time.time() >= self.time:
 					self.disable()
 			elif self.function == 'schedule':
-				if time.time() >= self.next_action_time:
+				if time.time() >= self.next_action_time_ms:
 					self.inc_schedule()
 
 	def inc_schedule(self):
-		self.next_action_time += .0325	
+		self.next_action_time_ms += .0325	
 		
 		# See if the state needs to change.
 		next_state = (self.schedule_val >> 1) & 0x1
 		if next_state != self.curr_state: self.change_state(next_state)
 
 		# Rotate schedule down.
-		self.schedule_val = self.schedule_val >> 1 | ((self.schedule_val << 31) & 0x8000)
+		self.schedule_val = self.schedule_val >> 1 | ((self.schedule_val << 31) & 0x80000000)
+		print "New schedule: %x" % self.schedule_val
 		
 class Player(object):
 	"""Represents a player in the game.
