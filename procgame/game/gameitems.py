@@ -210,7 +210,8 @@ class AuxDriver(Driver):
 		if milliseconds == None:
 			milliseconds = self.default_pulse_time
 		self.change_state(True)
-		self.time = time.time() + milliseconds/1000.0
+		if milliseconds == 0: self.time_ms = 0
+		else: self.time = time.time() + milliseconds/1000.0
 		self.game.log("Time: %f: AuxDriver %s - pulse %d. End time: %f" % (time.time(), self.name, milliseconds, self.time))
 
 	def schedule(self, schedule, cycle_seconds, now):
@@ -244,11 +245,9 @@ class AuxDriver(Driver):
 
 	def tick(self):
 		if self.function_active:
-			if time.time() >= self.time_ms:
+			# Check for time expired.  time_ms == 0 is a special case that never expires.
+			if time.time() >= self.time_ms and self.time_ms > 0:
 				self.disable()
-			elif self.function == 'pulse':
-				if time.time() >= self.time:
-					self.disable()
 			elif self.function == 'schedule':
 				if time.time() >= self.next_action_time_ms:
 					self.inc_schedule()
