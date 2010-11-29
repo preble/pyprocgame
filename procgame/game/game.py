@@ -215,16 +215,39 @@ class GameController(object):
 		pairs = [('PRCoils', self.coils, Driver), 
 		         ('PRLamps', self.lamps, Driver), 
 		         ('PRSwitches', self.switches, Switch)]
+		new_aux_drivers = []
+		polarity = self.machine_type == 'sternWhitestar' or self.machine_type == 'sternSAM'
+
 		for section, collection, klass in pairs:
 			sect_dict = self.config[section]
 			print 'Processing section: %s' % (section)
 			for name in sect_dict:
 				item = sect_dict[name]
 				number = pinproc.decode(self.machine_type, str(item['number']))
-				if 'type' in item:
+				print "Item %s from %d" % (name,number)
+				if 'bus' in item and item['bus'] == 'AuxPort':	
+					collection.add(name, AuxDriver(self, name, number, polarity))
+					new_aux_drivers += [number]
+				elif 'type' in item:
 					collection.add(name, klass(self, name, number, type = item['type']))
 				else:
 					collection.add(name, klass(self, name, number))
+
+		# In the P-ROC, AuxDrivers will conflict with regular drivers on the same group.
+		# So if any AuxDrivers were added, the regular drivers in that group must be changed
+		# to AuxDrivers as well.
+		for aux_driver in new_aux_drivers:
+			base_group_number = aux_driver/8
+			for collection in [self.coils, self.lamps]:
+				items_to_remove = []
+				for item in collection:
+					if item.number/8 == base_group_number:
+						items_to_remove += [{name:item.name,number:item.number}]
+				for item in items_to_remove:
+					print "Removing %s from %s" % (item[name],str(collection))
+					collection.remove(item[name], item[number])
+					print "Adding %s to AuxDrivers" % (item[name])
+					collection.add(item[name], AuxDriver(self, item[name], item[number], polarity))
 
 	        sect_dict = self.config['PRBallSave']
 		self.ballsearch_coils = sect_dict['pulseCoils']
@@ -322,8 +345,8 @@ class GameController(object):
 					if self.switches[flipper].is_active():
 						self.coils[flipper+'Main'].pulse(34)
 						self.coils[flipper+'Hold'].pulse(0)
-				else:
-					self.coils[flipper+'Hold'].disable()
+					else: self.coils[flipper+'Hold'].disable()
+				else: self.coils[flipper+'Hold'].disable()
 
 				drivers = []
 				if enable:
@@ -348,9 +371,8 @@ class GameController(object):
 				if enable:
 					if self.switches[flipper].is_active():
 						self.coils[flipper+'Main'].patter(3, 22, 34)
-				else:
-					self.coils[flipper+'Main'].disable()
-
+					else: self.coils[flipper+'Main'].disable()
+				else: self.coils[flipper+'Main'].disable()
 
 				drivers = []
 				if enable:
@@ -440,6 +462,10 @@ class GameController(object):
 		this cycle of the run loop.
 		"""
 		return self.proc.get_events()
+
+	def tick_drivers(self):
+		for coil in self.coils:
+			coil.tick()
 	
 	def run_loop(self):
 		"""Called by the programmer to read and process switch events until interrupted."""
@@ -453,6 +479,7 @@ class GameController(object):
 				for event in self.get_events():
 					self.process_event(event)
 				self.tick()
+				self.tick_drivers()
 				self.modes.tick()
 				self.proc.watchdog_tickle()
 				self.proc.flush()

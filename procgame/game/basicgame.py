@@ -3,6 +3,8 @@ from ..dmd import DisplayController, font_named
 from ..modes import ScoreDisplay
 from ..desktop import Desktop
 from .. import config
+from .. import auxport
+from .. import alphanumeric
 import pinproc
 
 class BasicGame(GameController):
@@ -22,15 +24,22 @@ class BasicGame(GameController):
 	"""
 	
 	dmd = None
+        alpha_display = None
 	score_display = None
+        aux_port = None
 	desktop = None
 	
 	def __init__(self, machine_type):
 		super(BasicGame, self).__init__(machine_type)
-		self.dmd = DisplayController(self, width=128, height=32, message_font=font_named('Font07x5.dmd'))
+                
+		self.aux_port = auxport.AuxPort(self)
+                if machine_type == 'wpcAlphanumeric':
+			self.alpha_display = alphanumeric.AlphanumericDisplay(self.aux_port)
+		else:
+			self.dmd = DisplayController(self, width=128, height=32, message_font=font_named('Font07x5.dmd'))
 		self.score_display = ScoreDisplay(self, 0)
 		self.desktop = Desktop()
-		self.dmd.frame_handlers.append(self.set_last_frame)
+		if self.dmd: self.dmd.frame_handlers.append(self.set_last_frame)
 		key_map_config = config.value_for_key_path(keypath='keyboard_switch_map', default={})
 		for k, v in key_map_config.items():
 			print k, v, pinproc.decode(machine_type, v), machine_type
@@ -43,7 +52,7 @@ class BasicGame(GameController):
 		
 	def dmd_event(self):
 		"""Updates the DMD via :class:`DisplayController`."""
-		self.dmd.update()
+		if self.dmd: self.dmd.update()
 	
 	def get_events(self):
 		"""Overriding GameController's implementation in order to append keyboard events."""
@@ -55,6 +64,7 @@ class BasicGame(GameController):
 		"""Called once per run loop.
 		
 		Displays the last-received DMD frame on the desktop."""
+		super(BasicGame, self).tick()
 		self.show_last_frame()
 
 	def score(self, points):
