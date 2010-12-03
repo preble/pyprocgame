@@ -74,17 +74,30 @@ class AlphanumericDisplay(object):
 		"""Initializes the animation."""
 		super(AlphanumericDisplay, self).__init__()
 
+		# Used to keep the previous data for possible transparency
+		self.last_strings = ["                ","                "]
 		self.aux_controller = aux_controller
 		self.aux_index = aux_controller.get_index()
+
+		# Added to initialize display
+		self.display(["                ","                "])
 
 	def display(self, input_strings, intensities=[[1]*16]*2):
 
 		strings = []
-
+		
 		# Make sure strings are at least 16 chars.
 		# Then convert each string to a list of chars.
 		for j in range(0,2):
+			# Convert the input string to upper case to prevent issues
+			input_strings[j] = input_strings[j].upper()
 			if len(input_strings[j]) < 16: input_strings[j] += ' '*(16-len(input_strings[j]))
+
+			# Replace any @ signs with the last string's character.
+			for i in range(0,16):
+				if input_strings[j][i] == "@":
+					input_strings[j] = input_strings[j][:i] + self.last_strings[j][i] + input_strings[j][i+1:]
+
 			strings += [list(input_strings[j])]
 
 		# Make sure insensities are 1 or less
@@ -157,3 +170,7 @@ class AlphanumericDisplay(object):
 
 		# Send the new list of commands to the Aux port controller.
 		self.aux_controller.update(self.aux_index, commands)
+
+		# Save the strings as the last display for the next use
+                # for transparency.
+		self.last_strings = input_strings
