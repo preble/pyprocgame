@@ -335,13 +335,6 @@ class GameController(object):
 		stream = file(filename, 'w')
 		yaml.dump(self.game_data, stream)
 
-	def pinproc_func(self, func, *args):
-		"""If not using FakePinPROC, func is called with the arguments in *args.  Otherwise, a list made of the function and arguments is returned."""
-		if "Fake" in str(type(self.proc)):
-			func_words = str(func).rsplit('_')
-			return [func_words[len(func_words)-1], args]
-		else: return func(*args)
-
 	def enable_flippers(self, enable):
 		#return True
 		"""Enables or disables the flippers AND bumpers."""
@@ -360,16 +353,17 @@ class GameController(object):
 					else: self.coils[flipper+'Hold'].disable()
 				else: self.coils[flipper+'Hold'].disable()
 
+
 				drivers = []
 				if enable:
-					drivers += [self.pinproc_func(pinproc.driver_state_pulse, main_coil.state(), 34)]
-					drivers += [self.pinproc_func(pinproc.driver_state_pulse, hold_coil.state(), 0)]
+					drivers += [pinproc.driver_state_pulse(main_coil.state(), 34)]
+					drivers += [pinproc.driver_state_pulse(hold_coil.state(), 0)]
 				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
 			
 				drivers = []
 				if enable:
-					drivers += [self.pinproc_func(pinproc.driver_state_disable, main_coil.state())]
-					drivers += [self.pinproc_func(pinproc.driver_state_disable, hold_coil.state())]
+					drivers += [pinproc.driver_state_disable(main_coil.state())]
+					drivers += [pinproc.driver_state_disable(hold_coil.state())]
 	
 				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
                 elif self.machine_type == 'sternWhitestar' or self.machine_type == 'sternSAM':
@@ -387,13 +381,13 @@ class GameController(object):
 
 				drivers = []
 				if enable:
-					drivers += [self.pinproc_func(pinproc.driver_state_patter, main_coil.state(), 3, 22, 34)]
+					drivers += [pinproc.driver_state_patter(main_coil.state(), 3, 22, 34)]
 	
 				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
 			
 				drivers = []
 				if enable:
-					drivers += [self.pinproc_func(pinproc.driver_state_disable, main_coil.state())]
+					drivers += [pinproc.driver_state_disable(main_coil.state())]
 	
 				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
 	
@@ -403,7 +397,7 @@ class GameController(object):
 
 			drivers = []
 			if enable:
-				drivers += [self.pinproc_func(pinproc.driver_state_pulse, coil.state(), 20)]
+				drivers += [pinproc.driver_state_pulse(coil.state(), 20)]
 
 			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':True}, drivers)
 

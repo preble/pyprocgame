@@ -89,8 +89,6 @@ class Controller:
 
 	# Need to overload this method to tell that we support IID_IServerWithEvents
 	def _query_interface_(self, iid):
-		print "iid"
-		print iid
 		if iid == IID_IController:
 			return win32com.server.util.wrap(self)
 	
@@ -101,9 +99,7 @@ class Controller:
         
 	def Run(self):
 		vp_game_map_file = config.value_for_key_path(keypath='vp_game_map_file', default='/.')
-		#vp_game_map_file = '/P-ROC\pyprocgame/vp_game_map.yaml'
 		vp_game_map = yaml.load(open(vp_game_map_file, 'r'))
-		print "GameName: %s" % self.GameName
 		game_class = vp_game_map[self.GameName]['kls']
 		game_path = vp_game_map[self.GameName]['path']
 		yamlpath = vp_game_map[self.GameName]['yaml']
@@ -111,17 +107,10 @@ class Controller:
 		rundir = vp_game_map['rundir']
 		os.chdir(rundir)
 
-		#yamlpath = "/P-ROC/shared/config/JD.yaml"
-		#config = yaml.load(open(yamlpath, 'r'))
-
 		game_config = yaml.load(open(yamlpath, 'r'))
 		machine_type = game_config['PRGame']['machineType']
 		self.game = None
 		
-		#try:
-		#klass = util.get_class('jd.Game','/../games/jd')
-
-		print "game_class: %s\ngame_path: %s" %(game_class,game_path)
 		klass = util.get_class(game_class,game_path)
 	 	self.game = klass(machine_type)
 		self.game.log("GameName: " + str(self.GameName))
@@ -130,6 +119,9 @@ class Controller:
 	 	self.last_lamp_states = self.getLampStates()
 	 	self.last_coil_states = self.getCoilStates()
 		self.game.setup()
+
+		# Initialize switches.  Call SetSwitch so it can invert
+		# normally closed switches as appropriate.
 		for i in range(0,120):
 			self.SetSwitch(i, False)
 		thread.start_new_thread(self.game.run_loop,())
@@ -140,28 +132,20 @@ class Controller:
 		return True
 
 	def Games(self, rom_name):
-		print "hi"
 		games = IGames()
 		wrapped_games = wrap (games)
 		return wrapped_games
 
 	def SetGames(self, rom_name):
-		print "hi1"
 		games = IGames()
 		wrapped_games = wrap (games)
 		return wrapped_games
 		
 	def Switch(self, number):
-		print "Reading Switch"
-		print number
 		if number != None: self.lastSwitch = number
-		print self.switch[self.lastSwitch]
 		return self.switch[self.lastSwitch]
 				
 	def SetSwitch(self, number, value):
-		print "Setswitch"
-		print number
-		print value
 		if value == None: return self.Switch(number)
 		if number == None: return self.Switch(number)
 		if number != None: self.lastSwitch = number
@@ -176,7 +160,6 @@ class Controller:
 		else: prNumber = 0
 
 		if not self.game.switches.has_key(prNumber): return False
-		print "prNumber: %d" % prNumber
 		if self.game.switches[prNumber].type == 'NC': 
 			self.AddSwitchEvent(prNumber, not value)
 		else: self.AddSwitchEvent(prNumber, value)
