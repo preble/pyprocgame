@@ -57,11 +57,42 @@ class FakePinPROC(object):
 		""" Send a disable command to a virtual driver. """
 		self.drivers[number].disable()
 
-	# There is no state structure for virtual drivers.  Just return
-	# the number since it's typically stored in the structure.
+	def driver_state_disable(self, state):
+		""" Change the driver state dict to represent a Disable command. """
+		state['state'] = 0
+		state['timeslots'] = 0
+		state['waitForFirstTimeSlot'] = False 
+		state['outputDriveTime'] = 0
+		state['patterOnTime'] = 0
+		state['patterOffTime'] = 0
+		state['patterEnable'] = False 
+		return state
+
+	def driver_state_pulse(self, state, milliseconds):
+		""" Change the driver state dict to represent a Pulse command. """
+		state['state'] = True
+		state['timeslots'] = 0
+		state['waitForFirstTimeSlot'] = False 
+		state['outputDriveTime'] = milliseconds
+		state['patterOnTime'] = 0
+		state['patterOffTime'] = 0
+		state['patterEnable'] = False 
+		return state
+
+	def driver_state_schedule(self, state, schedule, cycleSeconds, now):
+		""" Change the driver state dict to represent a Schedule command. """
+		state['state'] = True
+		state['timeslots'] = schedule
+		state['waitForFirstTimeSlot'] = not now 
+		state['outputDriveTime'] = cycleSeconds
+		state['patterOnTime'] = 0
+		state['patterOffTime'] = 0
+		state['patterEnable'] = False 
+		return state
+
 	def driver_get_state(self, number):
-		""" Returns needed elements of a virtual drivers state structure.  In pypinproc, the structure matches the attributes of a driver in the P-ROC.  The concept of the structure can be very simple here.  For now it just represents the driver number. """
-		return number
+	""" Return the state dictionary for the specified driver. """
+		return self.drivers[number].state
 
 	# Switch rule methods
 	def switch_update_rule(self, num, state, rule_params, drivers):
@@ -103,12 +134,7 @@ class FakePinPROC(object):
 		# needs to change.
 		drivers = self.switch_rules[rule_index]['drivers']
 		for driver_rule in drivers:
-			if 'pulse' in driver_rule[0]:
-				self.drivers[driver_rule[1][0]].pulse(driver_rule[1][1])
-			elif 'disable' in driver_rule[0]:
-				self.drivers[driver_rule[1][0]].disable()
-			elif 'schedule' in driver_rule[0]:
-				self.drivers[driver_rule[1][0]].schedule(driver_rules[1][1], driver_rules[1][2], driver_rules[1][3])
+			self.drivers[driver_rule['driverNum']].update_state(driver_rule)
 
 
 	def watchdog_tickle(self):

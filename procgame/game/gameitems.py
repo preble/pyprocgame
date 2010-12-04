@@ -170,22 +170,15 @@ class AuxDriver(Driver):
 	
 	Subclass of :class:`Driver`.
 	"""
-	polarity = True
-	"""The drivers polarity.  Active high is True.  Active low is False."""
 	curr_state = False
 	"""The current state of the driver.  Active is True.  Inactive is False."""
 	curr_value = False
 	"""The current value of the driver taking into account the desired state and polarity."""
-	schedule_val = 0x0
-	"""The driver's schedule: 32bits, each representing a 31.25ms timeslot, least significant bit first."""
 	time_ms = 0
 	"""The time the driver's currently active function should end."""
 	next_action_time_ms = 0
 	"""The next time the driver's state should change."""
-	patter_on_ms = 0
-	"""The amount of time to activate the driver during a patter in millisenconds."""
-	patter_off_ms = 0
-	"""The amount of time to activate the driver during a patter in millisenconds."""
+
 	function = None
 	"""The currently assigned function (pulse, schedule, patter, pulsed_patter)."""
 	function_active = False
@@ -195,8 +188,26 @@ class AuxDriver(Driver):
 
 	def __init__(self, game, name, number, polarity):
 		super(AuxDriver, self).__init__(game, name, number)
-		self.polarity = polarity
-		self.curr_value = not (self.curr_state ^ polarity)
+
+		self.state = {'polarity':polarity,
+		              'timeslots':0x0,
+		              'patterEnable':False,
+		              'driverNum':number,
+		              'patterOnTime':0,
+		              'patterOffTime':0,
+		              'state':0,
+		              'outputDriveTime':0,
+		              'waitForFirstTimeSlot':0}
+
+		self.curr_value = not (self.curr_state ^ self.state['polarity'])
+
+
+	def update_state(self, state):
+		""" Generic state change request that represents the P-ROC's PRDriverUpdateState function. """
+		self.state = state.copy()
+		if not state['state']: self.disable()
+		elif state['timeslots'] == 0: self.pulse(state['outputDriveTime'])
+		else: self.schedule(state['timeslots'], state['outputDriveTime'], state['waitForFirstTimeSlot'])
 
 	def disable(self):
 		"""Disables (turns off) this driver."""
@@ -221,7 +232,7 @@ class AuxDriver(Driver):
 		"""Schedules this driver to be enabled according to the given `schedule` bitmask."""
 		self.function = 'schedule'
 		self.function_active = True
-		self.schedule_val = schedule
+		self.state['timeslots'] = schedule
 		if cycle_seconds == 0: self.time_ms = 0
 		else: self.time_ms = time.time() + cycle_seconds
 		self.game.log("AuxDriver %s - schedule %08x" % (self.name, schedule))
@@ -241,7 +252,7 @@ class AuxDriver(Driver):
 
 	def change_state(self, new_state):
 		self.curr_state = new_state
-		self.curr_value = not (self.curr_state ^ self.polarity)
+		self.curr_value = not (self.curr_state ^ self.state['polarity'])
 		self.last_time_changed = time.time()
 		if self.state_change_handler: self.state_change_handler()
 		self.game.log("AuxDriver %s - state change: %d" % (self.name, self.curr_state))
@@ -259,11 +270,11 @@ class AuxDriver(Driver):
 		self.next_action_time_ms += .0325	
 		
 		# See if the state needs to change.
-		next_state = (self.schedule_val >> 1) & 0x1
+		next_state = (self.state['timeslots'] >> 1) & 0x1
 		if next_state != self.curr_state: self.change_state(next_state)
 
 		# Rotate schedule down.
-		self.schedule_val = self.schedule_val >> 1 | ((self.schedule_val << 31) & 0x80000000)
+		self.state['timeslots'] = self.state['timeslots'] >> 1 | ((self.state['timeslots'] << 31) & 0x80000000)
 		
 class Player(object):
 	"""Represents a player in the game.
