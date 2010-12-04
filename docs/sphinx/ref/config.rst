@@ -9,12 +9,11 @@ The ``config`` submodule serves as a central location for pyprocgame runtime con
 Example config.yaml
 -------------------
 
-The following :file:`config.yaml` demonstrates use of the ``fonts.path`` key path used by :data:`procgame.dmd.font_path`::
+The following :file:`config.yaml` demonstrates use of the ``font_path`` key path used by :data:`procgame.dmd.font_path`::
 
-  fonts:
-    path:
-      - .
-      - ../shared/dmd
+  font_path:
+    - .
+    - ../shared/dmd
 
 Members
 -------

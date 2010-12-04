@@ -6,6 +6,7 @@ import time
 #import pygame.image
 import Image
 import re
+import string
 
 class ImageSequence:
 	"""Iterates over all images in a sequence (of PIL Images)."""
@@ -57,7 +58,7 @@ def gif_frames(src):
 		
 	return frames
 
-def load_and_append(anim, filename):
+def load_and_append_image(anim, filename):
 	if not os.path.exists(filename):
 		#print "Not found:", filename
 		return False
@@ -96,6 +97,56 @@ def load_and_append(anim, filename):
 	
 	return True
 
+
+def load_and_append_text(anim, filename, dot_map = {'0':0, '1':5, '2':10, '3':15}):
+	"""Support for text-based DMD files.  Each line in the file describes a
+	row of DMD data, with each character representing a dot.  Dot values are
+	interpreted using the dot_map parameter.  A blank line indicates the end
+	of a frame.
+	"""
+	if not os.path.exists(filename):
+		return False
+	print "Appending ", filename
+	f = open(filename, 'r')
+	lines = f.readlines()
+	
+	# Find the dimensions
+	w = 0
+	h = 0
+	for line in lines:
+		line = string.strip(line)
+		if len(line) == 0: break
+		w = len(line)
+		h += 1
+	print "Dimensions:", w, h
+	(anim.width, anim.height) = (w, h)
+	
+	frame = procgame.dmd.Frame(w, h)
+	y = 0
+	
+	for line in lines:
+		
+		line = string.strip(line)
+		
+		if len(line) == 0:
+			anim.frames.append(frame)
+			frame = procgame.dmd.Frame(w, h)
+			y = 0
+			continue
+		
+		x = 0
+		for ch in line:
+			frame.set_dot(x, y, dot_map[ch])
+			x += 1
+		
+		y += 1
+	
+	if y != 0:
+		anin.frames.append(frame)
+	
+	return True
+
+
 def image_to_dmd(src_filenames, dst_filename):
 	"""docstring for image_to_dmd"""
 	last_filename = None
@@ -106,8 +157,12 @@ def image_to_dmd(src_filenames, dst_filename):
 		src_filenames = []
 		for frame_index in range(1000):
 			src_filenames.append(pattern % (frame_index))
+	
 	for filename in src_filenames:
-		load_and_append(anim=anim, filename=filename)
+		if filename.endswith('.txt'):
+			load_and_append_text(anim=anim, filename=filename)
+		else:
+			load_and_append_image(anim=anim, filename=filename)
 	
 	if len(anim.frames) == 0:
 		print "ERROR: No frames found!"
