@@ -118,6 +118,9 @@ class Switch(GameItem):
 		self.state = state
 		self.reset_timer()
 	def is_state(self, state, seconds = None):
+		# Changed from simple '==' to boolean logic for weird 
+		# TypeError issue when running with Visual Pinball.
+		#if not (self.state or state):
 		if self.state == state:
 			if seconds != None:
 				return self.time_since_change() > seconds
@@ -211,8 +214,8 @@ class AuxDriver(Driver):
 			milliseconds = self.default_pulse_time
 		self.change_state(True)
 		if milliseconds == 0: self.time_ms = 0
-		else: self.time = time.time() + milliseconds/1000.0
-		self.game.log("Time: %f: AuxDriver %s - pulse %d. End time: %f" % (time.time(), self.name, milliseconds, self.time))
+		else: self.time_ms = time.time() + milliseconds/1000.0
+		self.game.log("Time: %f: AuxDriver %s - pulse %d. End time: %f" % (time.time(), self.name, milliseconds, self.time_ms))
 
 	def schedule(self, schedule, cycle_seconds, now):
 		"""Schedules this driver to be enabled according to the given `schedule` bitmask."""
@@ -261,7 +264,6 @@ class AuxDriver(Driver):
 
 		# Rotate schedule down.
 		self.schedule_val = self.schedule_val >> 1 | ((self.schedule_val << 31) & 0x80000000)
-		print "New schedule: %x" % self.schedule_val
 		
 class Player(object):
 	"""Represents a player in the game.
