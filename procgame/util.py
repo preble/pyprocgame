@@ -1,4 +1,5 @@
 import os
+import sys
 
 def find_file_in_path(name, paths):
 	"""Search *paths* for a file named *name*.  Return the path, or ``None`` if not found."""
@@ -8,10 +9,11 @@ def find_file_in_path(name, paths):
 			return path
 	return None
 
-def get_class( kls ):
+def get_class( kls, path_adj='/.' ):
 	"""Returns a class for the given fully qualified class name, *kls*.
 
 	Source: http://stackoverflow.com/questions/452969/does-python-have-an-equivalent-to-java-class-forname"""
+	sys.path.append(sys.path[0]+path_adj)
 	parts = kls.split('.')
 	module = ".".join(parts[:-1])
 	m = __import__( module )

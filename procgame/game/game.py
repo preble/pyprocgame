@@ -1,4 +1,5 @@
 import os
+import sys
 import pinproc
 import Queue
 import yaml
@@ -71,6 +72,11 @@ class GameController(object):
 		self.proc.reset(1)
 		self.modes = ModeQueue(self)
 		self.t0 = time.time()
+		self.logging_dest = config.value_for_key_path(keypath='log_destination', default="stdout")
+		if self.logging_dest != "stdout":
+			self.f = open(self.logging_dest, 'w') 
+			self.f.write("pyprocgame log - starting at " + time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime()) + "\n") 
+			sys.stdout = self.f
 	
 	def create_pinproc(self):
 		"""Instantiates and returns the class to use as the P-ROC device.
@@ -140,8 +146,6 @@ class GameController(object):
 		"""Called by the game framework when a new ball is starting."""
 		self.save_ball_start_time()	
                 print "Ball Start time: % 10.3f" % self.ball_start_time
-
-		pass
 	
 	def shoot_again(self):
 		"""Called by the game framework when a new ball is starting which was the result of a stored extra ball (Player.extra_balls).  
@@ -266,7 +270,7 @@ class GameController(object):
 		# Configure the initial switch states:
 		states = self.proc.switch_get_states()
 		for sw in self.switches:
-				sw.set_state(states[sw.number] == 1)
+			sw.set_state(states[sw.number] == 1)
 
 		sect_dict = self.config['PRGame']
 		self.num_balls_total = sect_dict['numBalls']
@@ -331,16 +335,24 @@ class GameController(object):
 		stream = file(filename, 'w')
 		yaml.dump(self.game_data, stream)
 
+	def pinproc_func(self, func, *args):
+		"""If not using FakePinPROC, func is called with the arguments in *args.  Otherwise, a list made of the function and arguments is returned."""
+		if "Fake" in str(type(self.proc)):
+			func_words = str(func).rsplit('_')
+			return [func_words[len(func_words)-1], args]
+		else: return func(*args)
+
 	def enable_flippers(self, enable):
+		#return True
 		"""Enables or disables the flippers AND bumpers."""
 		if self.machine_type == 'wpc' or self.machine_type == 'wpc95' or self.machine_type == 'wpcAlphanumeric':
-			print("Programming flippers...")
 			for flipper in self.config['PRFlippers']:
+				print("  programming flipper %s" % (flipper))
 				main_coil = self.coils[flipper+'Main']
 				hold_coil = self.coils[flipper+'Hold']
 				switch_num = self.switches[flipper].number
-
-				# Check to see if the flipper should be activated now.
+#
+				# Chck to see if the flipper should be activated now.
 				if enable:
 					if self.switches[flipper].is_active():
 						self.coils[flipper+'Main'].pulse(34)
@@ -350,21 +362,20 @@ class GameController(object):
 
 				drivers = []
 				if enable:
-					drivers += [pinproc.driver_state_pulse(main_coil.state(), 34)]
-					drivers += [pinproc.driver_state_pulse(hold_coil.state(), 0)]
+					drivers += [self.pinproc_func(pinproc.driver_state_pulse, main_coil.state(), 34)]
+					drivers += [self.pinproc_func(pinproc.driver_state_pulse, hold_coil.state(), 0)]
 				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
 			
 				drivers = []
 				if enable:
-					drivers += [pinproc.driver_state_disable(main_coil.state())]
-					drivers += [pinproc.driver_state_disable(hold_coil.state())]
+					drivers += [self.pinproc_func(pinproc.driver_state_disable, main_coil.state())]
+					drivers += [self.pinproc_func(pinproc.driver_state_disable, hold_coil.state())]
 	
 				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
                 elif self.machine_type == 'sternWhitestar' or self.machine_type == 'sternSAM':
 			for flipper in self.config['PRFlippers']:
 				print("  programming flipper %s" % (flipper))
 				main_coil = self.coils[flipper+'Main']
-				#switch_num = self.switches[flipper].number
 				switch_num = pinproc.decode(self.machine_type, str(self.switches[flipper].number))
 
 				# Check to see if the flipper should be activated now.
@@ -376,13 +387,13 @@ class GameController(object):
 
 				drivers = []
 				if enable:
-					drivers += [pinproc.driver_state_patter(main_coil.state(), 3, 22, 34)]
+					drivers += [self.pinproc_func(pinproc.driver_state_patter, main_coil.state(), 3, 22, 34)]
 	
 				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
 			
 				drivers = []
 				if enable:
-					drivers += [pinproc.driver_state_disable(main_coil.state())]
+					drivers += [self.pinproc_func(pinproc.driver_state_disable, main_coil.state())]
 	
 				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
 	
@@ -392,7 +403,7 @@ class GameController(object):
 
 			drivers = []
 			if enable:
-				drivers += [pinproc.driver_state_pulse(coil.state(), 20)]
+				drivers += [self.pinproc_func(pinproc.driver_state_pulse, coil.state(), 20)]
 
 			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':True}, drivers)
 
@@ -436,6 +447,7 @@ class GameController(object):
 		else:
 			sw = self.switches[event_value]
 			recvd_state = event_type == pinproc.EventTypeSwitchClosedDebounced
+
 			if sw.state != recvd_state:
 				sw.set_state(recvd_state)
 				self.log("    %s:\t%s" % (sw.name, sw.state_str()))
@@ -455,7 +467,9 @@ class GameController(object):
 	def log(self, line):
 		"""Print a line to the console with the number of seconds elapsed since the game started up."""
 		if self.logging_enabled:
-			print("% 10.3f %s" % (time.time()-self.t0, line))
+			if self.logging_dest == "stdout":
+				print("% 10.3f %s" % (time.time()-self.t0, line))
+			else: self.f.write(line + "\n") 
 	
 	def get_events(self):
 		"""Called by :meth:`run_loop` once per cycle to get the events to process during
@@ -463,9 +477,11 @@ class GameController(object):
 		"""
 		return self.proc.get_events()
 
-	def tick_drivers(self):
+	def tick_aux_drivers(self):
 		for coil in self.coils:
 			coil.tick()
+		for lamp in self.lamps:
+			lamp.tick()
 	
 	def run_loop(self):
 		"""Called by the programmer to read and process switch events until interrupted."""
@@ -479,7 +495,7 @@ class GameController(object):
 				for event in self.get_events():
 					self.process_event(event)
 				self.tick()
-				self.tick_drivers()
+				self.tick_aux_drivers()
 				self.modes.tick()
 				self.proc.watchdog_tickle()
 				self.proc.flush()

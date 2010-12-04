@@ -10,6 +10,7 @@ __all__ = [
 	'modes',
 	'service',
 	'sound',
+	'util',
 	]
 import config
 import desktop
@@ -19,3 +20,4 @@ import lamps
 import modes
 import service
 import sound
+import util
