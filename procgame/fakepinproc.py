@@ -57,41 +57,8 @@ class FakePinPROC(object):
 		""" Send a disable command to a virtual driver. """
 		self.drivers[number].disable()
 
-	def driver_state_disable(self, state):
-		""" Change the driver state dict to represent a Disable command. """
-		state['state'] = 0
-		state['timeslots'] = 0
-		state['waitForFirstTimeSlot'] = False 
-		state['outputDriveTime'] = 0
-		state['patterOnTime'] = 0
-		state['patterOffTime'] = 0
-		state['patterEnable'] = False 
-		return state
-
-	def driver_state_pulse(self, state, milliseconds):
-		""" Change the driver state dict to represent a Pulse command. """
-		state['state'] = True
-		state['timeslots'] = 0
-		state['waitForFirstTimeSlot'] = False 
-		state['outputDriveTime'] = milliseconds
-		state['patterOnTime'] = 0
-		state['patterOffTime'] = 0
-		state['patterEnable'] = False 
-		return state
-
-	def driver_state_schedule(self, state, schedule, cycleSeconds, now):
-		""" Change the driver state dict to represent a Schedule command. """
-		state['state'] = True
-		state['timeslots'] = schedule
-		state['waitForFirstTimeSlot'] = not now 
-		state['outputDriveTime'] = cycleSeconds
-		state['patterOnTime'] = 0
-		state['patterOffTime'] = 0
-		state['patterEnable'] = False 
-		return state
-
 	def driver_get_state(self, number):
-	""" Return the state dictionary for the specified driver. """
+		""" Return the state dictionary for the specified driver. """
 		return self.drivers[number].state
 
 	# Switch rule methods
