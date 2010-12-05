@@ -235,8 +235,11 @@ def init_font_path():
             font_path.extend(map(os.path.expanduser, value))
         elif issubclass(type(value), str):
             font_path.append(os.path.expanduser(value))
+        elif value == None:
+            print('WARNING no font_path set in %s!' % (config.path))
         else:
-            raise Exception, 'Expected string or array for font_path.'
+            print('ERROR loading font_path from %s; type is %s but should be list or str.' % (config.path, type(value)))
+            sys.exit(1)
     except ValueError, e:
         #print e
         pass
