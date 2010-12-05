@@ -104,7 +104,7 @@ class AlphanumericDisplay(object):
 		for i in range(0,16):
 
 			# Activate the character position (this goes to both displayas)
-			commands += [pinproc.aux_command_output_custom(i,0,self.strobes[0],False)]
+			commands += [pinproc.aux_command_output_custom(i,0,self.strobes[0],False,0)]
 
 			for j in range(0,2):
 				segs[j][i] = self.asciiSegments[ord(strings[j][i])-32]
@@ -116,14 +116,13 @@ class AlphanumericDisplay(object):
 				if (i<15): 
 					comma_dot = strings[j][i+1]
 	                        	if comma_dot == "," or comma_dot == ".":
-						print "command found i:%d, j:%d" % (i,j)
 						segs[j][i] |= self.asciiSegments[ord(comma_dot)-32]
 						strings[j].remove(comma_dot)
 						# Append a space to ensure there are enough chars.
 						strings[j].append(' ')
 
-				commands += [pinproc.aux_command_output_custom(segs[j][i] & 0xff,0,self.strobes[j*2+1],False)]
-				commands += [pinproc.aux_command_output_custom((segs[j][i]>> 8) & 0xff,0,self.strobes[j*2+2],False)]
+				commands += [pinproc.aux_command_output_custom(segs[j][i] & 0xff,0,self.strobes[j*2+1],False, 0)]
+				commands += [pinproc.aux_command_output_custom((segs[j][i]>> 8) & 0xff,0,self.strobes[j*2+2],False, 0)]
 				char_on_time += [intensities[j][i] * self.full_intensity_delay]
 				char_off_time += [self.inter_char_delay + (self.full_intensity_delay - char_on_time[j])]
 
@@ -144,16 +143,19 @@ class AlphanumericDisplay(object):
 
 			# Delay until it's time to turn off the character with the lowest intensity
 			commands += [pinproc.aux_command_delay(char_on_time[first])]
-			commands += [pinproc.aux_command_output_custom(0,0,self.strobes[first*2+1],False)]
-			commands += [pinproc.aux_command_output_custom(0,0,self.strobes[first*2+2],False)]
+			commands += [pinproc.aux_command_output_custom(0,0,self.strobes[first*2+1],False,0)]
+			commands += [pinproc.aux_command_output_custom(0,0,self.strobes[first*2+2],False,0)]
 
 			# Delay until it's time to turn off the other character.
 			commands += [pinproc.aux_command_delay(between_delay)]
-			commands += [pinproc.aux_command_output_custom(0,0,self.strobes[second*2+1],False)]
-			commands += [pinproc.aux_command_output_custom(0,0,self.strobes[second*2+2],False)]
+			commands += [pinproc.aux_command_output_custom(0,0,self.strobes[second*2+1],False,0)]
+			commands += [pinproc.aux_command_output_custom(0,0,self.strobes[second*2+2],False,0)]
 
 			# Delay for the inter-digit delay.
 			commands += [pinproc.aux_command_delay(char_off_time[second])]
 
 		# Send the new list of commands to the Aux port controller.
 		self.aux_controller.update(self.aux_index, commands)
+
+		for command in commands:
+			print "Aux Command: %s" % command
