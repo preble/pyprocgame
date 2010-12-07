@@ -219,7 +219,7 @@ class GameController(object):
 		pairs = [('PRCoils', self.coils, Driver), 
 		         ('PRLamps', self.lamps, Driver), 
 		         ('PRSwitches', self.switches, Switch)]
-		new_aux_drivers = []
+		new_virtual_drivers = []
 		polarity = self.machine_type == 'sternWhitestar' or self.machine_type == 'sternSAM'
 
 		for section, collection, klass in pairs:
@@ -230,18 +230,18 @@ class GameController(object):
 				number = pinproc.decode(self.machine_type, str(item['number']))
 				print "Item %s from %d" % (name,number)
 				if 'bus' in item and item['bus'] == 'AuxPort':	
-					collection.add(name, AuxDriver(self, name, number, polarity))
-					new_aux_drivers += [number]
+					collection.add(name, VirtualDriver(self, name, number, polarity))
+					new_virtual_drivers += [number]
 				elif 'type' in item:
 					collection.add(name, klass(self, name, number, type = item['type']))
 				else:
 					collection.add(name, klass(self, name, number))
 
-		# In the P-ROC, AuxDrivers will conflict with regular drivers on the same group.
-		# So if any AuxDrivers were added, the regular drivers in that group must be changed
-		# to AuxDrivers as well.
-		for aux_driver in new_aux_drivers:
-			base_group_number = aux_driver/8
+		# In the P-ROC, VirtualDrivers will conflict with regular drivers on the same group.
+		# So if any VirtualDrivers were added, the regular drivers in that group must be changed
+		# to VirtualDrivers as well.
+		for virtual_driver in new_virtual_drivers:
+			base_group_number = virtual_driver/8
 			for collection in [self.coils, self.lamps]:
 				items_to_remove = []
 				for item in collection:
@@ -250,8 +250,8 @@ class GameController(object):
 				for item in items_to_remove:
 					print "Removing %s from %s" % (item[name],str(collection))
 					collection.remove(item[name], item[number])
-					print "Adding %s to AuxDrivers" % (item[name])
-					collection.add(item[name], AuxDriver(self, item[name], item[number], polarity))
+					print "Adding %s to VirtualDrivers" % (item[name])
+					collection.add(item[name], VirtualDriver(self, item[name], item[number], polarity))
 
 	        sect_dict = self.config['PRBallSave']
 		self.ballsearch_coils = sect_dict['pulseCoils']
@@ -471,7 +471,7 @@ class GameController(object):
 		"""
 		return self.proc.get_events()
 
-	def tick_aux_drivers(self):
+	def tick_virtual_drivers(self):
 		for coil in self.coils:
 			coil.tick()
 		for lamp in self.lamps:
@@ -489,7 +489,7 @@ class GameController(object):
 				for event in self.get_events():
 					self.process_event(event)
 				self.tick()
-				self.tick_aux_drivers()
+				self.tick_virtual_drivers()
 				self.modes.tick()
 				self.proc.watchdog_tickle()
 				self.proc.flush()

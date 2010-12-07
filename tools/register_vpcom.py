@@ -11,10 +11,6 @@ import thread
 import yaml
 from procgame import *
 
-GN = None
-SIL = None
-g_test = 0
-
 class ISettings:
 	_public_methods_ = []
 	_public_attrs_ = [ 	'Value']
@@ -41,6 +37,7 @@ class IGames:
 IID_IController = pythoncom.MakeIID('{CE9ECC7C-960F-407E-B27B-62E39AB1E30F}')
 
 class Controller:
+	"""Main Visual Pinball COM interface class."""
 	_public_methods_ = [ 	'Run',
 				'Stop',
 				'PrintGlobal']
@@ -84,20 +81,24 @@ class Controller:
 	game = None
 	last_lamp_states = []
 	last_coil_states = []
+	last_gi_states = []
 	
 	HandleMechanics = True
 
 	# Need to overload this method to tell that we support IID_IServerWithEvents
 	def _query_interface_(self, iid):
+		""" Return this main interface if the IController class is queried. """
 		if iid == IID_IController:
 			return win32com.server.util.wrap(self)
 	
         def PrintGlobal(self):
-        	global g_test
-        	g_test += 1
-        	return g_test
+		""" Unused by pyprocgame. """
+        	return True
         
 	def Run(self):
+		""" Figure out which game to play based on the contents of the 
+		vp_game_map_file. """
+
 		vp_game_map_file = config.value_for_key_path(keypath='vp_game_map_file', default='/.')
 		vp_game_map = yaml.load(open(vp_game_map_file, 'r'))
 		game_class = vp_game_map[self.GameName]['kls']
@@ -129,23 +130,37 @@ class Controller:
 		return True
 		
 	def Stop(self):
+		""" Currently unused. """
+		
+		#TODO: Figure out a way to kill the run_loop thread.
 		return True
 
 	def Games(self, rom_name):
+		""" Return the IGames interface, by wrapping the object. """
 		games = IGames()
 		wrapped_games = wrap (games)
 		return wrapped_games
 
 	def SetGames(self, rom_name):
+		""" Return the IGames interface, by wrapping the object. """
 		games = IGames()
 		wrapped_games = wrap (games)
 		return wrapped_games
 		
 	def Switch(self, number):
+		""" Return the current value of the requested switch. """
 		if number != None: self.lastSwitch = number
 		return self.switch[self.lastSwitch]
 				
 	def SetSwitch(self, number, value):
+		""" Set the value of the requested switch. """
+
+		# All of the 'None' logic is error handling for unexpected
+		# cases when None is passed in as a parameter.  This seems to
+		# only happen with the original VP scripts when the switch data
+		# is corrupted by making COM calls into this object.  This
+		# appears to be a pywin32 bug.
+
 		if value == None: return self.Switch(number)
 		if number == None: return self.Switch(number)
 		if number != None: self.lastSwitch = number
@@ -167,6 +182,7 @@ class Controller:
 		return True
 
 	def AddSwitchEvent(self, prNumber, value):
+		""" Add the incoming VP switch event into the p-roc emulator. """
 		# VP doesn't have a concept of bouncing switches; so send
 		# both nondebounced and debounced for each event to ensure
 		# switch rules for either event type will be processed.
@@ -178,6 +194,7 @@ class Controller:
 			self.game.proc.add_switch_event(prNumber, pinproc.EventTypeSwitchOpenDebounced)
 		
 	def VPSwitchMatrixToPRSwitch(self, number):
+		""" Helper method to find the P-ROC number of a matrix switch. """
 		vpNumber = ((number / 10)*8) + ((number%10) - 1)
 		vpIndex = vpNumber / 8
 		vpOffset = vpNumber % 8 + 1
@@ -188,25 +205,34 @@ class Controller:
 
 			
 	def VPSwitchFlipperToPRSwitch(self, number):
+		""" Helper method to find the P-ROC number of a flipper switch. """
 		vpNumber = number - 110
 		switch = 'SF' + str(vpNumber)
 		return pinproc.decode(self.game.machine_type, switch)
 		
 	def VPSwitchDedToPRSwitch(self, number):
+		""" Helper method to find the P-ROC number of a direct switch. """
 		vpNumber = number
 		switch = 'SD' + str(vpNumber)
 		return pinproc.decode(self.game.machine_type, switch)
 		
 	def Mech(self, number):
+		""" Currently unused.  Game specific mechanism handling will
+		be called through this method. """
 		return True
 		
 	def SetMech(self, number):
+		""" Currently unused.  Game specific mechanism handling will
+		be called through this method. """
 		return True
 		
 	def GetMech(self, number):
+		""" Currently unused.  Game specific mechanism handling will
+		be called through this method. """
 		return 0
 		
 	def ChangedSolenoids(self):
+		""" Return a list of changed coils. """
 		coils = self.getCoilStates()
 		changedCoils = []
 		
@@ -220,10 +246,10 @@ class Controller:
 					changedCoils += [(i,coils[i])]
 				
 		self.last_coil_states = coils
-		
 		return changedCoils
 		
 	def ChangedLamps(self):
+		""" Return a list of changed lamps. """
 		lamps = self.getLampStates()
 		changedLamps = []
 		
@@ -233,14 +259,35 @@ class Controller:
 					changedLamps += [(i,lamps[i])]
 				
 		self.last_lamp_states = lamps
-		
 		return changedLamps
-		
-		
+
+	def ChangedGIStrings(self):
+		""" Return a list of changed GI strings. """
+		gi = self.getGIStates()
+		changedGI = []
+
+		if len(self.last_gi_states) > 0:
+			for i in range(0,len(gi)):
+				if gi[i] != self.last_gi_states[i]:
+					changedGI += [(i,gi[i])]
+
+		self.last_gi_states = gi
+		return changedGI
 			
+	def getGIStates(self):
+		""" Gets the current state of the GI strings. """
+		vpgi = [False]*5
+	
+		for i in range(0,5):
+			numStr = 'G0' + str(i+1)
+			prNumber = pinproc.decode(self.game.machine_type, numStr)
+			vpgi[i] = self.game.proc.drivers[prNumber].curr_state
+			
+		return vpgi
+		
 	def getLampStates(self):
+		""" Gets the current state of the lamps. """
 		vplamps = [False]*90
-		lamps = []
 	
 		for i in range(0,64):
 			vpNum = (((i/8)+1)*10) + (i%8) + 1
@@ -249,6 +296,8 @@ class Controller:
 		return vplamps
 		
 	def getCoilStates(self):
+		""" Gets the current state of the coils. """
+
 		pycoils = self.game.proc.drivers
 		vpcoils = [False]*64
 	
@@ -270,18 +319,14 @@ class Controller:
 
 		return vpcoils		
 			
-	def ChangedGIStrings(self):
-		giStrings = []
-		return giStrings
-
 		
 def Register(pyclass=Controller, p_game=None):
-	print "Registering COM server"
+	""" Registration code for the Visual Pinball COM interface for pyprocgame."""
 	pythoncom.CoInitialize()
 	from win32com.server.register import UseCommandLine
 	UseCommandLine(pyclass)
 	
-# Add code so that when this script is run by
-# Python.exe, it self-registers.
+# Run the registration code by default.  Using the commandline param
+# "--unregister" will unregister this COM object.
 if __name__=='__main__':
 	Register(Controller)
