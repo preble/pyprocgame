@@ -4,6 +4,8 @@ import yaml
 values = None
 """The configuration data structure loaded from :file:`~/.pyprocgame/config.yaml` when this submodule is loaded."""
 
+path = None
+
 def value_for_key_path(keypath, default=None):
     """Returns the value at the given *keypath* within :attr:`values`.
     
@@ -24,11 +26,17 @@ def value_for_key_path(keypath, default=None):
     return v
 
 def initialize():
-    global values
+    global values, path
     path = os.path.expanduser('~/.pyprocgame/config.yaml')
     if not os.path.exists(path):
+        print('WARNING pyprocgame configuration not found at %s' % path)
         return
-    print("Loading pyprocgame config from %s..." % path)
-    values = yaml.load(open(path, 'r'))
+    print('pyprocgame configuration found at %s' % path)
+    try:
+        values = yaml.load(open(path, 'r'))
+    except yaml.scanner.ScannerError, e:
+        print('ERROR loading pyprocgame config from %s; your configuration file has a syntax error in it!\nDetails: %s' % (path, e))
+    except Exception, e:
+        print('ERROR loading pyprocgame config from %s: %s' % (path, e))
 
 initialize()
