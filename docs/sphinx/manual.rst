@@ -68,7 +68,7 @@ Note that the connection to the P-ROC hardware is established in the constructor
 
 	game.load_config('mygame.yaml')
 
-Here we load a `YAML <http://yaml.org/>`_ file that describes the pinball hardware.  The P-ROC software uses YAML files (a "human-friendly data serialization standard") to describe the machine that the P-ROC hardware is connected to.  This statement loads the configuration and configures all of the switches, lamps and coils, as well as the flippers so that we can... ::
+Here we load a YAML file that describes the pinball hardware.  The P-ROC software uses YAML files (a "human-friendly data serialization standard") to describe the machine that the P-ROC hardware is connected to (see :ref:`machine-config` for a complete description of these files).  This statement loads the configuration and configures all of the switches, lamps and coils, as well as the flippers so that we can... ::
 
 	game.enable_flippers(enable=True)
 
@@ -193,10 +193,74 @@ We've spent a good amount of time talking about how to react to events within th
 	  self.game.lamps.shootAgain.pulse(0) # Turn on indefinitely.
 
 
-YAML Configuration File
-=======================
+Configuration Files
+===================
 
-*To be written.*
+pyprocgame uses configuration files in the `YAML <http://yaml.org/>`_ format.  YAML is a human-readable structured text file format.  Configuration files generally consist of a set of "keys" at the top level
+
+.. _machine-config:
+
+Machine Configuration Files
+---------------------------
+
+Machine configuration files describe the physical components of a pinball machine: coils, lamps, switches, etc., and make it easier to refer to those components in code.  The following is a subset a machine configuration file for Judge Dredd (JD.yaml)::
+
+	PRGame:
+	  machineType: wpc
+	  numBalls: 6
+	PRFlippers:
+	  - flipperLwR
+	  - flipperLwL
+	PRBumpers:
+	  - slingL
+	PRSwitches:
+	  flipperLwR:
+	    number: SF2
+	  flipperLwL: 
+	    number: SF4
+	  leftRampToLock:
+	    number: S63
+	    type: 'NC'
+	PRCoils:
+	  flipperLwRMain: 
+	    number: FLRM
+	PRLamps:
+	  perp1W:
+	    number: L11
+	  perp1R:
+	    number: L12
+
+
+
+.. _system-config:
+
+System Configuration Files
+--------------------------
+
+System configuration files contain values common to all games, and values specific to the system being developed on, such as file paths.  The configuration file is managed by the :mod:`procgame.config` module; you can retrieve values from the configuration using :func:`~procgame.config.value_for_key_path`.
+
+The configuration file is located at ``~/.pyprocgame/config.yaml``.  Note that the tilde (~) is a UNIX convention meaning the user's home directory.
+
+.. note::
+
+	Windows Users
+
+	On Windows it can be tricky to determine your home directory.  Luckily pyprocgame prints out the full path that it expects to find the config.yaml file at.  Make sure that the path that pyprocgame prints matches where you placed your configuration file.
+
+	If you encounter difficulty creating a ``.pyprocgame`` directory in Windows, try using the command print: ``mkdir .pyprocgame``.  Yes, that's "dot-pyprocgame".  Dot-files and dot-folders are common in UNIX-like systems.  By default they are not shown in directory listings.
+
+	When creating your config.yaml file, be sure that its actual extension is ``.yaml``, not ``.txt``.  Some components of Windows like to add a ``.txt`` extension when you are not expecting it.
+
+
+An example config.yaml file follows::
+
+	font_path:
+	 - ~/Projects/PROC/shared/dmd
+	 - ~/Projects/PROC/my_fonts
+	config_path:
+	 - ~/Projects/PROC/shared/config
+
+``font_path`` is used by :func:`~procgame.dmd.font_named`, while ``config_path`` is used by :func:`~procgame.game.config_named`.
 
 
 Dot Matrix Display (DMD) Control
