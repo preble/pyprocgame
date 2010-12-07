@@ -162,7 +162,7 @@ class Switch(GameItem):
 		else:
 			return 'open  '
 
-class AuxDriver(Driver):
+class VirtualDriver(Driver):
 	"""Represents a driver in a pinball machine, such as a lamp, coil/solenoid, or flasher
 	that should be driver by Auxiliar Port logic rather directly by P-ROC hardware.  This
 	means any automatic logic to determine when to turn on or off the driver is implemented
@@ -187,7 +187,7 @@ class AuxDriver(Driver):
 	"""Function to be called when the driver needs to change state."""
 
 	def __init__(self, game, name, number, polarity):
-		super(AuxDriver, self).__init__(game, name, number)
+		super(VirtualDriver, self).__init__(game, name, number)
 
 		self.state = {'polarity':polarity,
 		              'timeslots':0x0,
@@ -211,7 +211,7 @@ class AuxDriver(Driver):
 
 	def disable(self):
 		"""Disables (turns off) this driver."""
-		self.game.log("AuxDriver %s - disable" % (self.name))
+		self.game.log("VirtualDriver %s - disable" % (self.name))
 		self.function_active = False
 		self.change_state(False)
 
@@ -226,7 +226,7 @@ class AuxDriver(Driver):
 		self.change_state(True)
 		if milliseconds == 0: self.time_ms = 0
 		else: self.time_ms = time.time() + milliseconds/1000.0
-		self.game.log("Time: %f: AuxDriver %s - pulse %d. End time: %f" % (time.time(), self.name, milliseconds, self.time_ms))
+		self.game.log("Time: %f: VirtualDriver %s - pulse %d. End time: %f" % (time.time(), self.name, milliseconds, self.time_ms))
 
 	def schedule(self, schedule, cycle_seconds, now):
 		"""Schedules this driver to be enabled according to the given `schedule` bitmask."""
@@ -235,7 +235,7 @@ class AuxDriver(Driver):
 		self.state['timeslots'] = schedule
 		if cycle_seconds == 0: self.time_ms = 0
 		else: self.time_ms = time.time() + cycle_seconds
-		self.game.log("AuxDriver %s - schedule %08x" % (self.name, schedule))
+		self.game.log("VirtualDriver %s - schedule %08x" % (self.name, schedule))
 		self.change_state(schedule & 0x1)
 		self.next_action_time_ms = time.time() + 0.03125
 
@@ -255,7 +255,7 @@ class AuxDriver(Driver):
 		self.curr_value = not (self.curr_state ^ self.state['polarity'])
 		self.last_time_changed = time.time()
 		if self.state_change_handler: self.state_change_handler()
-		self.game.log("AuxDriver %s - state change: %d" % (self.name, self.curr_state))
+		self.game.log("VirtualDriver %s - state change: %d" % (self.name, self.curr_state))
 
 	def tick(self):
 		if self.function_active:
