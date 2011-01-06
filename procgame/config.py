@@ -6,6 +6,7 @@ values = None
 """The configuration data structure loaded from :file:`~/.pyprocgame/config.yaml` when this submodule is loaded."""
 
 path = None
+"""Path that the configuration data structure was loaded from, by :meth:`load`."""
 
 def value_for_key_path(keypath, default=None):
     """Returns the value at the given *keypath* within :attr:`values`.
@@ -26,7 +27,7 @@ def value_for_key_path(keypath, default=None):
             v = default
     return v
 
-def initialize():
+def load():
     global values, path
     logger = logging.getLogger('game.config')
     path = os.path.expanduser('~/.pyprocgame/config.yaml')
@@ -41,4 +42,4 @@ def initialize():
     except Exception, e:
         logger.error('Error loading pyprocgame config from %s: %s', path, e)
 
-initialize()
+load()
