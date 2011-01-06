@@ -17,6 +17,9 @@ See "Development Mode" at http://peak.telecommunity.com/DevCenter/setuptool for 
 """
 VERSION = '0.9.1'
 
+from ez_setup import use_setuptools
+use_setuptools()
+
 try:
     from setuptools import setup
 except ImportError:
