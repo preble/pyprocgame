@@ -2,10 +2,10 @@ import random
 import time
 
 try:
-	print("Initializing sound...")
+	print("procgame.sound: Initializing sound...")
 	from pygame import mixer # This call takes a while.
 except ImportError, e:
-	print("Error importing pygame.mixer; sound will be disabled!  Error: "+str(e))
+	print("procgame.sound: Error importing pygame.mixer; sound will be disabled!  Error: "+str(e))
 
 import os.path
 
@@ -21,7 +21,7 @@ class SoundController(object):
 		except Exception, e:
 			# The import mixer above may work, but init can still fail if mixer is not fully supported.
 			self.enabled = False
-			print("pygame mixer init failed; sound will be disabled: "+str(e))
+			print("procgame.sound: pygame mixer init failed; sound will be disabled: "+str(e))
 		self.sounds = {}
 		self.music = {}
 		self.music_volume_offset = 0
@@ -65,7 +65,7 @@ class SoundController(object):
 			else:
 				self.sounds[key] = [self.new_sound]
 		else:
-			print ("Sound registration error: file %s does not exist!" % sound_file)
+			print("procgame.sound: Sound registration error: file %s does not exist!" % sound_file)
 
 	def register_music(self, key, music_file):
 		""" """
@@ -77,7 +77,7 @@ class SoundController(object):
 			else:
                 		self.music[key] = [music_file]
 		else:
-			print ("Music registration error: file %s does not exist!" % music_file)
+			print("procgame.sound: Music registration error: file %s does not exist!" % music_file)
 
 	def play(self,key, loops=0, max_time=0, fade_ms=0):
 		""" """
