@@ -1,4 +1,3 @@
-"""Configuration tool."""
 import procgame
 import os
 import sys

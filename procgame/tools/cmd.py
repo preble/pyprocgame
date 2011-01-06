@@ -3,6 +3,11 @@ import os
 import sys
 import procgame
 
+commands = {
+    'config'    : 'Configuration tool.',
+    'dmdconvert': 'Converts image files to .dmd files.',
+}
+
 def main():
     """Command line main for 'procgame'.
     
@@ -15,18 +20,11 @@ def main():
     
     """
     
-    # Assemble a list of available commands.
-    commands = {}
-    for name in dir(procgame.tools):
-        module = getattr(procgame.tools, name)
-        if hasattr(module, 'tool_run'):
-            commands[name] = module
-    
     show_help = False
     
     if len(sys.argv) <= 1:
         show_help = True
-    elif not sys.argv[1] in commands:
+    elif not sys.argv[1] in commands.keys():
         show_help = True
     
     if show_help:
@@ -34,11 +32,12 @@ def main():
         print("")
         print("Commands:")
         for name in sorted(commands.keys()):
-            print """  % -12s  %s""" % (name, commands[name].__doc__)
+            print """  % -12s  %s""" % (name, commands[name])
         sys.exit(1)
     
     command_name = sys.argv[1]
-    module = commands[command_name]
+    __import__('procgame.tools.'+command_name)
+    module = getattr(procgame.tools, command_name)
     
     parser = optparse.OptionParser()
     parser.usage = """%s %s %s""" % (os.path.basename(sys.argv[0]), sys.argv[1], module.tool_get_usage())
