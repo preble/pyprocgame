@@ -1,4 +1,3 @@
-"""Converts image files to .dmd files."""
 import sys
 import os
 sys.path.append(sys.path[0]+'/..') # Set the path so we can find procgame.  We are assuming (stupidly?) that the first member is our directory.
