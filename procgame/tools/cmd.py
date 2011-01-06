@@ -6,6 +6,7 @@ import procgame
 commands = {
     'config'    : 'Configuration tool.',
     'dmdconvert': 'Converts image files to .dmd files.',
+    'dmdfontwidths': 'Interactively assign font width values.',
 }
 
 def main():
@@ -32,7 +33,7 @@ def main():
         print("")
         print("Commands:")
         for name in sorted(commands.keys()):
-            print """  % -12s  %s""" % (name, commands[name])
+            print """  % -16s  %s""" % (name, commands[name])
         sys.exit(1)
     
     command_name = sys.argv[1]
