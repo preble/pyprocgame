@@ -253,10 +253,11 @@ class GameController(object):
 					print "Adding %s to VirtualDrivers" % (item[name])
 					collection.add(item[name], VirtualDriver(self, item[name], item[number], polarity))
 
-	        sect_dict = self.config['PRBallSave']
-		self.ballsearch_coils = sect_dict['pulseCoils']
-		self.ballsearch_stopSwitches = sect_dict['stopSwitches']
-		self.ballsearch_resetSwitches = sect_dict['resetSwitches']
+		if 'PRBallSave' in self.config:
+			sect_dict = self.config['PRBallSave']
+			self.ballsearch_coils = sect_dict['pulseCoils']
+			self.ballsearch_stopSwitches = sect_dict['stopSwitches']
+			self.ballsearch_resetSwitches = sect_dict['resetSwitches']
                 
 			
 		# We want to receive events for all of the defined switches:
