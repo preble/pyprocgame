@@ -67,7 +67,7 @@ class GameController(object):
 	
 	def __init__(self, machine_type):
 		super(GameController, self).__init__()
-		self.machine_type = machine_type
+		self.machine_type = pinproc.normalize_machine_type(machine_type)
 		self.proc = self.create_pinproc()
 		self.proc.reset(1)
 		self.modes = ModeQueue(self)
@@ -339,7 +339,7 @@ class GameController(object):
 	def enable_flippers(self, enable):
 		#return True
 		"""Enables or disables the flippers AND bumpers."""
-		if self.machine_type == 'wpc' or self.machine_type == 'wpc95' or self.machine_type == 'wpcAlphanumeric':
+		if self.machine_type == pinproc.MachineTypeWPC or self.machine_type == pinproc.MachineTypeWPC95 or self.machine_type == pinproc.MachineTypeWPCAlphanumeric:
 			for flipper in self.config['PRFlippers']:
 				print("  programming flipper %s" % (flipper))
 				main_coil = self.coils[flipper+'Main']
