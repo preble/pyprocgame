@@ -179,7 +179,7 @@ class GameController(object):
 		if self.ball > self.balls_per_game:
 			self.end_game()
 		else:
-			self.ball_starting() # Consider: Do we want to call this here, or should it be called by the game? (for bonus sequence)
+			self.start_ball() # Consider: Do we want to call this here, or should it be called by the game? (for bonus sequence)
 	
 	def game_started(self):
 		"""Called by the GameController when a new game is starting."""
