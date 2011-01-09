@@ -32,7 +32,7 @@ setup(
     name='pyprocgame',
     version=VERSION,
     description='A Python-based pinball software development framework for use with P-ROC.',
-    long_description=open('README.txt').read(),
+    long_description=open('README.markdown').read(),
     license='MIT License',
     url='http://pyprocgame.pindev.org/',
     author='Adam Preble and Gerry Stellenberg',
