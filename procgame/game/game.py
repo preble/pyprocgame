@@ -226,16 +226,18 @@ class GameController(object):
 			sect_dict = self.config[section]
 			print 'Processing section: %s' % (section)
 			for name in sect_dict:
-				item = sect_dict[name]
-				number = pinproc.decode(self.machine_type, str(item['number']))
+				item_dict = sect_dict[name]
+				number = pinproc.decode(self.machine_type, str(item_dict['number']))
 				print "Item %s from %d" % (name,number)
-				if 'bus' in item and item['bus'] == 'AuxPort':	
-					collection.add(name, VirtualDriver(self, name, number, polarity))
+				item = None
+				if 'bus' in item_dict and item_dict['bus'] == 'AuxPort':
+					item = VirtualDriver(self, name, number, polarity)
 					new_virtual_drivers += [number]
-				elif 'type' in item:
-					collection.add(name, klass(self, name, number, type = item['type']))
 				else:
-					collection.add(name, klass(self, name, number))
+					item = klass(self, name, number)
+					if 'type' in item_dict:
+						item.type = item_dict['type']
+				collection.add(name, item)
 
 		# In the P-ROC, VirtualDrivers will conflict with regular drivers on the same group.
 		# So if any VirtualDrivers were added, the regular drivers in that group must be changed
