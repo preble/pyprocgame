@@ -8,14 +8,14 @@ import time
 import locale
 import math
 import copy
-import dmd
 import ctypes
 
 try:
 	import pygame
-	from pygame.locals import *
+	import pygame.locals
 except ImportError:
 	print "Error importing pygame; ignoring."
+	pygame = None
 
 if hasattr(ctypes.pythonapi, 'Py_InitModule4'):
    Py_ssize_t = ctypes.c_int
@@ -57,8 +57,8 @@ class Desktop():
 			self.setup_window()
 		else:
 			print 'Desktop init skipping setup_window(); pygame does not appear to be loaded.'
-		self.add_key_map(K_LSHIFT, 3)
-		self.add_key_map(K_RSHIFT, 1)
+		self.add_key_map(pygame.locals.K_LSHIFT, 3)
+		self.add_key_map(pygame.locals.K_RSHIFT, 1)
 	
 	def add_key_map(self, key, switch_number):
 		"""Maps the given *key* to *switch_number*, where *key* is one of the key constants in :mod:`pygame.locals`."""
@@ -74,21 +74,21 @@ class Desktop():
 		key_events = []
 		for event in pygame.event.get():
 			key_event = {}
-			if event.type == KEYDOWN:
-				if event.key == K_RCTRL or event.key == K_LCTRL:
+			if event.type == pygame.locals.KEYDOWN:
+				if event.key == pygame.locals.K_RCTRL or event.key == pygame.locals.K_LCTRL:
 					self.ctrl = 1
-				if event.key == K_c:
+				if event.key == pygame.locals.K_c:
 					if self.ctrl == 1:
 						key_event['type'] = self.exit_event_type
 						key_event['value'] = 'quit'
-				elif (event.key == K_ESCAPE):
+				elif (event.key == pygame.locals.K_ESCAPE):
 					key_event['type'] = self.exit_event_type
 					key_event['value'] = 'quit'
 				elif event.key in self.key_map:
 					key_event['type'] = pinproc.EventTypeSwitchClosedDebounced
 					key_event['value'] = self.key_map[event.key]
-			elif event.type == KEYUP:
-				if event.key == K_RCTRL or event.key == K_LCTRL:
+			elif event.type == pygame.locals.KEYUP:
+				if event.key == pygame.locals.K_RCTRL or event.key == pygame.locals.K_LCTRL:
 					self.ctrl = 0
 				elif event.key in self.key_map:
 					key_event['type'] = pinproc.EventTypeSwitchOpenDebounced
@@ -137,3 +137,7 @@ class Desktop():
 		del surface_array
 
 		pygame.display.update()
+	
+	def __str__(self):
+		return '<Desktop pygame>'
+
