@@ -5,8 +5,6 @@ import pyglet.image
 import pyglet.window
 from pyglet import gl
 
-print "Pyglet!"
-
 DMD_SIZE = (128, 32)
 DMD_SCALE = 8
 
@@ -25,16 +23,13 @@ class Desktop(object):
 	key_map = {}
 	
 	window = None
-	mask = pyglet.image.ImageData(8, 8, 'LA', MASK_DATA, pitch=16)
-	mask_texture = pyglet.image.TileableTexture.create_for_image(mask)
 	
 	def __init__(self):
-		self.ctrl = 0
-		self.i = 0
 		self.key_events = []
 		self.setup_window()
 		self.add_key_map(pyglet.window.key.LSHIFT, 3)
 		self.add_key_map(pyglet.window.key.RSHIFT, 1)
+		self.frame_drawer = FrameDrawer()
 	
 	def add_key_map(self, key, switch_number):
 		"""Maps the given *key* to *switch_number*, where *key* is one of the key constants in :mod:`pygame.locals`."""
@@ -79,10 +74,32 @@ class Desktop(object):
 		"""Draw the given :class:`~procgame.dmd.Frame` in the window."""
 		self.window.dispatch_events()
 		self.window.clear()
+		self.frame_drawer.draw(frame)
+		self.window.flip()
+
+	def __str__(self):
+		return '<Desktop pyglet>'
+
+
+class FrameDrawer(object):
+	"""docstring for FrameDrawer"""
+	def __init__(self):
+		super(FrameDrawer, self).__init__()
+		self.mask = pyglet.image.ImageData(8, 8, 'LA', MASK_DATA, pitch=16)
+		self.mask_texture = pyglet.image.TileableTexture.create_for_image(self.mask)
+	
+	def draw(self, frame):
+		# The gneneral plan here is:
+		#  1. Get the dots in the range of 0-255.
+		#  2. Create a texture with the dots data.
+		#  3. Draw the texture, scaled up with nearest-neighbor.
+		#  4. Draw a mask over the dots to give them a slightly more realistic look.
+		
 		gl.glEnable(gl.GL_BLEND)
 		gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 		gl.glLoadIdentity()
-
+		
+		# Draw the dots in this color:
 		gl.glColor3f(1.0, 0.5, 0.25)
 
 		gl.glScalef(1, -1, 1)
@@ -98,10 +115,6 @@ class Desktop(object):
 
 		gl.glColor4f(1.0, 1.0, 1.0, 1.0)
 		self.mask_texture.blit_tiled(x=0, y=0, z=0, width=DMD_SIZE[0]*DMD_SCALE, height=DMD_SIZE[1]*DMD_SCALE)
-		self.window.flip()
-	
-	def __str__(self):
-		return '<Desktop pyglet>'
 
 
 def image_to_string(filename):
