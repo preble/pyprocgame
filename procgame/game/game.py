@@ -5,6 +5,7 @@ import Queue
 import yaml
 import time
 import copy
+import logging
 from procgame import config
 from gameitems import *
 from procgame import util
@@ -58,25 +59,22 @@ class GameController(object):
 	"""YAML game configuration loaded by :meth:`load_config`."""
 	balls_per_game = 3
 	"""Number of balls per game."""
-	logging_enabled = True
-	"""Determines whether :meth:`log` will print the log messages it is sent."""
 	game_data = {}
 	"""Contains high score and audit information.  That is, transient information specific to one game installation."""
 	user_settings = {}
 	"""Contains local game configuration, such as the volume."""
+
+	logger = None
+	""":class:`Logger` object instance; instantiated in :meth:`__init__` with the logger name "game"."""
 	
 	def __init__(self, machine_type):
 		super(GameController, self).__init__()
+		self.logger = logging.getLogger('game')
 		self.machine_type = pinproc.normalize_machine_type(machine_type)
 		self.proc = self.create_pinproc()
 		self.proc.reset(1)
 		self.modes = ModeQueue(self)
 		self.t0 = time.time()
-		self.logging_dest = config.value_for_key_path(keypath='log_destination', default="stdout")
-		if self.logging_dest != "stdout":
-			self.f = open(self.logging_dest, 'w') 
-			self.f.write("pyprocgame log - starting at " + time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime()) + "\n") 
-			sys.stdout = self.f
 	
 	def create_pinproc(self):
 		"""Instantiates and returns the class to use as the P-ROC device.
@@ -447,10 +445,10 @@ class GameController(object):
 
 			if sw.state != recvd_state:
 				sw.set_state(recvd_state)
-				self.log("    %s:\t%s" % (sw.name, sw.state_str()))
+				self.logger.info("%s:\t%s", sw.name, sw.state_str())
 				self.modes.handle_event(event)
 			else:
-				#self.log("DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s" % (sw.name, sw.state_str()))
+				#self.logger.warning("DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s", sw.name, sw.state_str())
 				pass
 
 	def update_lamps(self):
@@ -462,11 +460,8 @@ class GameController(object):
 		self.done = True
 
 	def log(self, line):
-		"""Print a line to the console with the number of seconds elapsed since the game started up."""
-		if self.logging_enabled:
-			if self.logging_dest == "stdout":
-				print("% 10.3f %s" % (time.time()-self.t0, line))
-			else: self.f.write(line + "\n") 
+		"""Deprecated; use :attr:`logger` to log messages."""
+		self.logger.info(line)
 	
 	def get_events(self):
 		"""Called by :meth:`run_loop` once per cycle to get the events to process during

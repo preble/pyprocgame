@@ -221,7 +221,7 @@ class ModeQueue(object):
 		self.modes += [mode]
 		# Sort by priority, descending:
 		self.modes.sort(lambda x, y: y.priority - x.priority)
-		self.game.log("Added %s, now:\n%s" % (str(mode), str(self)))
+		self.game.logger.info("Added %s, now:\n%s", str(mode), str(self))
 		mode.mode_started()
 		if mode == self.modes[0]:
 			mode.mode_topmost()
@@ -230,7 +230,7 @@ class ModeQueue(object):
 		for idx, m in enumerate(self.modes):
 			if m == mode:
 				del self.modes[idx]
-				self.game.log("Removed %s, now:\n%s" % (str(mode), str(self)))
+				self.game.loger.info("Removed %s, now:\n%s", str(mode), str(self))
 				mode.mode_stopped()
 				break
 		if len(self.modes) > 0:

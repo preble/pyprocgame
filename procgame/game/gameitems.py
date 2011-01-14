@@ -1,3 +1,4 @@
+import logging
 import time
 
 class AttrCollection(object):
@@ -57,9 +58,11 @@ class Driver(GameItem):
 	
 	def __init__(self, game, name, number):
 		GameItem.__init__(self, game, name, number)
+		self.logger = logging.getLogger('game.driver')
+		
 	def disable(self):
 		"""Disables (turns off) this driver."""
-		self.game.log("Driver %s - disable" % (self.name))
+		self.logger.debug('Driver %s - disable', self.name)
 		self.game.proc.driver_disable(self.number)
 		self.last_time_changed = time.time()
 	def pulse(self, milliseconds=None):
@@ -68,12 +71,12 @@ class Driver(GameItem):
 		If no parameters are provided or `milliseconds` is `None`, :attr:`default_pulse_time` is used."""
 		if milliseconds == None:
 			milliseconds = self.default_pulse_time
-		self.game.log("Driver %s - pulse %d" % (self.name, milliseconds))
+		self.logger.debug("Driver %s - pulse %d", self.name, milliseconds)
 		self.game.proc.driver_pulse(self.number, milliseconds)
 		self.last_time_changed = time.time()
 	def schedule(self, schedule, cycle_seconds, now):
 		"""Schedules this driver to be enabled according to the given `schedule` bitmask."""
-		self.game.log("Driver %s - schedule %08x" % (self.name, schedule))
+		self.logger.debug("Driver %s - schedule %08x", self.name, schedule)
 		self.game.proc.driver_schedule(number=self.number, schedule=schedule, cycle_seconds=cycle_seconds, now=now)
 		self.last_time_changed = time.time()
 	def enable(self):
@@ -200,6 +203,7 @@ class VirtualDriver(Driver):
 		              'waitForFirstTimeSlot':0}
 
 		self.curr_value = not (self.curr_state ^ self.state['polarity'])
+		self.logger = logging.getLogger('game.vdriver')
 
 
 	def update_state(self, state):
@@ -211,7 +215,7 @@ class VirtualDriver(Driver):
 
 	def disable(self):
 		"""Disables (turns off) this driver."""
-		self.game.log("VirtualDriver %s - disable" % (self.name))
+		self.logger.debug("VirtualDriver %s - disable", self.name)
 		self.function_active = False
 		self.change_state(False)
 
@@ -226,7 +230,7 @@ class VirtualDriver(Driver):
 		self.change_state(True)
 		if milliseconds == 0: self.time_ms = 0
 		else: self.time_ms = time.time() + milliseconds/1000.0
-		self.game.log("Time: %f: VirtualDriver %s - pulse %d. End time: %f" % (time.time(), self.name, milliseconds, self.time_ms))
+		self.logger.debug("Time: %f: VirtualDriver %s - pulse %d. End time: %f", time.time(), self.name, milliseconds, self.time_ms)
 
 	def schedule(self, schedule, cycle_seconds, now):
 		"""Schedules this driver to be enabled according to the given `schedule` bitmask."""
@@ -235,7 +239,7 @@ class VirtualDriver(Driver):
 		self.state['timeslots'] = schedule
 		if cycle_seconds == 0: self.time_ms = 0
 		else: self.time_ms = time.time() + cycle_seconds
-		self.game.log("VirtualDriver %s - schedule %08x" % (self.name, schedule))
+		self.logger.debug("VirtualDriver %s - schedule %08x", self.name, schedule)
 		self.change_state(schedule & 0x1)
 		self.next_action_time_ms = time.time() + 0.03125
 
@@ -255,7 +259,7 @@ class VirtualDriver(Driver):
 		self.curr_value = not (self.curr_state ^ self.state['polarity'])
 		self.last_time_changed = time.time()
 		if self.state_change_handler: self.state_change_handler()
-		self.game.log("VirtualDriver %s - state change: %d" % (self.name, self.curr_state))
+		self.logger.debug("VirtualDriver %s - state change: %d", self.name, self.curr_state)
 
 	def tick(self):
 		if self.function_active:
