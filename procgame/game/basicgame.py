@@ -31,9 +31,9 @@ class BasicGame(GameController):
 	
 	def __init__(self, machine_type):
 		super(BasicGame, self).__init__(machine_type)
-                
+
 		self.aux_port = auxport.AuxPort(self)
-                if machine_type == 'wpcAlphanumeric':
+		if self.machine_type == pinproc.MachineTypeWPCAlphanumeric:
 			self.alpha_display = alphanumeric.AlphanumericDisplay(self.aux_port)
 		else:
 			self.dmd = DisplayController(self, width=128, height=32, message_font=font_named('Font07x5.dmd'))
