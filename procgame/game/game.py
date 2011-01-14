@@ -218,7 +218,7 @@ class GameController(object):
 		         ('PRLamps', self.lamps, Driver), 
 		         ('PRSwitches', self.switches, Switch)]
 		new_virtual_drivers = []
-		polarity = self.machine_type == 'sternWhitestar' or self.machine_type == 'sternSAM'
+		polarity = self.machine_type == pinproc.MachineTypeSternWhitestar or self.machine_type == pinproc.MachineTypeSternSAM
 
 		for section, collection, klass in pairs:
 			sect_dict = self.config[section]
