@@ -22,7 +22,7 @@ class FakePinPROC(object):
 		# Instantiate 256 drivers.
 		for i in range(0, 256):
 			name = 'driver' + str(i)
-			self.drivers.add(name, gameitems.VirtualDriver(self, name, i, True))
+			self.drivers.add(name, gameitems.VirtualDriver(None, name, i, True))
 
 	def noop(self, *args, **kwargs):
 		""" Empty method used when no virtual equivalent to a pypinproc method is necessary.  This allows a game to switch back and forth between pypinproc and this fakepinproc class without modification. """
