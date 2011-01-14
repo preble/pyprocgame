@@ -344,7 +344,7 @@ class GameController(object):
 				main_coil = self.coils[flipper+'Main']
 				hold_coil = self.coils[flipper+'Hold']
 				switch_num = self.switches[flipper].number
-#
+
 				# Chck to see if the flipper should be activated now.
 				if enable:
 					if self.switches[flipper].is_active():
@@ -366,11 +366,15 @@ class GameController(object):
 					drivers += [pinproc.driver_state_disable(hold_coil.state())]
 	
 				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
+
+			# Enable the flipper relay on wpcAlphanumeric machines
                         if self.machine_type == 'wpcAlphanumeric':
+				# 79 corresponds to the circuit on the power/driver board.  It will be 79 for all WPCAlphanumeric machines.
+				flipperRelayPRNumber = 79
                                 if enable:
-                                        self.coils['flipperRelay'].pulse(0)
+                                        self.coils[79].pulse(0)
                                 else:
-                                        self.coils['flipperRelay'].disable()
+                                        self.coils[79].disable()
                 elif self.machine_type == 'sternWhitestar' or self.machine_type == 'sternSAM':
 			for flipper in self.config['PRFlippers']:
 				print("  programming flipper %s" % (flipper))
