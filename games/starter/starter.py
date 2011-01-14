@@ -8,16 +8,19 @@ from random import *
 import string
 import time
 import locale
+import logging
 import math
 import copy
 import yaml
 
 locale.setlocale(locale.LC_ALL, "") # Used to put commas in the score.
 
-fonts_path = "../shared/dmd/"
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+dmd_path = "../shared/dmd/"
 sound_path = "../shared/sound/"
-font_tiny7 = dmd.Font(fonts_path+"04B-03-7px.dmd")
-font_jazz18 = dmd.Font(fonts_path+"Jazz18-18px.dmd")
+font_tiny7 = dmd.font_named("04B-03-7px.dmd")
+font_jazz18 = dmd.font_named("Jazz18-18px.dmd")
 
 class Attract(game.Mode):
 	"""docstring for AttractMode"""
@@ -26,7 +29,7 @@ class Attract(game.Mode):
 		self.press_start = dmd.TextLayer(128/2, 7, font_jazz18, "center", opaque=True).set_text("Press Start")
 		self.proc_banner = dmd.TextLayer(128/2, 7, font_jazz18, "center", opaque=True).set_text("pyprocgame")
 		self.game_title = dmd.TextLayer(128/2, 7, font_jazz18, "center", opaque=True).set_text("Starter")
-		self.splash = dmd.FrameLayer(opaque=True, frame=dmd.Animation().load(fonts_path+'Splash.dmd').frames[0])
+		self.splash = dmd.FrameLayer(opaque=True, frame=dmd.Animation().load(dmd_path+'Splash.dmd').frames[0])
 		self.layer = dmd.ScriptedLayer(128, 32, [{'seconds':2.0, 'layer':self.splash}, {'seconds':2.0, 'layer':self.proc_banner}, {'seconds':2.0, 'layer':self.game_title}, {'seconds':2.0, 'layer':self.press_start}, {'seconds':2.0, 'layer':None}])
 
 	def mode_topmost(self):
