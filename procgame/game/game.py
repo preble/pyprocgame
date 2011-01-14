@@ -5,6 +5,7 @@ import Queue
 import yaml
 import time
 import copy
+import logging
 from procgame import config
 from gameitems import *
 from procgame import util
@@ -58,25 +59,22 @@ class GameController(object):
 	"""YAML game configuration loaded by :meth:`load_config`."""
 	balls_per_game = 3
 	"""Number of balls per game."""
-	logging_enabled = True
-	"""Determines whether :meth:`log` will print the log messages it is sent."""
 	game_data = {}
 	"""Contains high score and audit information.  That is, transient information specific to one game installation."""
 	user_settings = {}
 	"""Contains local game configuration, such as the volume."""
+
+	logger = None
+	""":class:`Logger` object instance; instantiated in :meth:`__init__` with the logger name "game"."""
 	
 	def __init__(self, machine_type):
 		super(GameController, self).__init__()
-		self.machine_type = machine_type
+		self.logger = logging.getLogger('game')
+		self.machine_type = pinproc.normalize_machine_type(machine_type)
 		self.proc = self.create_pinproc()
 		self.proc.reset(1)
 		self.modes = ModeQueue(self)
 		self.t0 = time.time()
-		self.logging_dest = config.value_for_key_path(keypath='log_destination', default="stdout")
-		if self.logging_dest != "stdout":
-			self.f = open(self.logging_dest, 'w') 
-			self.f.write("pyprocgame log - starting at " + time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime()) + "\n") 
-			sys.stdout = self.f
 	
 	def create_pinproc(self):
 		"""Instantiates and returns the class to use as the P-ROC device.
@@ -179,7 +177,7 @@ class GameController(object):
 		if self.ball > self.balls_per_game:
 			self.end_game()
 		else:
-			self.ball_starting() # Consider: Do we want to call this here, or should it be called by the game? (for bonus sequence)
+			self.start_ball() # Consider: Do we want to call this here, or should it be called by the game? (for bonus sequence)
 	
 	def game_started(self):
 		"""Called by the GameController when a new game is starting."""
@@ -213,6 +211,7 @@ class GameController(object):
 		Configures the switches, lamps, and coils members.
 		Enables notifyHost for the open and closed debounced states on each configured switch.
 		"""
+		self.logger.info('Loading machine configuration from "%s"...', filename)
 		self.config = config_named(filename)
 		if not self.config:
 			raise ValueError, 'load_config(filename="%s") could not be found. Did you set config_path?' % (name)
@@ -220,22 +219,22 @@ class GameController(object):
 		         ('PRLamps', self.lamps, Driver), 
 		         ('PRSwitches', self.switches, Switch)]
 		new_virtual_drivers = []
-		polarity = self.machine_type == 'sternWhitestar' or self.machine_type == 'sternSAM'
+		polarity = self.machine_type == pinproc.MachineTypeSternWhitestar or self.machine_type == pinproc.MachineTypeSternSAM
 
 		for section, collection, klass in pairs:
 			sect_dict = self.config[section]
-			print 'Processing section: %s' % (section)
 			for name in sect_dict:
-				item = sect_dict[name]
-				number = pinproc.decode(self.machine_type, str(item['number']))
-				print "Item %s from %d" % (name,number)
-				if 'bus' in item and item['bus'] == 'AuxPort':	
-					collection.add(name, VirtualDriver(self, name, number, polarity))
+				item_dict = sect_dict[name]
+				number = pinproc.decode(self.machine_type, str(item_dict['number']))
+				item = None
+				if 'bus' in item_dict and item_dict['bus'] == 'AuxPort':
+					item = VirtualDriver(self, name, number, polarity)
 					new_virtual_drivers += [number]
-				elif 'type' in item:
-					collection.add(name, klass(self, name, number, type = item['type']))
 				else:
-					collection.add(name, klass(self, name, number))
+					item = klass(self, name, number)
+					if 'type' in item_dict:
+						item.type = item_dict['type']
+				collection.add(name, item)
 
 		# In the P-ROC, VirtualDrivers will conflict with regular drivers on the same group.
 		# So if any VirtualDrivers were added, the regular drivers in that group must be changed
@@ -253,19 +252,18 @@ class GameController(object):
 					print "Adding %s to VirtualDrivers" % (item[name])
 					collection.add(item[name], VirtualDriver(self, item[name], item[number], polarity))
 
-	        sect_dict = self.config['PRBallSave']
-		self.ballsearch_coils = sect_dict['pulseCoils']
-		self.ballsearch_stopSwitches = sect_dict['stopSwitches']
-		self.ballsearch_resetSwitches = sect_dict['resetSwitches']
-                
-			
+		if 'PRBallSave' in self.config:
+			sect_dict = self.config['PRBallSave']
+			self.ballsearch_coils = sect_dict['pulseCoils']
+			self.ballsearch_stopSwitches = sect_dict['stopSwitches']
+			self.ballsearch_resetSwitches = sect_dict['resetSwitches']
+
+		
 		# We want to receive events for all of the defined switches:
-		print "Programming switch rules: ",
+		self.logger.info("Programming switch rules...")
 		for switch in self.switches:
-			print("%s," % (switch.name)),
 			self.proc.switch_update_rule(switch.number, 'closed_debounced', {'notifyHost':True, 'reloadActive':False}, [])
 			self.proc.switch_update_rule(switch.number, 'open_debounced', {'notifyHost':True, 'reloadActive':False}, [])
-		print " ...done!"
 		
 		# Configure the initial switch states:
 		states = self.proc.switch_get_states()
@@ -338,9 +336,9 @@ class GameController(object):
 	def enable_flippers(self, enable):
 		#return True
 		"""Enables or disables the flippers AND bumpers."""
-		if self.machine_type == 'wpc' or self.machine_type == 'wpc95' or self.machine_type == 'wpcAlphanumeric':
+		if self.machine_type == pinproc.MachineTypeWPC or self.machine_type == pinproc.MachineTypeWPC95 or self.machine_type == pinproc.MachineTypeWPCAlphanumeric:
 			for flipper in self.config['PRFlippers']:
-				print("  programming flipper %s" % (flipper))
+				self.logger.info("Programming flipper %s", flipper)
 				main_coil = self.coils[flipper+'Main']
 				hold_coil = self.coils[flipper+'Hold']
 				switch_num = self.switches[flipper].number
@@ -453,10 +451,10 @@ class GameController(object):
 
 			if sw.state != recvd_state:
 				sw.set_state(recvd_state)
-				self.log("    %s:\t%s" % (sw.name, sw.state_str()))
+				self.logger.info("%s:\t%s", sw.name, sw.state_str())
 				self.modes.handle_event(event)
 			else:
-				#self.log("DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s" % (sw.name, sw.state_str()))
+				#self.logger.warning("DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s", sw.name, sw.state_str())
 				pass
 
 	def update_lamps(self):
@@ -468,11 +466,8 @@ class GameController(object):
 		self.done = True
 
 	def log(self, line):
-		"""Print a line to the console with the number of seconds elapsed since the game started up."""
-		if self.logging_enabled:
-			if self.logging_dest == "stdout":
-				print("% 10.3f %s" % (time.time()-self.t0, line))
-			else: self.f.write(line + "\n") 
+		"""Deprecated; use :attr:`logger` to log messages."""
+		self.logger.info(line)
 	
 	def get_events(self):
 		"""Called by :meth:`run_loop` once per cycle to get the events to process during

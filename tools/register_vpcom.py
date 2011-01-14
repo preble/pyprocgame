@@ -310,7 +310,7 @@ class Controller:
 			elif i == 34: vpcoils[i] = pycoils[pinproc.decode(self.game.machine_type, "FURH")].curr_state
 			elif i == 36: vpcoils[i] = pycoils[pinproc.decode(self.game.machine_type, "FULH")].curr_state
 			elif i<44:
-				if self.game.machine_type == 'wpc95':
+				if self.game.machine_type == pinproc.MachineTypeWPC95:
 					vpcoils[i] = pycoils[i+31].curr_state
 				else: vpcoils[i] = pycoils[i+107].curr_state
 			elif i == 46: vpcoils[i] = pycoils[pinproc.decode(self.game.machine_type, "FLRH")].curr_state

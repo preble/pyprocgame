@@ -146,7 +146,7 @@ class InitialEntryMode(Mode):
 			if self.entered_handler != None:
 				self.entered_handler(mode=self, inits=self.inits)
 			else:
-				self.game.log('InitialEntryMode finished but no entered_handler to notify!')
+				self.game.logger.warning('InitialEntryMode finished but no entered_handler to notify!')
 		else:
 			self.inits += letter
 		self.letter_increment(0)

@@ -1,5 +1,6 @@
 import os
 import yaml
+import logging
 
 values = None
 """The configuration data structure loaded from :file:`~/.pyprocgame/config.yaml` when this submodule is loaded."""
@@ -27,16 +28,17 @@ def value_for_key_path(keypath, default=None):
 
 def initialize():
     global values, path
+    logger = logging.getLogger('game.config')
     path = os.path.expanduser('~/.pyprocgame/config.yaml')
     if not os.path.exists(path):
-        print('WARNING pyprocgame configuration not found at %s' % path)
+        logger.warning('pyprocgame configuration not found at %s' % path)
         return
-    print('pyprocgame configuration found at %s' % path)
+    logger.info('pyprocgame configuration found at %s' % path)
     try:
         values = yaml.load(open(path, 'r'))
     except yaml.scanner.ScannerError, e:
-        print('ERROR loading pyprocgame config from %s; your configuration file has a syntax error in it!\nDetails: %s' % (path, e))
+        logger.error('Error loading pyprocgame config from %s; your configuration file has a syntax error in it!\nDetails: %s', path, e)
     except Exception, e:
-        print('ERROR loading pyprocgame config from %s: %s' % (path, e))
+        logger.error('Error loading pyprocgame config from %s: %s', path, e)
 
 initialize()

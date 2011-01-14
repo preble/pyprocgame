@@ -31,9 +31,9 @@ class BasicGame(GameController):
 	
 	def __init__(self, machine_type):
 		super(BasicGame, self).__init__(machine_type)
-                
+
 		self.aux_port = auxport.AuxPort(self)
-                if machine_type == 'wpcAlphanumeric':
+		if self.machine_type == pinproc.MachineTypeWPCAlphanumeric:
 			self.alpha_display = alphanumeric.AlphanumericDisplay(self.aux_port)
 		else:
 			self.dmd = DisplayController(self, width=128, height=32, message_font=font_named('Font07x5.dmd'))
@@ -42,7 +42,6 @@ class BasicGame(GameController):
 		if self.dmd: self.dmd.frame_handlers.append(self.set_last_frame)
 		key_map_config = config.value_for_key_path(keypath='keyboard_switch_map', default={})
 		for k, v in key_map_config.items():
-			print k, v, pinproc.decode(machine_type, v), machine_type
 			self.desktop.add_key_map(ord(str(k)), pinproc.decode(machine_type, v))
 	
 	def reset(self):

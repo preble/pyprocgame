@@ -1,6 +1,7 @@
 import time
 import re
 import copy
+import logging
 
 # Documented in game.rst:
 SwitchStop = True
@@ -214,6 +215,7 @@ class ModeQueue(object):
 		super(ModeQueue, self).__init__()
 		self.game = game
 		self.modes = []
+		self.logger = logging.getLogger('game.modes')
 		
 	def add(self, mode):
 		if mode in self.modes:
@@ -221,7 +223,8 @@ class ModeQueue(object):
 		self.modes += [mode]
 		# Sort by priority, descending:
 		self.modes.sort(lambda x, y: y.priority - x.priority)
-		self.game.log("Added %s, now:\n%s" % (str(mode), str(self)))
+		self.logger.info("Added %s, now:", str(mode))
+		self.log_queue()
 		mode.mode_started()
 		if mode == self.modes[0]:
 			mode.mode_topmost()
@@ -230,7 +233,8 @@ class ModeQueue(object):
 		for idx, m in enumerate(self.modes):
 			if m == mode:
 				del self.modes[idx]
-				self.game.log("Removed %s, now:\n%s" % (str(mode), str(self)))
+				self.logger.info("Removed %s, now:", str(mode))
+				self.log_queue()
 				mode.mode_stopped()
 				break
 		if len(self.modes) > 0:
@@ -247,12 +251,10 @@ class ModeQueue(object):
 		for mode in modes:
 			mode.dispatch_delayed()
 			mode.mode_tick()
-		
-	def __str__(self):
-		s = ""
+	
+	def log_queue(self, log_level=logging.INFO):
 		for mode in self.modes:
 			layer = None
 			if hasattr(mode, 'layer'):
 				layer = mode.layer
-			s += "\t\t#%d %s\t\tlayer=%s\n" % (mode.priority, type(mode).__name__, type(layer).__name__)
-		return s[:-1] # Remove \n
+			self.logger.log(log_level, "\t\t#%d %s\t\tlayer=%s", mode.priority, type(mode).__name__, type(layer).__name__)
