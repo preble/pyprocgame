@@ -1,3 +1,7 @@
+# Setup logging first thing in case any of the modules log something as they start:
+import logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
 import sys
 sys.path.append(sys.path[0]+'/../..') # Set the path so we can find procgame.  We are assuming (stupidly?) that the first member is our directory.
 import procgame
@@ -8,14 +12,12 @@ from random import *
 import string
 import time
 import locale
-import logging
 import math
 import copy
 import yaml
 
 locale.setlocale(locale.LC_ALL, "") # Used to put commas in the score.
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 dmd_path = "../shared/dmd/"
 sound_path = "../shared/sound/"
@@ -252,9 +254,6 @@ class Game(game.BasicGame):
 		"""docstring for setup"""
 		self.load_config(self.yamlpath)
 		#self.load_settings(settings_path, user_settings_path)
-		print("Initial switch states:")
-		for sw in self.switches:
-			print("  %s:\t%s" % (sw.name, sw.state_str()))
 
 		self.setup_ball_search()
 

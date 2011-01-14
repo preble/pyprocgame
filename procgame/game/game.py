@@ -211,6 +211,7 @@ class GameController(object):
 		Configures the switches, lamps, and coils members.
 		Enables notifyHost for the open and closed debounced states on each configured switch.
 		"""
+		self.logger.info('Loading machine configuration from "%s"...', filename)
 		self.config = config_named(filename)
 		if not self.config:
 			raise ValueError, 'load_config(filename="%s") could not be found. Did you set config_path?' % (name)
@@ -222,11 +223,9 @@ class GameController(object):
 
 		for section, collection, klass in pairs:
 			sect_dict = self.config[section]
-			print 'Processing section: %s' % (section)
 			for name in sect_dict:
 				item_dict = sect_dict[name]
 				number = pinproc.decode(self.machine_type, str(item_dict['number']))
-				print "Item %s from %d" % (name,number)
 				item = None
 				if 'bus' in item_dict and item_dict['bus'] == 'AuxPort':
 					item = VirtualDriver(self, name, number, polarity)
@@ -258,15 +257,13 @@ class GameController(object):
 			self.ballsearch_coils = sect_dict['pulseCoils']
 			self.ballsearch_stopSwitches = sect_dict['stopSwitches']
 			self.ballsearch_resetSwitches = sect_dict['resetSwitches']
-                
-			
+
+		
 		# We want to receive events for all of the defined switches:
-		print "Programming switch rules: ",
+		self.logger.info("Programming switch rules...")
 		for switch in self.switches:
-			print("%s," % (switch.name)),
 			self.proc.switch_update_rule(switch.number, 'closed_debounced', {'notifyHost':True, 'reloadActive':False}, [])
 			self.proc.switch_update_rule(switch.number, 'open_debounced', {'notifyHost':True, 'reloadActive':False}, [])
-		print " ...done!"
 		
 		# Configure the initial switch states:
 		states = self.proc.switch_get_states()
@@ -341,11 +338,11 @@ class GameController(object):
 		"""Enables or disables the flippers AND bumpers."""
 		if self.machine_type == pinproc.MachineTypeWPC or self.machine_type == pinproc.MachineTypeWPC95 or self.machine_type == pinproc.MachineTypeWPCAlphanumeric:
 			for flipper in self.config['PRFlippers']:
-				print("  programming flipper %s" % (flipper))
+				self.logger.info("Programming flipper %s", flipper)
 				main_coil = self.coils[flipper+'Main']
 				hold_coil = self.coils[flipper+'Hold']
 				switch_num = self.switches[flipper].number
-#
+
 				# Chck to see if the flipper should be activated now.
 				if enable:
 					if self.switches[flipper].is_active():

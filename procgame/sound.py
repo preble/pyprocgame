@@ -1,11 +1,12 @@
 import random
 import time
+import logging
 
 try:
-	print("Initializing sound...")
+	logging.getLogger('game.sound').info("Initializing sound...")
 	from pygame import mixer # This call takes a while.
 except ImportError, e:
-	print("Error importing pygame.mixer; sound will be disabled!  Error: "+str(e))
+	logging.getLogger('game.sound').error("Error importing pygame.mixer; sound will be disabled!  Error: "+str(e))
 
 import os.path
 
@@ -16,17 +17,18 @@ class SoundController(object):
 	
 	def __init__(self, delegate):
 		super(SoundController, self).__init__()
+		self.logger = logging.getLogger('game.sound')
 		try:
 			mixer.init()
 		except Exception, e:
 			# The import mixer above may work, but init can still fail if mixer is not fully supported.
 			self.enabled = False
-			print("pygame mixer init failed; sound will be disabled: "+str(e))
+			self.logger.error("pygame mixer init failed; sound will be disabled: "+str(e))
 		self.sounds = {}
 		self.music = {}
 		self.music_volume_offset = 0
 		self.set_volume(0.5)
-        	self.voice_end_time = 0
+		self.voice_end_time = 0
 
 	def play_music(self, key, loops=0, start_time=0.0):
 		"""Start playing music at the given *key*."""
@@ -54,7 +56,7 @@ class SoundController(object):
 
 	def register_sound(self, key, sound_file):
 		""" """
-		print ("Registering sound - key: %s, file: %s" % (key, sound_file))
+		self.logger.info("Registering sound - key: %s, file: %s", key, sound_file)
 		if not self.enabled: return
 		if os.path.isfile(sound_file):
 			self.new_sound = mixer.Sound(str(sound_file))
@@ -65,7 +67,7 @@ class SoundController(object):
 			else:
 				self.sounds[key] = [self.new_sound]
 		else:
-			print ("Sound registration error: file %s does not exist!" % sound_file)
+			self.logger.error("Sound registration error: file %s does not exist!", sound_file)
 
 	def register_music(self, key, music_file):
 		""" """
@@ -75,9 +77,9 @@ class SoundController(object):
 				if not music_file in self.music[key]:
 					self.music[key].append(music_file)
 			else:
-                		self.music[key] = [music_file]
+				self.music[key] = [music_file]
 		else:
-			print ("Music registration error: file %s does not exist!" % music_file)
+			self.logger.error("Music registration error: file %s does not exist!", music_file)
 
 	def play(self,key, loops=0, max_time=0, fade_ms=0):
 		""" """
@@ -139,14 +141,4 @@ class SoundController(object):
 	def beep(self):
 		if not self.enabled: return
 		pass
-	#	self.play('chime')
-
-	#def play(self, name):
-	#	self.chuck.add_shred('sound/'+name)
-	#	self.chuck.poll()
-	#	pass
-	#def on_add_shred(self, num, name):
-	#	pass
-	#def on_rm_shred(self, num, name):
-	#	pass
-
+		#	self.play('chime')

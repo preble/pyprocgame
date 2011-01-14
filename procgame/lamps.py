@@ -7,6 +7,7 @@ import math
 import copy
 import re
 import time
+import logging
 
 # Pattern functions:
 def make_pattern(m, repeats):
@@ -149,8 +150,8 @@ class LampShowTrack(object):
 		# print "Loaded %d schedules for %s:" % (len(self.schedules), self.name)
 		# for sch in self.schedules:
 		# 	print " - % 8x" % (sch)
-		print "%s | %s" % (self.name, m.group('data'))
-		print "%s | %s" % (self.name, data)
+		# print "%s | %s" % (self.name, m.group('data'))
+		# print "%s | %s" % (self.name, data)
 
 	def resolve_driver_with_game(self, game):
 		if self.name.startswith('coil:'):
@@ -251,6 +252,7 @@ class LampShowMode(game.Mode):
 		super(LampShowMode, self).__init__(game, 3)
 		self.lampshow = LampShow(self.game)
 		self.show_over = True
+		self.logger = logging.getLogger('game.lamps')
 
 	def load(self, filename, repeat=False, callback='None'):
 		"""Load a new lamp show."""
@@ -291,6 +293,7 @@ class LampController(object):
 		self.show = LampShowMode(self.game)
 		self.show_playing = False
 		self.saved_state_dicts = {}
+		self.logger = logging.getLogger('game.lamps')
 		
 	def register_show(self, key, show_file):
                 self.shows[key] = show_file
@@ -318,10 +321,9 @@ class LampController(object):
 			state_dict[lamp.name] = {'time':lamp.last_time_changed, 'state':lamp.state()}
 		self.saved_state_dicts[key] = state_dict
 		self.saved_state_dicts[key + '_time'] = time.time()
-		print self.saved_state_dicts
 
 	def restore_state(self, key):
-		print "restoring lamp states"
+		self.logger.info('Restoring lamp state "%s"...', key)
 		if key in self.saved_state_dicts:
 			state_dict = self.saved_state_dicts[key]
 			for lamp_name, record in state_dict.iteritems():

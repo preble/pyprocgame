@@ -42,7 +42,6 @@ class BasicGame(GameController):
 		if self.dmd: self.dmd.frame_handlers.append(self.set_last_frame)
 		key_map_config = config.value_for_key_path(keypath='keyboard_switch_map', default={})
 		for k, v in key_map_config.items():
-			print k, v, pinproc.decode(machine_type, v), machine_type
 			self.desktop.add_key_map(ord(str(k)), pinproc.decode(machine_type, v))
 	
 	def reset(self):
