@@ -165,7 +165,7 @@ class Mode(object):
 			if match['delay'] == None:
 				handler = match['handler']
 				result = handler(self.game.switches[match['name']])
-				if result == True:
+				if result == SwitchStop:
 					handled = True
 			else:
 				self.delay(name=sw_name, event_type=match['type'], delay=match['delay'], handler=match['handler'], param=match['param'])
@@ -243,7 +243,8 @@ class ModeQueue(object):
 	def handle_event(self, event):
 		modes = copy.copy(self.modes) # Make a copy so if a mode is added we don't get into a loop.
 		for mode in modes:
-			if mode.handle_event(event) == SwitchStop:
+			handled = mode.handle_event(event)
+			if handled:
 				break
 	
 	def tick(self):
