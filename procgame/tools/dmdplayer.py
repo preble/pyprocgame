@@ -36,6 +36,6 @@ def tool_get_usage():
     return """<file.dmd>"""
 
 def tool_run(options, args):
-    if len(args) != 1:
-        return False
-    return play(filename=args[0])
+	if len(args) != 1:
+		return False
+	return play(filename=args[0])

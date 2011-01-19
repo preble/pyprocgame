@@ -72,6 +72,6 @@ def tool_get_usage():
     return """<font.dmd> <text>"""
 
 def tool_run(options, args):
-    if len(args) < 2:
-        return False
-    return dmdfontwidths(font_path=args[0], text=args[1])
+	if len(args) < 2:
+		return False
+	return dmdfontwidths(font_path=args[0], text=args[1])

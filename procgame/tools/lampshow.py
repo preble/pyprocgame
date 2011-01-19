@@ -5,6 +5,7 @@ import yaml
 import pinproc
 import procgame.game
 import procgame.lamps
+import procgame.tools
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
@@ -30,13 +31,8 @@ class LampGame(procgame.game.GameController):
 			self.lampctrl.play_show('show', repeat=True)
 			self.show_mtime = mtime
 
-def machine_type_from_yaml(config_path):
-	config = yaml.load(open(config_path, 'r'))
-	machine_type = config['PRGame']['machineType']
-	return pinproc.normalize_machine_type(machine_type)
-
 def play(config_path, show_path):
-	game = LampGame(machine_type=machine_type_from_yaml(config_path))
+	game = LampGame(machine_type=procgame.tools.machine_type_from_yaml(config_path))
 	game.load_config(config_path)
 	game.play(show_path)
 	game.run_loop()

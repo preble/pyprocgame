@@ -189,7 +189,7 @@ def tool_get_usage():
   to include all filenames matching that wildcard."""
 
 def tool_run(options, args):
-    if len(args) < 2:
-        return False
-    image_to_dmd(src_filenames=args[0:-1], dst_filename=args[-1])
-    return True
+	if len(args) < 2:
+		return False
+	image_to_dmd(src_filenames=args[0:-1], dst_filename=args[-1])
+	return True
