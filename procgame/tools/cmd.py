@@ -8,6 +8,7 @@ commands = {
     'dmdconvert': 'Converts image files to .dmd files.',
     'dmdfontwidths': 'Interactively assign font width values.',
     'dmdplayer': 'Play a .dmd file.',
+	'lampshow': 'Play a lamp show.',
 }
 
 def main():
