@@ -21,6 +21,8 @@ def tool_populate_options(parser):
 	parser.add_option('-k', '--key', action='store', help='The configuration key to be manipulated.')
 	parser.add_option('-a', '--add', action='store', help='Add VALUE to list KEY.', metavar='VALUE')
 	parser.add_option('-r', '--remove', action='store', help='Remove VALUE from list KEY.', metavar='VALUE')
+	parser.add_option('-s', '--set', action='store', help='Assign the value of KEY to VALUE.', metavar='VALUE')
+	parser.add_option('-c', '--clear', action='store_true', help='Removes KEY from the configuration.')
 
 def tool_get_usage():
 	return """[options]"""
@@ -29,7 +31,7 @@ def tool_run(options, args):
 	no_values_loaded = (procgame.config.values == {})
 	procgame.config.values = procgame.config.values or {}
 	if options.key:
-		if options.key not in procgame.config.values and not options.add:
+		if options.key not in procgame.config.values and not (options.add or options.set):
 			print("Key does not exist.")
 			sys.exit(3)
 
@@ -48,6 +50,20 @@ def tool_run(options, args):
 				procgame.config.values[options.key].remove(options.remove)
 				save_config()
 				return True
+		
+		if options.set:
+			if options.key in procgame.config.values and type(procgame.config.values[options.key]) != str:
+				print("Cannot assign a value to a key that is not a string.  Type is "+(type(procgame.config.values[options.key]).__name__))
+				sys.exit(3)
+			
+			procgame.config.values[options.key] = options.set
+			save_config()
+			return True
+		
+		if options.clear:
+			del procgame.config.values[options.key]
+			save_config()
+			return True
 		
 		print procgame.config.values[options.key]
 		return True
