@@ -1,15 +1,41 @@
 ## pyprocgame
 
-pyprocgame is a high-level pinball development framework for use with P-ROC 
-(Pinball Remote Operations Controller).  More information about P-ROC is 
-available at http://pinballcontrollers.com/.
+pyprocgame is a high-level pinball development framework for use with P-ROC (Pinball Remote Operations Controller).  It was written by Adam Preble and Gerry Stellenberg.  More information about P-ROC is available at [pinballcontrollers.com](http://pinballcontrollers.com/).  See the [pyprocgame site](http://pyprocgame.pindev.org/) for the full pyprocgame documentation.
 
-Read more about pyprocgame at: http://pyprocgame.pindev.org/
+## Prerequisites
 
+pyprocgame requires the following:
+
+- [Python 2.6](http://python.org/)
+- [pypinproc](http://github.com/preble/pypinproc) -- native Python extension enabling P-ROC hardware access and native DMD frame manipulation.
+- [pyyaml](http://pyyaml.org/) -- YAML parsing.
+- One of the Python graphics and sound modules:
+  - [pyglet](http://www.pyglet.org/)
+  - [pygame](http://www.pygame.org/)
+
+## Installation
+
+To install pyprocgame:
+
+	python setup.py install
+
+This will install pyprocgame such that you can import it from any Python script on your system:
+
+	import procgame.game
+
+It will also install the "procgame" command line tool into a system-dependent location.  On Linux and Mac OS X systems this will probably be in your path such that you can type, from the command line:
+
+	procgame
+
+and see a list of available commands.  If it is not in your path you can invoke it directly, or modify your PATH environment variable.  Note that on Windows the procgame script is typically located in C:\Python26\Scripts.
+
+## Documentation
+
+Please see the [pyprocgame Documentation](http://pyprocgame.pindev.org/) site for the pyprocgame Manual and detailed API documentation.
 
 ## License
 
-Copyright (c) 2011 Adam Preble and Gerry Stellenberg
+Copyright (c) 2009-2011 Adam Preble and Gerry Stellenberg
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
