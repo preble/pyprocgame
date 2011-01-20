@@ -366,7 +366,7 @@ class GameController(object):
 				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
 
 			# Enable the flipper relay on wpcAlphanumeric machines
-                        if self.machine_type == 'wpcAlphanumeric':
+                        if self.machine_type == pinproc.MachineTypeWPCAlphanumeric:
 				# 79 corresponds to the circuit on the power/driver board.  It will be 79 for all WPCAlphanumeric machines.
 				flipperRelayPRNumber = 79
                                 if enable:
