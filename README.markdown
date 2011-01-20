@@ -16,7 +16,7 @@ pyprocgame requires the following:
 
 ## Installation
 
-To install pyprocgame:
+To install pyprocgame: (depending on your system configuration you may need to use _sudo_)
 
 	python setup.py install
 
