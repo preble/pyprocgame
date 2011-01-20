@@ -26,7 +26,7 @@ class Frame(pinproc.DMDBuffer):
 		"""Static method which performs some type checking before calling :meth:`pinproc.DMDBuffer.copy_to_rect`."""
 		if not (issubclass(type(dst), pinproc.DMDBuffer) and issubclass(type(src), pinproc.DMDBuffer)):
 			raise ValueError, "Incorrect types"
-		src.copy_to_rect(dst, dst_x, dst_y, src_x, src_y, width, height, op)
+		src.copy_to_rect(dst, int(dst_x), int(dst_y), int(src_x), int(src_y), int(width), int(height), op)
 	copy_rect = staticmethod(copy_rect)
 	
 	def subframe(self, x, y, width, height):
