@@ -1,4 +1,5 @@
 import procgame
+import procgame.config
 import os
 import sys
 import yaml
