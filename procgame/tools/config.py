@@ -6,6 +6,10 @@ import yaml
 
 def save_config():
 	try:
+		dirname = os.path.dirname(procgame.config.path)
+		if not os.path.isdir(dirname):
+			print("Creating directory: %s" % (dirname))
+			os.makedirs(dirname)
 		output = file(procgame.config.path, 'w')
 		yaml.dump(procgame.config.values, output)
 		del output
