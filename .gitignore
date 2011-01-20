@@ -1,3 +1,6 @@
 ._*
 *.pyc
 user_settings.yaml
+dist
+build
+pyprocgame.egg-info

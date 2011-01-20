@@ -8,23 +8,15 @@
 #
 import sys
 import os
-sys.path.append(sys.path[0]+'/..') # Set the path so we can find procgame.  We are assuming (stupidly?) that the first member is our directory.
 import pinproc
-import procgame
-from procgame import *
+from procgame import dmd
 import time
 
-def main():
-	if len(sys.argv) < 3:
-		print("Usage: %s <font.dmd> <text>"%(sys.argv[0]))
-		return
-
-	font = dmd.Font(sys.argv[1])
+def dmdfontwidths(font_path, text):
+	font = dmd.Font(font_path)
 	if not font:
 		print("Error loading font")
-		return
-	save_path = sys.argv[1]
-	text = sys.argv[2]
+		return False
 	
 	for i in range(96):
 		if font.char_widths[i] != 0:
@@ -33,7 +25,7 @@ def main():
 	text_layer = dmd.TextLayer(0, 0, font)
 	text_layer.set_text(text)
 
-	proc = pinproc.PinPROC('wpc')
+	proc = pinproc.PinPROC(pinproc.MachineTypeWPC) # TODO: Make this an option!
 	w = 128
 	h = 32
 	proc.reset(1)
@@ -44,7 +36,7 @@ def main():
 		frame = grouped_layer.next_frame()
 		if frame == None:
 			print("No frame?")
-			return
+			return True
 		#for x in range(5): # Send it enough times to get it to show
 		proc.dmd_draw(frame)
 		
@@ -69,7 +61,17 @@ def main():
 		except Exception, e:
 			print e
 
-	font.save(save_path)
+	font.save(font_path)
+	return True
 
-if __name__ == "__main__":
-	main()
+
+def tool_populate_options(parser):
+    pass
+
+def tool_get_usage():
+    return """<font.dmd> <text>"""
+
+def tool_run(options, args):
+	if len(args) < 2:
+		return False
+	return dmdfontwidths(font_path=args[0], text=args[1])

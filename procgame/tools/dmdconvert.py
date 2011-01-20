@@ -171,20 +171,25 @@ def image_to_dmd(src_filenames, dst_filename):
 	anim.save(dst_filename)
 	print "Saved."
 
-def main():
-	if len(sys.argv) < 3:
-		print("Usage: %s <image1.png> [... <imageN.png>] <output.dmd>"%(sys.argv[0]))
-		print("  If only one image name is used it may include %d format specifiers to")
-		print("  create animations.  Example:")
-		print("    %s Animation%%03d.png Animation.dmd" % (sys.argv[0]))
-		print("  Creates an animation of up to 999 frames with sequential names.")
-		print("  ")
-		print("  Note that in UNIX-like shells that support wildcard expansion you can")
-		print("  enter image*.png as the one image filename and the shell will expend it")
-		print("  to include all filenames matching that wildcard.")
-		return
-	image_to_dmd(src_filenames=sys.argv[1:-1], dst_filename=sys.argv[-1])
 
+def tool_populate_options(parser):
+    pass
 
-if __name__ == "__main__":
-	main()
+def tool_get_usage():
+    return """[options] <image1.png> [... <imageN.png>] <output.dmd>
+
+  If only one image name is used it may include %d format specifiers to
+  create animations.  For example, to create an animation of up to 999 
+  frames with sequential names:
+  
+    Animation%03d.png Animation.dmd
+  
+  Note that in UNIX-like shells that support wildcard expansion you can
+  enter image*.png as the one image filename and the shell will expend it
+  to include all filenames matching that wildcard."""
+
+def tool_run(options, args):
+	if len(args) < 2:
+		return False
+	image_to_dmd(src_filenames=args[0:-1], dst_filename=args[-1])
+	return True
