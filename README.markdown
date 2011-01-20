@@ -12,6 +12,7 @@ pyprocgame requires the following:
 - One of the Python graphics and sound modules:
   - [pyglet](http://www.pyglet.org/)
   - [pygame](http://www.pygame.org/)
+- [Python Imaging Library](http://www.pythonware.com/products/pil/) (PIL)
 
 ## Installation
 
