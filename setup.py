@@ -37,7 +37,7 @@ setup(
     url='http://pyprocgame.pindev.org/',
     author='Adam Preble and Gerry Stellenberg',
     author_email='pyprocgame@pindev.org',
-    packages=['procgame', 'procgame.dmd', 'procgame.game', 'procgame.highscore', 'procgame.modes', 'procgame.desktop'],
+    packages=['procgame', 'procgame.dmd', 'procgame.game', 'procgame.highscore', 'procgame.modes', 'procgame.desktop', 'procgame.tools'],
     zip_safe = True, # False for non-zipped install
     # This works but it copies the files into /System/Library/Frameworks/Python.framework/Versions/2.6/tools -- not good
     # data_files = [
