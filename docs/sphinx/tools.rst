@@ -1,9 +1,6 @@
 procgame Command Line Tool
 ==========================
 
-About
------
-
 pyprocgame includes a number of tools to make certain tasks easier.  Your installation should have included a ``procgame`` command line tool.  Once ``procgame`` is in your path (the steps for this will depend on your specific platform; on some platforms it will already be in your path), you can invoke it on the command line::
 
 	$ procgame
@@ -27,6 +24,8 @@ Without any arguments, ``procgame`` shows the available commands within the tool
 
 The following documents the specifics of some of the ``procgame`` tools.
 
+
+.. _tool-config:
 
 config
 ------

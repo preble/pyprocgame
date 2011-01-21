@@ -17,6 +17,7 @@ pyprocgame is a Python-based pinball software development framework for use with
 	:maxdepth: 2
 
 	intro
+	install
 	manual
 	ref-index
 	ref-pinproc
