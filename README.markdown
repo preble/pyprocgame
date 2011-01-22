@@ -8,6 +8,7 @@ pyprocgame requires the following:
 
 - [Python 2.6](http://python.org/)
 - [pypinproc](http://github.com/preble/pypinproc) -- native Python extension enabling P-ROC hardware access and native DMD frame manipulation.
+- [setuptools](http://pypi.python.org/pypi/setuptools) -- required for procgame script installation.  Also adds easy\_install, a helpful installer tool for popular Python modules.
 - [pyyaml](http://pyyaml.org/) -- YAML parsing.
 - One of the Python graphics and sound modules:
   - [pyglet](http://www.pyglet.org/)

@@ -8,6 +8,7 @@ Before you install pyprocgame, you will need the following software components:
 
 * `Python 2.6 <http://python.org/>`_
 * `pypinproc <http://github.com/preble/pypinproc>`_ -- native Python extension enabling P-ROC hardware control.  Exposes the `libpinproc <http://github.com/preble/libpinproc>`_ API to Python and adds native DMD frame manipulation features.  See the :ref:`branch note <pyprocgame-branch>` below.
+* `setuptools <http://pypi.python.org/pypi/setuptools>`_ -- required for procgame script installation.  Also adds easy_install, a helpful installer tool for popular Python modules.
 * `pyyaml <http://pyyaml.org/>`_ -- YAML parsing.
 * One of the Python graphics and sound modules:
 
