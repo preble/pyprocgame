@@ -25,7 +25,7 @@ class FrameLayer(Layer):
 
 class AnimatedLayer(Layer):
 	"""Collection of frames displayed sequentially, as an animation.  Optionally holds the last frame on-screen."""
-	def __init__(self, opaque=False, hold=True, repeat=False, frame_time=1, frames=None):
+	def __init__(self, opaque=False, hold=True, repeat=False, frame_time=1, frames=None, callback=None, start_frame=0):
 		super(AnimatedLayer, self).__init__(opaque)
 		self.hold = hold
 		self.repeat = repeat
@@ -33,11 +33,15 @@ class AnimatedLayer(Layer):
 			self.frames = list()
 		else:
 			self.frames = frames
+				
 		self.frame_time = frame_time # Number of frames each frame should be displayed for before moving to the next.
 		self.frame_time_counter = self.frame_time
+		self.callback = callback
+		self.start_frame = start_frame
+		self.frame_listeners = []
 		self.reset()
 	def reset(self):
-		self.frame_pointer = 0
+		self.frame_pointer = self.start_frame
 	def next_frame(self):
 		"""Returns the frame to be shown, or None if there is no frame."""
 		if self.frame_pointer >= len(self.frames):
@@ -49,7 +53,7 @@ class AnimatedLayer(Layer):
 			if (self.frame_pointer == len(self.frames)-1):
 				if self.repeat:
 					self.frame_pointer = 0
-				else:
+				elif (self.hold == False):
 					self.frame_pointer += 1
 					frame = None
 			else:
@@ -57,6 +61,15 @@ class AnimatedLayer(Layer):
 
 		if self.frame_time_counter == 0:
 			self.frame_time_counter = self.frame_time
+			
+		if self.frame_pointer == len(self.frames) -1 and self.callback:
+			self.callback()
+			
+		# Check frame listeners
+		for frame_listener in self.frame_listeners:
+			if self.frame_pointer == frame_listener[0]:
+				frame_listener[1]()
+		
 		return frame
 
 
@@ -100,6 +113,7 @@ class TextLayer(Layer):
 		super(TextLayer, self).__init__(opaque)
 		self.set_target_position(x, y)
 		self.font = font
+		self.text = None
 		self.started_at = None
 		self.seconds = None # Number of seconds to show the text for
 		self.frame = None # Frame that text is rendered into.
@@ -111,6 +125,7 @@ class TextLayer(Layer):
 	def set_text(self, text, seconds=None, blink_frames=None):
 		"""Displays the given message for the given number of seconds."""
 		self.started_at = None
+		self.text = text
 		self.seconds = seconds
 		self.blink_frames = blink_frames
 		self.blink_frames_counter = self.blink_frames
@@ -144,6 +159,14 @@ class TextLayer(Layer):
 			else:
 				self.blink_frames_counter -= 1
 		return self.frame
+
+	def width(self):
+		(w, h) = self.font.size(self.text)
+		return w
+	
+	def height(self):
+		(w, h) = self.font.size(self.text)
+		return h
 	
 	def is_visible(self):
 		return self.frame != None
