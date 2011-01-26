@@ -495,8 +495,9 @@ class GameController(object):
 				self.tick()
 				self.tick_virtual_drivers()
 				self.modes.tick()
-				self.proc.watchdog_tickle()
-				self.proc.flush()
+				if self.proc:
+					self.proc.watchdog_tickle()
+					self.proc.flush()
 		finally:
 			if loops != 0:
 				dt = time.time()-self.t0

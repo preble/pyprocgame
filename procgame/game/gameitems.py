@@ -74,7 +74,7 @@ class Driver(GameItem):
 		self.logger.debug("Driver %s - pulse %d", self.name, milliseconds)
 		self.game.proc.driver_pulse(self.number, milliseconds)
 		self.last_time_changed = time.time()
-	def schedule(self, schedule, cycle_seconds, now):
+	def schedule(self, schedule, cycle_seconds=0, now=True):
 		"""Schedules this driver to be enabled according to the given `schedule` bitmask."""
 		self.logger.debug("Driver %s - schedule %08x", self.name, schedule)
 		self.game.proc.driver_schedule(number=self.number, schedule=schedule, cycle_seconds=cycle_seconds, now=now)
@@ -232,7 +232,7 @@ class VirtualDriver(Driver):
 		else: self.time_ms = time.time() + milliseconds/1000.0
 		self.logger.debug("Time: %f: VirtualDriver %s - pulse %d. End time: %f", time.time(), self.name, milliseconds, self.time_ms)
 
-	def schedule(self, schedule, cycle_seconds, now):
+	def schedule(self, schedule, cycle_seconds=0, now=True):
 		"""Schedules this driver to be enabled according to the given `schedule` bitmask."""
 		self.function = 'schedule'
 		self.function_active = True

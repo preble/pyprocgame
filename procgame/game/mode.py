@@ -113,7 +113,7 @@ class Mode(object):
 	def status_str(self):
 		return self.__class__.__name__
 	
-	def delay(self, name, event_type, delay, handler, param=None):
+	def delay(self, name, event_type, delay, handler, param=None, param2=None):
 		"""Schedule the run loop to call the given handler at a later time.
 		
 		Keyword arguments:
@@ -128,19 +128,21 @@ class Mode(object):
 			Function to be called once delay seconds have elapsed.
 		``param``
 			Value to be passed as the first (non-self) argument to handler.
+		``param2``
+			Value to be passed as the second (non-self) argument to handler.
 		
 		If param is None, handler's signature must be ``handler(self)``.  Otherwise,
 		it is ``handler(self, param)`` to match the switch method handler pattern.
 		"""
 		if type(event_type) == str:
 			event_type = {'closed':1, 'open':2}[event_type]
-		self.__delayed += [{'name':name, 'time':time.time()+delay, 'handler':handler, 'type':event_type, 'param':param}]
+		self.__delayed += [{'name':name, 'time':time.time()+delay, 'handler':handler, 'type':event_type, 'param':param, 'param2':param2}]
 		try:
 			self.__delayed.sort(lambda x, y: int((x['time'] - y['time'])*100))
 		except TypeError, ex:
 			# Debugging code:
 			for x in self.__delayed:
-				print(x['name'], x['time'], type(x['time']), x['handler'], x['type'], x['param'])
+				print(x['name'], x['time'], type(x['time']), x['handler'], x['type'], x['param'], x['param2'])
 			raise ex
 	
 	def cancel_delayed(self, name):
