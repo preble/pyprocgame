@@ -33,11 +33,34 @@ class AnimatedLayer(Layer):
 			self.frames = list()
 		else:
 			self.frames = frames
+		
 		self.frame_time = frame_time # Number of frames each frame should be displayed for before moving to the next.
 		self.frame_time_counter = self.frame_time
+		
+		self.frame_listeners = []
+		
 		self.reset()
+	
 	def reset(self):
 		self.frame_pointer = 0
+	
+	def add_frame_listener(self, frame_index, listener):
+		"""Registers a method (``listener``) to be called when a specific 
+		frame number (``frame_index``) in the animation has been reached.
+		Negative numbers, like Python list indexes, indicate a number of
+		frames from the last frame.  That is, a ``frame_index`` of -1 will
+		trigger on the last frame of the animation.
+		"""
+		self.frame_listeners.append((frame_index, listener))
+	
+	def notify_frame_listeners(self):
+		for frame_listener in self.frame_listeners:
+			(index, listener) = frame_listener
+			if index >= 0 and self.frame_pointer == index:
+				listener()
+			elif self.frame_pointer == (len(self.frames) + index):
+				listener()
+	
 	def next_frame(self):
 		"""Returns the frame to be shown, or None if there is no frame."""
 		if self.frame_pointer >= len(self.frames):
@@ -57,6 +80,9 @@ class AnimatedLayer(Layer):
 
 		if self.frame_time_counter == 0:
 			self.frame_time_counter = self.frame_time
+		
+		self.notify_frame_listeners()
+		
 		return frame
 
 
