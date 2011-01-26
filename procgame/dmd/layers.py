@@ -49,7 +49,7 @@ class AnimatedLayer(Layer):
 			if (self.frame_pointer == len(self.frames)-1):
 				if self.repeat:
 					self.frame_pointer = 0
-				else:
+				elif (self.hold == False):
 					self.frame_pointer += 1
 					frame = None
 			else:
