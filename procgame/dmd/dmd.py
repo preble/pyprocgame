@@ -152,13 +152,20 @@ class Font(object):
 	
 	Fonts can be loaded manually, using :meth:`load`, or with the :func:`font_named` utility function
 	which supports searching a font path."""
+	
+	char_widths = None
+	"""Array of dot widths for each character, 0-indexed from <space>.  
+	This array is populated by :meth:`load`.  You may alter this array
+	in order to update the font and then :meth:`save` it."""
+	
+	tracking = 0
+	"""Number of dots to adjust the horizontal position between characters, in addition to the last character's width."""
+	
 	def __init__(self, filename=None):
 		super(Font, self).__init__()
 		self.__anim = Animation()
 		self.char_size = None
 		self.bitmap = None
-		self.char_widths = None
-		self.tracking = 0
 		if filename != None:
 			self.load(filename)
 		
