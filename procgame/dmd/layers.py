@@ -25,6 +25,19 @@ class FrameLayer(Layer):
 
 class AnimatedLayer(Layer):
 	"""Collection of frames displayed sequentially, as an animation.  Optionally holds the last frame on-screen."""
+	
+	hold = True
+	"""``True`` if the last frame of the animation should be held on-screen indefinitely."""
+	
+	repeat = False
+	"""``True`` if the animation should be repeated indefinitely."""
+	
+	frame_time = 1
+	"""Number of frame times each frame should be shown on screen before advancing to the next frame.  The default is 1."""
+	
+	frame_pointer = 0
+	"""Index of the next frame to display.  Incremented by :meth:`next_frame`."""
+	
 	def __init__(self, opaque=False, hold=True, repeat=False, frame_time=1, frames=None):
 		super(AnimatedLayer, self).__init__(opaque)
 		self.hold = hold
@@ -42,6 +55,7 @@ class AnimatedLayer(Layer):
 		self.reset()
 	
 	def reset(self):
+		"""Resets the animation back to the first frame."""
 		self.frame_pointer = 0
 	
 	def add_frame_listener(self, frame_index, listener):
@@ -65,9 +79,16 @@ class AnimatedLayer(Layer):
 		"""Returns the frame to be shown, or None if there is no frame."""
 		if self.frame_pointer >= len(self.frames):
 			return None
-
+		
+		# Important: Notify the frame listeners before frame_pointer has been advanced.
+		# Only notify the listeners if this is the first time this frame has been shown
+		# (such as if frame_time is > 1).
+		if self.frame_time_counter == self.frame_time:
+			self.notify_frame_listeners()
+		
 		frame = self.frames[self.frame_pointer]
 		self.frame_time_counter -= 1
+		
 		if (self.hold == False or len(self.frames) > 1) and (self.frame_time_counter == 0):
 			if (self.frame_pointer == len(self.frames)-1):
 				if self.repeat:
@@ -80,8 +101,6 @@ class AnimatedLayer(Layer):
 
 		if self.frame_time_counter == 0:
 			self.frame_time_counter = self.frame_time
-		
-		self.notify_frame_listeners()
 		
 		return frame
 
