@@ -158,6 +158,7 @@ class Font(object):
 		self.char_size = None
 		self.bitmap = None
 		self.char_widths = None
+		self.tracking = 0
 		if filename != None:
 			self.load(filename)
 		
@@ -206,7 +207,7 @@ class Font(object):
 			char_y = self.char_size * (char_offset / 10)
 			width = self.char_widths[char_offset]
 			Frame.copy_rect(dst=frame, dst_x=x, dst_y=y, src=self.bitmap, src_x=char_x, src_y=char_y, width=width, height=self.char_size)
-			x += width
+			x += width + self.tracking
 		return x
 	
 	def size(self, text):
@@ -217,7 +218,7 @@ class Font(object):
 			if char_offset < 0 or char_offset >= 96:
 				continue
 			width = self.char_widths[char_offset]
-			x += width
+			x += width + self.tracking
 		return (x, self.char_size)
 
 
