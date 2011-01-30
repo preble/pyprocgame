@@ -178,7 +178,7 @@ class LampShowTrack(object):
 	
 	def is_complete(self):
 		"""True if this track's schedules have all been used."""
-		return self.current_index >= len(self.schedules) - 1
+		return self.current_index >= len(self.schedules)
 
 class LampShow(object):
 	"""Manages loading and playing a lamp show consisting of several lamps (or other drivers), 

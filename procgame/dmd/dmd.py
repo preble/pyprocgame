@@ -115,9 +115,12 @@ class Animation(object):
 		  ? bytes - Frames: frame_count * width * height bytes
 		
 		Frame data is laid out row0..rowN.  Byte values of each pixel
-		are 00-03, 00 being black and 03 being brightest.  This is
-		subject to change to allow for more brightness levels and/or
-		transparency.
+		are in two parts: the lower 4 bits are the dot "color", ``0x0`` 
+		being black and ``0xF`` being the brightest value and the upper 
+		4 bits are alpha (``0x0`` is fully transparent, ``0xF`` is fully
+		opaque).  Note that transparency is optional and only supported 
+		by the alpha blending modes in :meth:`procgame.dmd.Frame.copy_rect`.  
+		Alpha values are ignored by :meth:`pinproc.PinPROC.dmd_draw`.
 		"""
 		self.frames = []
 		f = open(filename, 'rb')
@@ -152,13 +155,20 @@ class Font(object):
 	
 	Fonts can be loaded manually, using :meth:`load`, or with the :func:`font_named` utility function
 	which supports searching a font path."""
+	
+	char_widths = None
+	"""Array of dot widths for each character, 0-indexed from <space>.  
+	This array is populated by :meth:`load`.  You may alter this array
+	in order to update the font and then :meth:`save` it."""
+	
+	tracking = 0
+	"""Number of dots to adjust the horizontal position between characters, in addition to the last character's width."""
+	
 	def __init__(self, filename=None):
 		super(Font, self).__init__()
 		self.__anim = Animation()
 		self.char_size = None
 		self.bitmap = None
-		self.char_widths = None
-		self.border = 0
 		if filename != None:
 			self.load(filename)
 		
@@ -207,7 +217,7 @@ class Font(object):
 			char_y = self.char_size * (char_offset / 10)
 			width = self.char_widths[char_offset]
 			Frame.copy_rect(dst=frame, dst_x=x, dst_y=y, src=self.bitmap, src_x=char_x, src_y=char_y, width=width, height=self.char_size)
-			x += width - self.border
+			x += width + self.tracking
 		return x
 	
 	def size(self, text):
@@ -218,7 +228,7 @@ class Font(object):
 			if char_offset < 0 or char_offset >= 96:
 				continue
 			width = self.char_widths[char_offset]
-			x += width - self.border
+			x += width + self.tracking
 		return (x, self.char_size)
 
 
