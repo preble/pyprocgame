@@ -225,11 +225,16 @@ class Animation(object):
 
 			frame = Frame(w, h)
 
+			# Construct a lookup table from 0-255 to 0-15:
+			eight_to_four_map = [0] * 256
+			for l in range(256):
+				eight_to_four_map[l] = int(round((l/255.0) * 15.0))
+			
 			for x in range(w):
 				for y in range(h):
-					color = int((reduced.getpixel((x,y))/255.0)*15)
+					color = eight_to_four_map[reduced.getpixel((x,y))]
 					if alpha:
-						color += int((alpha.getpixel((x,y))/255.0)*15) << 4
+						color += eight_to_four_map[alpha.getpixel((x,y))] << 4
 					frame.set_dot(x=x, y=y, value=color)
 
 			self.frames.append(frame)
