@@ -32,25 +32,29 @@ def gif_frames(src):
 	# Construct a lookup table from 0-255 to 0-15:
 	eight_to_four_map = [0] * 256
 	for l in range(256):
-		eight_to_four_map[l] = int(round((l/255.0) * 15.0))
+		eight_to_four_map[l] = 0xf0 + int(round((l/255.0) * 15.0))
 	
 	for src_im in ImageSequence(src):
-		reduced = src.convert("L") #.quantize(palette=pal_im).convert("P", palette=Image.ADAPTIVE, colors=4)#
+		reduced = src.convert("L")
 		
 		frame = procgame.dmd.Frame(w, h)
 		
 		for x in range(w):
 			for y in range(h):
 				idx = src_im.getpixel((x, y)) # Get the palette index for this pixel
-				if idx == background_idx and last_frame != None:
-					if last_frame == None:
-						color = 0xff # Don't have a good option here.
-					else:
+				if idx == background_idx:
+					# background index means use the prior frame's dot data
+					if last_frame:
 						color = last_frame.get_dot(x,y)
+					else:
+						# No prior frame to refer to.
+						color = 0xff # Don't have a good option here.
+				elif idx == transparent_idx:
+					color = 0x00
 				else:
 					color = eight_to_four_map[reduced.getpixel((x,y))]
 				frame.set_dot(x=x, y=y, value=color)
-				
+		
 		frames.append(frame)
 		last_frame = frame
 		
