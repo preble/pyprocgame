@@ -82,6 +82,10 @@ def image_to_dmd(src_filenames, dst_filename):
 		src_filenames = []
 		for frame_index in range(1000):
 			src_filenames.append(pattern % (frame_index))
+	else:
+		for filename in src_filenames:
+			if not os.path.exists(filename):
+				print 'File not found:', filename
 	
 	for filename in src_filenames:
 		if filename.endswith('.txt'):
@@ -90,7 +94,7 @@ def image_to_dmd(src_filenames, dst_filename):
 			load_and_append_image(anim=anim, filename=filename)
 	
 	if len(anim.frames) == 0:
-		print "ERROR: No frames found!"
+		print "ERROR: No frames found!  Ensure that the source file(s) exist and are readable."
 		sys.exit(1)
 	
 	anim.save(dst_filename)
