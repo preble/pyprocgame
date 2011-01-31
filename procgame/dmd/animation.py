@@ -8,9 +8,12 @@ import time
 import Image
 from procgame.dmd import Frame
 from procgame import config
-from . import animgif
 import logging
 
+try:
+	import Image
+except ImportError:
+	Image = None
 
 # Global reference; use AnimationCacheManager.shared_manager() to create and reference.
 shared_cache_manager = None
@@ -204,6 +207,9 @@ class Animation(object):
 
 	def populate_from_image_file(self, path, f):
 		
+		if not Image:
+			raise RuntimeError, 'Cannot open non-native image types without Python Imaging Library: %s' % (path)
+		
 		src = Image.open(f)
 
 		(w, h) = src.size
@@ -213,6 +219,7 @@ class Animation(object):
 		(self.width, self.height) = (w, h)
 
 		if path.endswith('.gif'):
+			from . import animgif
 			self.frames += animgif.gif_frames(src)
 		else:
 			alpha = None
