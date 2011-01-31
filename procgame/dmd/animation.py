@@ -139,6 +139,8 @@ class Animation(object):
 		if type(paths) != list:
 			paths = [paths]
 		
+		paths = map(os.path.abspath, paths)
+		
 		self.frames = []
 		
 		animation_cache = None
