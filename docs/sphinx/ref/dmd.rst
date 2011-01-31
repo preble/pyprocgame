@@ -148,3 +148,27 @@ MarkupFrameGenerator
 	.. autoclass:: procgame.dmd.TransitionOutHelperMode
 		:members:
 
+
+.. _dmd-format:
+
+DMD File Format Specification
+=============================
+
+.dmd files are the native format for DMD animations in pyprocgame.
+The file format is as follows::
+
+  4 bytes - header data (unused)
+  4 bytes - frame_count
+  4 bytes - width of animation frames in pixels
+  4 bytes - height of animation frames in pixels
+  ? bytes - Frames: frame_count * width * height bytes
+
+Frame data is laid out row0..rowN.  Byte values of each pixel
+are in two parts: the lower 4 bits are the dot "color", ``0x0`` 
+being black and ``0xF`` being the brightest value and the upper 
+4 bits are alpha (``0x0`` is fully transparent, ``0xF`` is fully
+opaque).  Note that transparency is optional and only supported 
+by the alpha blending modes in :meth:`procgame.dmd.Frame.copy_rect`.  
+Alpha values are ignored by :meth:`pinproc.PinPROC.dmd_draw`.
+
+.dmd files are loaded using :meth:`procgame.dmd.Animation.load`.

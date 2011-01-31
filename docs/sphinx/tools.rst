@@ -52,6 +52,8 @@ You can also use ``config`` to manage your ``font_path``::
 Run ``procgame config --help`` to view other options.
 
 
+.. _tool-dmdconvert:
+
 dmdconvert
 ----------
 

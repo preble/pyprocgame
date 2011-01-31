@@ -79,6 +79,12 @@ Configuration Keys/Values
 | ``desktop_dmd_scale``    | Number   | (pyglet :class:`~procgame.desktop.Desktop` only)   |
 |                          |          | Sets the scale factor of the desktop DMD display.  |
 +--------------------------+----------+----------------------------------------------------+
+| ``dmd_cache_path``       | String   | Provide a path to the directory to store cached    |
+|                          |          | animations in.  If this key is not present, no     |
+|                          |          | images will be cached.  See                        |
+|                          |          | :meth:`procgame.dmd.Animation.load` for further    |
+|                          |          | details.                                           |
++--------------------------+----------+----------------------------------------------------+
 | ``font_path``            | Sequence | List of paths that will be searched by             |
 |                          |          | :meth:`procgame.dmd.font_named`.                   |
 +--------------------------+----------+----------------------------------------------------+
@@ -115,3 +121,4 @@ Example Configuration
 	    z: SF4
 	    /: SF2
 	desktop_dmd_scale: 2
+	dmd_cache_path: ~/.pyprocgame/dmd_cache
