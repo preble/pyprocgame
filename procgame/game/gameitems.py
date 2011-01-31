@@ -68,9 +68,13 @@ class Driver(GameItem):
 	def pulse(self, milliseconds=None):
 		"""Enables this driver for `milliseconds`.
 		
-		If no parameters are provided or `milliseconds` is `None`, :attr:`default_pulse_time` is used."""
+		If no parameters are provided or `milliseconds` is `None`, :attr:`default_pulse_time` is used.
+		``ValueError`` will be raised if `milliseconds` is outside of the range 0-255.
+		"""
 		if milliseconds == None:
 			milliseconds = self.default_pulse_time
+		if not milliseconds in range(256):
+			raise ValueError, 'milliseconds must be in range 0-255.'
 		self.logger.debug("Driver %s - pulse %d", self.name, milliseconds)
 		self.game.proc.driver_pulse(self.number, milliseconds)
 		self.last_time_changed = time.time()
