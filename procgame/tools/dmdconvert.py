@@ -1,99 +1,24 @@
 import sys
 import os
-sys.path.append(sys.path[0]+'/..') # Set the path so we can find procgame.  We are assuming (stupidly?) that the first member is our directory.
 import procgame.dmd
 import time
-#import pygame.image
-import Image
 import re
 import string
 
-class ImageSequence:
-	"""Iterates over all images in a sequence (of PIL Images)."""
-	# Source: http://www.pythonware.com/library/pil/handbook/introduction.htm
-	def __init__(self, im):
-		self.im = im
-	def __getitem__(self, ix):
-		try:
-			if ix:
-				self.im.seek(ix)
-			return self.im
-		except EOFError:
-			raise IndexError # end of sequence
+import logging
+logging.basicConfig(level=logging.WARNING, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-def gif_frames(src):
-	"""Returns an array of frames to be added to the animation."""
-	frames = []
-	
-	# We have to do some special stuff for animated GIFs: check for the background index, and if we get it use the last frame's value.
-	transparent_idx = -1
-	background_idx = -1
-	if 'transparency' in src.info:
-		transparent_idx = src.info['transparency']
-	if 'background' in src.info:
-		background_idx = src.info['background']
-	last_frame = None
-	
-	(w, h) = src.size
-	
-	for src_im in ImageSequence(src):
-		reduced = src.convert("L") #.quantize(palette=pal_im).convert("P", palette=Image.ADAPTIVE, colors=4)#
-		
-		frame = procgame.dmd.Frame(w, h)
-		
-		for x in range(w):
-			for y in range(h):
-				idx = src_im.getpixel((x, y)) # Get the palette index for this pixel
-				if idx == background_idx and last_frame != None:
-					if last_frame == None:
-						color = 0xff # Don't have a good option here.
-					else:
-						color = last_frame.get_dot(x,y)
-				else:
-					color = int((reduced.getpixel((x,y))/255.0)*15)
-				frame.set_dot(x=x, y=y, value=color)
-				
-		frames += [frame]
-		last_frame = frame
-		
-	return frames
 
 def load_and_append_image(anim, filename):
 	if not os.path.exists(filename):
-		#print "Not found:", filename
 		return False
-	print "Appending ", filename
-	src = Image.open(filename)
-	last_filename = filename
+	print "Appending", filename
 	
-	(w, h) = src.size
-	if len(anim.frames) > 0 and (w != anim.width or h != anim.height):
-		print "ERROR: Image sizes must be uniform!  Anim is %dx%d, image is %dx%d" % (w, h, anim.width, anim.height)
-		sys.exit(1)
-	
-	(anim.width, anim.height) = (w, h)
-	
-	if filename.endswith('.gif'):
-		anim.frames += gif_frames(src)
-	else:
-		alpha = None
-		try:
-			alpha = Image.fromstring('L', src.size, src.tostring('raw', 'A'))
-		except:
-			pass # No alpha channel available?
-		
-		reduced = src.convert("L")
-		
-		frame = procgame.dmd.Frame(w, h)
-		
-		for x in range(w):
-			for y in range(h):
-				color = int((reduced.getpixel((x,y))/255.0)*15)
-				if alpha:
-					color += int((alpha.getpixel((x,y))/255.0)*15) << 4
-				frame.set_dot(x=x, y=y, value=color)
-		
-		anim.frames += [frame]
+	tmp = procgame.dmd.Animation().load(filename, allow_cache=False)
+	if len(tmp.frames) > 0:
+		first_frame = tmp.frames[0]
+		anim.width, anim.height = first_frame.width, first_frame.height
+	anim.frames += tmp.frames
 	
 	return True
 
