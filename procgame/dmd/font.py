@@ -17,6 +17,9 @@ class Font(object):
 	tracking = 0
 	"""Number of dots to adjust the horizontal position between characters, in addition to the last character's width."""
 	
+	composite_op = 'copy'
+	"""Composite operation used by :meth:`draw` when calling :meth:`~pinproc.DMDBuffer.copy_rect`."""
+	
 	def __init__(self, filename=None):
 		super(Font, self).__init__()
 		self.__anim = Animation()
@@ -69,7 +72,7 @@ class Font(object):
 			char_x = self.char_size * (char_offset % 10)
 			char_y = self.char_size * (char_offset / 10)
 			width = self.char_widths[char_offset]
-			Frame.copy_rect(dst=frame, dst_x=x, dst_y=y, src=self.bitmap, src_x=char_x, src_y=char_y, width=width, height=self.char_size)
+			Frame.copy_rect(dst=frame, dst_x=x, dst_y=y, src=self.bitmap, src_x=char_x, src_y=char_y, width=width, height=self.char_size, op=self.composite_op)
 			x += width + self.tracking
 		return x
 	
