@@ -1,4 +1,4 @@
-from dmd import *
+from procgame.dmd import Frame, font_named
 
 class MarkupFrameGenerator:
 	"""Renders a :class:`~procgame.dmd.Frame` for given text-based markup.
