@@ -89,7 +89,6 @@ class ServiceMode(ServiceModeList):
 		self.name = 'Service Mode'
 		self.tests = Tests(self.game, self.priority+1, font, extra_tests)
 		self.items = [self.tests]
-		print self.game.game_data
 		if len(self.game.settings) > 0: 
 			self.settings = Settings(self.game, self.priority+1, font, 'Settings', self.game.settings)
 			self.items.append(self.settings)
@@ -304,18 +303,12 @@ class SettingsEditor(ServiceModeList):
 		for item in sorted(itemlist.iterkeys()):
 			#self.items.append( EditItem(str(item), itemlist[item]['options'], itemlist[item]['value'] ) )
 			if 'increments' in itemlist[item]:
-				print "item"
-				print str(item)
-				print "increments:"
-				print itemlist[item]
 				num_options = (itemlist[item]['options'][1]-itemlist[item]['options'][0]) / itemlist[item]['increments']
 				option_list = []
 				for i in range(0,num_options):
 					option_list.append(itemlist[item]['options'][0] + (i * itemlist[item]['increments']))
 				self.items.append( EditItem(str(item), option_list, self.game.user_settings[self.name][item]) )
 			else:
-				print "options"
-				print itemlist[item]['options']
 				self.items.append( EditItem(str(item), itemlist[item]['options'], self.game.user_settings[self.name][item]) )
 		self.state = 'nav'
 		self.stop_blinking = True
