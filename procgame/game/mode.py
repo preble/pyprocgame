@@ -134,13 +134,13 @@ class Mode(object):
 		"""
 		if type(event_type) == str:
 			event_type = {'closed':1, 'open':2}[event_type]
-		self.__delayed += [{'name':name, 'time':time.time()+delay, 'handler':handler, 'type':event_type, 'param':param}]
+		self.__delayed.append(Mode.Delayed(name=name, time=time.time()+delay, handler=handler, event_type=event_type, param=param))
 		try:
-			self.__delayed.sort(lambda x, y: int((x['time'] - y['time'])*100))
+			self.__delayed.sort(lambda x, y: int((x.time - y.time)*100))
 		except TypeError, ex:
 			# Debugging code:
 			for x in self.__delayed:
-				print(x['name'], x['time'], type(x['time']), x['handler'], x['type'], x['param'])
+				print(x)
 			raise ex
 	
 	def cancel_delayed(self, name):
@@ -149,7 +149,7 @@ class Mode(object):
 			for n in name:
 				self.cancel_delayed(n)
 		else:
-			self.__delayed = filter(lambda x: x['name'] != name, self.__delayed)
+			self.__delayed = filter(lambda x: x.name != name, self.__delayed)
 	
 	def handle_event(self, event):
 		# We want to turn this event into a function call.
@@ -160,7 +160,7 @@ class Mode(object):
 		# Remove all items that are for this switch (sw_name) but for a different state (type).
 		# Put another way, keep delayed items pertaining to other switches, plus delayed items 
 		# pertaining to this switch for another state.
-		self.__delayed = filter(lambda x: not (sw_name == x['name'] and x['type'] != event['type']), self.__delayed)
+		self.__delayed = filter(lambda x: not (sw_name == x.name and x.event_type != event['type']), self.__delayed)
 		
 		filt = lambda x: (x['type'] == event['type']) and (x['name'] == sw_name)
 		matches = filter(filt, self.__accepted_switches)
@@ -199,18 +199,28 @@ class Mode(object):
 		"""Called by the GameController to dispatch any delayed events."""
 		t = time.time()
 		for item in self.__delayed:
-			if item['time'] <= t:
-				handler = item['handler']
-				if item['param'] != None:
-					handler(item['param'])
+			if item.time <= t:
+				handler = item.handler
+				if item.param != None:
+					handler(item.param)
 				else:
 					handler()
-		self.__delayed = filter(lambda x: x['time'] > t, self.__delayed)
+		self.__delayed = filter(lambda x: x.time > t, self.__delayed)
 	def __str__(self):
 		return "%s  pri=%d" % (type(self).__name__, self.priority)
 	def update_lamps(self):
 		"""Called by the GameController re-apply active lamp schedules"""
 		pass
+	
+	class Delayed:
+		def __init__(self, name, time, handler, event_type, param):
+			self.name = name
+			self.time = time
+			self.handler = handler
+			self.event_type = event_type
+			self.param = param
+		def __str__(self):
+			return '<name=%s time=%s event_type=%s>' % (self.name, self.time, self.event_type)
 
 class ModeQueue(object):
 	"""docstring for ModeQueue"""
