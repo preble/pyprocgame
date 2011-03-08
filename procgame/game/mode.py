@@ -108,7 +108,7 @@ class Mode(object):
 			return
 		d = {'name':name, 'type':et, 'delay':delay, 'handler':handler, 'param':sw}
 		if d not in self.__accepted_switches:
-			self.__accepted_switches += [d]
+			self.__accepted_switches.append(Mode.AcceptedSwitch(name=name, event_type=et, delay=delay, handler=handler, param=sw))
 	
 	def status_str(self):
 		return self.__class__.__name__
@@ -162,16 +162,15 @@ class Mode(object):
 		# pertaining to this switch for another state.
 		self.__delayed = filter(lambda x: not (sw_name == x.name and x.event_type != event['type']), self.__delayed)
 		
-		filt = lambda x: (x['type'] == event['type']) and (x['name'] == sw_name)
-		matches = filter(filt, self.__accepted_switches)
-		for match in matches:
-			if match['delay'] == None:
-				handler = match['handler']
-				result = handler(self.game.switches[match['name']])
+		filt = lambda accepted: (accepted.event_type == event['type']) and (accepted.name == sw_name)
+		for accepted in filter(filt, self.__accepted_switches):
+			if accepted.delay == None:
+				handler = accepted.handler
+				result = handler(self.game.switches[accepted.name])
 				if result == SwitchStop:
 					handled = True
 			else:
-				self.delay(name=sw_name, event_type=match['type'], delay=match['delay'], handler=match['handler'], param=match['param'])
+				self.delay(name=sw_name, event_type=accepted.event_type, delay=accepted.delay, handler=accepted.handler, param=accepted.param)
 		return handled
 		
 	def mode_started(self):
@@ -212,6 +211,18 @@ class Mode(object):
 		"""Called by the GameController re-apply active lamp schedules"""
 		pass
 	
+	# Data structure used by the __accepted_switches array:
+	class AcceptedSwitch:
+		def __init__(self, name, event_type, delay, handler, param):
+			self.name = name
+			self.event_type = event_type
+			self.delay = delay
+			self.handler = handler
+			self.param = param
+		def __str__(self):
+			return '<name=%s event_type=%s delay=%s>' % (self.name, self.event_type, self.delay)
+	
+	# Data structure used by the __delayed array:
 	class Delayed:
 		def __init__(self, name, time, handler, event_type, param):
 			self.name = name
