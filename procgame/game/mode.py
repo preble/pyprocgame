@@ -113,7 +113,7 @@ class Mode(object):
 	def status_str(self):
 		return self.__class__.__name__
 	
-	def delay(self, name, event_type, delay, handler, param=None, param2=None):
+	def delay(self, name, event_type, delay, handler, param=None):
 		"""Schedule the run loop to call the given handler at a later time.
 		
 		Keyword arguments:
@@ -128,21 +128,19 @@ class Mode(object):
 			Function to be called once delay seconds have elapsed.
 		``param``
 			Value to be passed as the first (non-self) argument to handler.
-		``param2``
-			Value to be passed as the second (non-self) argument to handler.
 		
 		If param is None, handler's signature must be ``handler(self)``.  Otherwise,
 		it is ``handler(self, param)`` to match the switch method handler pattern.
 		"""
 		if type(event_type) == str:
 			event_type = {'closed':1, 'open':2}[event_type]
-		self.__delayed += [{'name':name, 'time':time.time()+delay, 'handler':handler, 'type':event_type, 'param':param, 'param2':param2}]
+		self.__delayed += [{'name':name, 'time':time.time()+delay, 'handler':handler, 'type':event_type, 'param':param}]
 		try:
 			self.__delayed.sort(lambda x, y: int((x['time'] - y['time'])*100))
 		except TypeError, ex:
 			# Debugging code:
 			for x in self.__delayed:
-				print(x['name'], x['time'], type(x['time']), x['handler'], x['type'], x['param'], x['param2'])
+				print(x['name'], x['time'], type(x['time']), x['handler'], x['type'], x['param'])
 			raise ex
 	
 	def cancel_delayed(self, name):
@@ -158,7 +156,10 @@ class Mode(object):
 		sw_name = self.game.switches[event['value']].name
 		handled = False
 
-		# Filter out all of the delayed events that have been disqualified by this state change:
+		# Filter out all of the delayed events that have been disqualified by this state change.
+		# Remove all items that are for this switch (sw_name) but for a different state (type).
+		# Put another way, keep delayed items pertaining to other switches, plus delayed items 
+		# pertaining to this switch for another state.
 		self.__delayed = filter(lambda x: not (sw_name == x['name'] and x['type'] != event['type']), self.__delayed)
 		
 		filt = lambda x: (x['type'] == event['type']) and (x['name'] == sw_name)
