@@ -62,7 +62,7 @@ class FakePinPROC(object):
 		return self.drivers[number].state
 
 	# Switch rule methods
-	def switch_update_rule(self, num, state, rule_params, drivers):
+	def switch_update_rule(self, num, state, rule_params, drivers, drive_outputs_now=False):
 		""" Stores P-ROC switch rules in an internal switch_rules list. """
 		# Convert the pyprocgame event name to a pinproc event.
 		if state == 'closed_debounced': 

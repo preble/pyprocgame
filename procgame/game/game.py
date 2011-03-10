@@ -262,8 +262,8 @@ class GameController(object):
 		# We want to receive events for all of the defined switches:
 		self.logger.info("Programming switch rules...")
 		for switch in self.switches:
-			self.proc.switch_update_rule(switch.number, 'closed_debounced', {'notifyHost':True, 'reloadActive':False}, [])
-			self.proc.switch_update_rule(switch.number, 'open_debounced', {'notifyHost':True, 'reloadActive':False}, [])
+			self.proc.switch_update_rule(switch.number, 'closed_debounced', {'notifyHost':True, 'reloadActive':False}, [], False)
+			self.proc.switch_update_rule(switch.number, 'open_debounced', {'notifyHost':True, 'reloadActive':False}, [], False)
 		
 		# Configure the initial switch states:
 		states = self.proc.switch_get_states()
@@ -344,26 +344,29 @@ class GameController(object):
 				switch_num = self.switches[flipper].number
 
 				# Chck to see if the flipper should be activated now.
-				if enable:
-					if self.switches[flipper].is_active():
-						self.coils[flipper+'Main'].pulse(34)
-						self.coils[flipper+'Hold'].pulse(0)
-					else: self.coils[flipper+'Hold'].disable()
-				else: self.coils[flipper+'Hold'].disable()
-
+				#if enable:
+				#	if self.switches[flipper].is_active():
+				#		self.coils[flipper+'Main'].pulse(34)
+				#		self.coils[flipper+'Hold'].pulse(0)
+				#	else: self.coils[flipper+'Hold'].disable()
+				#else: self.coils[flipper+'Hold'].disable()
 
 				drivers = []
 				if enable:
 					drivers += [pinproc.driver_state_pulse(main_coil.state(), 34)]
 					drivers += [pinproc.driver_state_pulse(hold_coil.state(), 0)]
-				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
+				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers, len(drivers) > 0)
 			
 				drivers = []
 				if enable:
 					drivers += [pinproc.driver_state_disable(main_coil.state())]
 					drivers += [pinproc.driver_state_disable(hold_coil.state())]
 	
-				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
+				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers, len(drivers) > 0)
+
+				if not enable:
+					main_coil.disable()
+					hold_coil.disable()
 
 			# Enable the flipper relay on wpcAlphanumeric machines
                         if self.machine_type == pinproc.MachineTypeWPCAlphanumeric:
@@ -380,23 +383,26 @@ class GameController(object):
 				switch_num = pinproc.decode(self.machine_type, str(self.switches[flipper].number))
 
 				# Check to see if the flipper should be activated now.
-				if enable:
-					if self.switches[flipper].is_active():
-						self.coils[flipper+'Main'].patter(3, 22, 34)
-					else: self.coils[flipper+'Main'].disable()
-				else: self.coils[flipper+'Main'].disable()
+				#if enable:
+				#	if self.switches[flipper].is_active():
+				#		self.coils[flipper+'Main'].patter(3, 22, 34)
+				#	else: self.coils[flipper+'Main'].disable()
+				#else: self.coils[flipper+'Main'].disable()
 
 				drivers = []
 				if enable:
 					drivers += [pinproc.driver_state_patter(main_coil.state(), 3, 22, 34)]
 	
-				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
+				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers, len(drivers) > 0)
 			
 				drivers = []
 				if enable:
 					drivers += [pinproc.driver_state_disable(main_coil.state())]
 	
-				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers)
+				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers, len(drivers) > 0)
+
+				if not enable:
+					main_coil.disable()
 	
 		for bumper in self.config['PRBumpers']:
 			switch_num = self.switches[bumper].number
@@ -406,35 +412,35 @@ class GameController(object):
 			if enable:
 				drivers += [pinproc.driver_state_pulse(coil.state(), 20)]
 
-			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':True}, drivers)
+			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':True}, drivers, False)
 
-	def install_switch_rule_coil_disable(self, switch_num, switch_state, coil_name, notify_host, enable, reload_active = False):
+	def install_switch_rule_coil_disable(self, switch_num, switch_state, coil_name, notify_host, enable, reload_active = False, drive_coil_now_if_valid=False):
 		coil = self.coils[coil_name];
 		drivers = []
 		if enable:
 			drivers += [pinproc.driver_state_disable(coil.state())]
-		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host, 'reloadActive':reload_active}, drivers)
+		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host, 'reloadActive':reload_active}, drivers, drive_coil_now_if_valid)
 
-	def install_switch_rule_coil_pulse(self, switch_num, switch_state, coil_name, pulse_duration, notify_host, enable, reload_active = False):
+	def install_switch_rule_coil_pulse(self, switch_num, switch_state, coil_name, pulse_duration, notify_host, enable, reload_active = False, drive_coil_now_if_valid=False):
 		coil = self.coils[coil_name];
 		drivers = []
 		if enable:
 			drivers += [pinproc.driver_state_pulse(coil.state(),pulse_duration)]
-		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host, 'reloadActive':reload_active}, drivers)
+		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host, 'reloadActive':reload_active}, drivers, drive_coil_now_if_valid)
 
-	def install_switch_rule_coil_schedule(self, switch_num, switch_state, coil_name, schedule, schedule_seconds, now, notify_host, enable, reload_active = False):
+	def install_switch_rule_coil_schedule(self, switch_num, switch_state, coil_name, schedule, schedule_seconds, now, notify_host, enable, reload_active = False, drive_coil_now_if_valid=False):
 		coil = self.coils[coil_name];
 		drivers = []
 		if enable:
 			drivers += [pinproc.driver_state_schedule(coil.state(),schedule,schedule_seconds,now)]
-		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host, 'reloadActive':reload_active}, drivers)
+		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host, 'reloadActive':reload_active}, drivers, drive_coil_now_if_valid)
 
-	def install_switch_rule_coil_patter(self, switch_num, switch_state, coil_name, milliseconds_on, milliseconds_off, original_on_time, notify_host, enable, reload_active = False):
+	def install_switch_rule_coil_patter(self, switch_num, switch_state, coil_name, milliseconds_on, milliseconds_off, original_on_time, notify_host, enable, reload_active = False, drive_coil_now_if_valid=False):
 		coil = self.coils[coil_name];
 		drivers = []
 		if enable:
 			drivers += [pinproc.driver_state_patter(coil.state(),milliseconds_on,milliseconds_off,original_on_time)]
-		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host, 'reloadActive':reload_active}, drivers)
+		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host, 'reloadActive':reload_active}, drivers, drive_coil_now_if_valid)
 
 	def process_event(self, event):
 		event_type = event['type']
