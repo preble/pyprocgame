@@ -214,7 +214,7 @@ class GameController(object):
 		self.logger.info('Loading machine configuration from "%s"...', filename)
 		self.config = config_named(filename)
 		if not self.config:
-			raise ValueError, 'load_config(filename="%s") could not be found. Did you set config_path?' % (name)
+			raise ValueError, 'load_config(filename="%s") could not be found. Did you set config_path?' % (filename)
 		pairs = [('PRCoils', self.coils, Driver), 
 		         ('PRLamps', self.lamps, Driver), 
 		         ('PRSwitches', self.switches, Switch)]
