@@ -67,7 +67,7 @@ def load_and_append_text(anim, filename, dot_map = {'0':0, '1':5, '2':10, '3':15
 		y += 1
 	
 	if y != 0:
-		anin.frames.append(frame)
+		anim.frames.append(frame)
 	
 	return True
 
