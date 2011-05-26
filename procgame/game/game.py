@@ -376,7 +376,7 @@ class GameController(object):
                                         self.coils[79].pulse(0)
                                 else:
                                         self.coils[79].disable()
-                elif self.machine_type == 'sternWhitestar' or self.machine_type == 'sternSAM':
+                elif self.machine_type == pinproc.MachineTypeSternWhitestar or self.machine_type == pinproc.MachineTypeSternSAM:
 			for flipper in self.config['PRFlippers']:
 				print("  programming flipper %s" % (flipper))
 				main_coil = self.coils[flipper+'Main']
@@ -429,6 +429,7 @@ class GameController(object):
 		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host, 'reloadActive':reload_active}, drivers, drive_coil_now_if_valid)
 
 	def install_switch_rule_coil_schedule(self, switch_num, switch_state, coil_name, schedule, schedule_seconds, now, notify_host, enable, reload_active = False, drive_coil_now_if_valid=False):
+
 		coil = self.coils[coil_name];
 		drivers = []
 		if enable:
