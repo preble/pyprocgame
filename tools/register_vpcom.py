@@ -108,12 +108,13 @@ class Controller:
 		rundir = vp_game_map['rundir']
 		os.chdir(rundir)
 
-		game_config = yaml.load(open(yamlpath, 'r'))
-		machine_type = game_config['PRGame']['machineType']
-		self.game = None
+		#game_config = yaml.load(open(yamlpath, 'r'))
+		#machine_type = game_config['PRGame']['machineType']
+		#self.game = None
 		
 		klass = util.get_class(game_class,game_path)
-	 	self.game = klass(machine_type)
+	 	#self.game = klass(machine_type)
+	 	self.game = klass()
 		self.game.log("GameName: " + str(self.GameName))
 		self.game.log("SplashInfoLine: " + str(self.SplashInfoLine))
 		self.game.yamlpath = yamlpath
