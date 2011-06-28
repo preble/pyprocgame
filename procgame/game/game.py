@@ -220,7 +220,7 @@ class GameController(object):
 		         ('PRSwitches', self.switches, Switch)]
 		new_virtual_drivers = []
 		polarity = self.machine_type == pinproc.MachineTypeSternWhitestar or self.machine_type == pinproc.MachineTypeSternSAM
-
+		
 		for section, collection, klass in pairs:
 			sect_dict = self.config[section]
 			for name in sect_dict:
@@ -391,7 +391,7 @@ class GameController(object):
 
 				drivers = []
 				if enable:
-					drivers += [pinproc.driver_state_patter(main_coil.state(), 3, 22, 34)]
+					drivers += [pinproc.driver_state_patter(main_coil.state(), 2, 18, 34)]
 	
 				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers, len(drivers) > 0)
 			
