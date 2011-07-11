@@ -450,7 +450,7 @@ class GameController(object):
 			print "CTRL-C detected, quiting..."	
 			self.end_run_loop()
 		elif event_type == pinproc.EventTypeDMDFrameDisplayed: # DMD events
-			#print "% 10.3f Frame event" % (time.time()-self.t0)
+			#print "% 10.3f Frame event.  Value=%x" % (time.time()-self.t0, event_value)
 			self.dmd_event()
 		else:
 			sw = self.switches[event_value]
