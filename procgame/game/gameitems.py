@@ -78,6 +78,41 @@ class Driver(GameItem):
 		self.logger.debug("Driver %s - pulse %d", self.name, milliseconds)
 		self.game.proc.driver_pulse(self.number, milliseconds)
 		self.last_time_changed = time.time()
+	def patter(self, on_time=10, off_time=10, orig_on_time=0):
+		"""Enables a pitter-patter sequence.  
+
+		It starts by activating the driver for `orig_on_time` milliseconds.  
+		Then it repeatedly turns the driver on for `on_time` milliseconds and off for 
+		`off_time` milliseconds.
+		"""
+
+		if not orig_on_time in range(256):
+			raise ValueError, 'orig_on_time must be in range 0-255.'
+		if not on_time in range(128):
+			raise ValueError, 'on_time must be in range 0-127.'
+		if not off_time in range(128):
+			raise ValueError, 'off_time must be in range 0-127.'
+
+		self.logger.debug("Driver %s - patter on:%d, off:%d, orig_on:%d", self.name, on_time, off_time, orig_on_time)
+		self.game.proc.driver_patter(self.number, on_time, off_time, orig_on_time)
+		self.last_time_changed = time.time()
+	def pulsed_patter(self, on_time=10, off_time=10, run_time=0):
+		"""Enables a pitter-patter sequence that runs for `run_time` milliseconds.  
+
+		Until it ends, the sequence repeatedly turns the driver on for `on_time` 
+		milliseconds and off for `off_time` milliseconds.
+		"""
+
+		if not run_time in range(256):
+			raise ValueError, 'run_time must be in range 0-255.'
+		if not on_time in range(128):
+			raise ValueError, 'on_time must be in range 0-127.'
+		if not off_time in range(128):
+			raise ValueError, 'off_time must be in range 0-127.'
+
+		self.logger.debug("Driver %s - pulsed patter on:%d, off:%d, run_time:%d", self.name, on_time, off_time, run_time)
+		self.game.proc.driver_pulsed_patter(self.number, on_time, off_time, run_time)
+		self.last_time_changed = time.time()
 	def schedule(self, schedule, cycle_seconds=0, now=True):
 		"""Schedules this driver to be enabled according to the given `schedule` bitmask."""
 		self.logger.debug("Driver %s - schedule %08x", self.name, schedule)
