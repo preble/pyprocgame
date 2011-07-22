@@ -2,7 +2,7 @@ pyprocgame 1.0 Release Notes
 ============================
 
 The following change notes are a summary of changes between git hash
-`8a769c077d1c184f5dcd <http://github.com/preble/pyprocgame/commit/8a769c077d1c184f5dcd76cfb0e1275318695095>`_ and (...):
+`8a769c077d1c184f5dcd <http://github.com/preble/pyprocgame/commit/8a769c077d1c184f5dcd76cfb0e1275318695095>`_ and `1.0 <https://github.com/preble/pyprocgame/tree/1.0>`_:
 
 pyprocgame
 ----------
