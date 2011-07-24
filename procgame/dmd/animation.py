@@ -9,6 +9,7 @@ import Image
 from procgame.dmd import Frame
 from procgame import config
 import logging
+import re
 
 try:
 	import Image
@@ -135,11 +136,24 @@ class Animation(object):
 		"""
 		
 		# Allow the parameter to be a single filename, or a list of filenames.
-		paths = filename
-		if type(paths) != list:
-			paths = [paths]
-		
+		paths = list()
+		if type(filename) != list:
+			if re.search("%[0-9]*d", filename):
+				frame_index = 0
+				while True:
+					tmp_filename = filename % (frame_index)
+					if os.path.exists(tmp_filename):
+						paths += [tmp_filename]
+						frame_index += 1
+					else:
+						break;
+			else:
+				paths += [filename]
+				
 		paths = map(os.path.abspath, paths)
+		
+		# The path that is used as the key in the database
+		key_path = paths[0]
 		
 		self.frames = []
 		
@@ -148,26 +162,25 @@ class Animation(object):
 			animation_cache = AnimationCacheManager.shared_manager()
 		
 		logger = logging.getLogger('game.dmdcache')
+		t0 = time.time()
+		data = None
 		
-		# Iterate over the provided paths:
-		for path in paths:
-			
-			t0 = time.time()
-			data = None
-			
-			if animation_cache:
-				# Check the cache for this data:
-				data = animation_cache.get_at_path(path, os.path.getmtime(path))
-		
-			# If there was data in the cache:
-			if data:
-				# If it was in the cache, we know that it is in the dmd format:
-				self.populate_from_dmd_file(StringIO.StringIO(data))
-				# print "Loaded", path, "from cache",
-				logger.debug('Loaded "%s" from cache in %0.3fs', path, time.time()-t0)
-			else:
-				# Not in the cache, so we must load from disk:
+		if animation_cache:
+			# Check the cache for this data:
+			data = animation_cache.get_at_path(key_path, os.path.getmtime(key_path))
+	
+		# If there was data in the cache:
+		if data:
+			# If it was in the cache, we know that it is in the dmd format:
+			self.populate_from_dmd_file(StringIO.StringIO(data))
+			# print "Loaded", path, "from cache",
+			logger.debug('Loaded "%s" from cache in %0.3fs', key_path, time.time()-t0)
+		else:
+			# Not in the cache, so we must load from disk:
 				
+			# Iterate over the provided paths:
+			for path in paths:
+			
 				with open(path, 'rb') as f:
 					# Opening from disk.  It may be a DMD, or it may be another format.
 					# We keep track of the DMD data representation so we can save it to
@@ -186,16 +199,17 @@ class Animation(object):
 						# and then process it into a .dmd format.
 						self.populate_from_image_file(path, f)
 					
-						# Now use our normal save routine to get the DMD format data:
-						stringio = StringIO.StringIO()
-						self.save_to_dmd_file(stringio)
-						dmd_data = stringio.getvalue()
+			# Now use our normal save routine to get the DMD format data:
+			stringio = StringIO.StringIO()
+			self.save_to_dmd_file(stringio)
+			dmd_data = stringio.getvalue()
+		
+			# Finally store the data in the cache:	
+			if animation_cache:
+				print "Storing in the cache: ", key_path
+				animation_cache.set_at_path(key_path, dmd_data)
 					
-						# Finally store the data in the cache:	
-						if animation_cache:
-							animation_cache.set_at_path(path, dmd_data)
-				
-				logger.debug('Loaded "%s" from disk in %0.3fs', path, time.time()-t0)
+			logger.debug('Loaded "%s" from disk in %0.3fs', key_path, time.time()-t0)
 			
 		return self
 
@@ -215,7 +229,7 @@ class Animation(object):
 		src = Image.open(f)
 
 		(w, h) = src.size
-		if len(self.frames) > 0 and (w != anim.width or h != anim.height):
+		if len(self.frames) > 0 and (w != self.width or h != self.height):
 			raise ValueError, "Image sizes must be uniform!  Anim is %dx%d, image is %dx%d" % (w, h, self.width, self.height)
 
 		(self.width, self.height) = (w, h)
