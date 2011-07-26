@@ -1,6 +1,5 @@
 __all__ = [
 	'config',
-	'desktop',
 	'dmd',
 	'alphanumeric',
 	'auxport',
