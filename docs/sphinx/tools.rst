@@ -11,6 +11,7 @@ pyprocgame includes a number of tools to make certain tasks easier.  Your instal
 	  dmdconvert        Converts image files to .dmd files.
 	  dmdfontwidths     Interactively assign font width values.
 	  dmdplayer         Play a .dmd file.
+	  dmdsplashrom      Create a P-ROC ROM with a custom power-up image.
 	  lampshow          Play a lamp show.
 
 Without any arguments, ``procgame`` shows the available commands within the tool.  Run ``procgame`` again with the command specified in order to see information about that command::
@@ -97,3 +98,25 @@ dmdplayer
   procgame dmdplayer <file.dmd>
 
 
+.. _tool-dmdsplashrom:
+
+dmdsplashrom
+------------
+
+``dmdsplashrom`` requests a new P-ROC ROM image (.p-roc file) with a custom power-up image.  Usage::
+
+  procgame dmdsplashrom <key> <base_fpga_version> <file.dmd> <output.p-roc>
+
+``key``
+	A transaction key obtained from support@pinballcontrollers.com.
+
+``base_fpga_version``
+	Version number of the desired base P-ROC image.  Format is x.yy (ie: 1.18).
+
+``file.dmd``
+	Splash screen image in the .dmd format - must be a single frame at 128x32.
+
+``output.p-roc``
+	Filename for the new P-ROC image.  Must end in ".p-roc".
+
+All images made with this utility will have a P-ROC watermark applied, showing 'P-ROC' and the image version number.

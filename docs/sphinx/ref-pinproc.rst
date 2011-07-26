@@ -83,6 +83,77 @@ PinPROC Class
 	
 		Returns a dictionary containing the state information for the specified driver.  See :ref:`driver-state-dict` for a description of the dictionary.
 	
+	.. method:: driver_update_global_config(enable_outputs, global_polarity,use_clear,strobe_start_select,start_strobe_time,matrix_row_enable_index_0, matrix_row_enable_index_1, active_low_matrix_rows, tickle_stern_watchdog, encode_enables, watchdog_expired, watchdog_enable, watchdog_reset_time)
+	
+		``enable_outputs``
+			bool
+		
+		``global_polarity`` 
+			bool 
+		
+		``use_clear`` 
+			bool, ignored by the hardware.
+		
+		``strobe_start_select``
+			bool - use external strobe to start driver update loop. Ignored by the hardware.
+		
+		``start_strobe_time`` 
+			bool - driver update loop time.  Ignored by the hardware.
+		
+		``matrix_row_enable_index_0`` 
+			int
+		
+		``matrix_row_enable_index_1`` 
+			int
+		
+		``active_low_matrix_rows`` 
+			bool
+		
+		``tickle_stern_watchdog`` 
+			bool
+		
+		``encode_enables`` 
+			bool - use muxed enables or individual lines.
+		
+		``watchdog_expired`` 
+			bool 
+		
+		``watchdog_enable`` 
+			bool
+		
+		``watchdog_reset_time`` 
+			int - milliseconds
+
+	.. method:: driver_update_group_config(group_num, slow_time, enable_index, row_activate_index, row_enable_select, matrixed, polarity, active, disable_strobe_after)
+	
+		``group_num`` 
+			int
+		
+		``slow_time`` 
+			int - milliseconds to keep each group active matrix - only.
+		
+		``enable_index`` 
+			int - enable index to use for each group of data.
+		
+		``row_activate_index`` 
+			int - data bit to enable for the group's row - matrix only.
+		
+		``row_enable_select`` 
+			int - which of the 2 global matrix_row_enable_indexes to which to send the row_activate_index - matrix only
+		
+		``matrixed`` 
+			bool
+		
+		``polarity`` 
+			bool - takes precedence over global polarity.
+
+		``active`` 
+			bool - enables the group.
+		
+		``disable_strobe_after`` 
+			bool - set if the data should be disabled after it has been driven - used mostly with matrix groups.
+		
+	
 	.. method:: driver_update_state(dict)
 	
 		Updates a driver configuration using the passed dictionary.  The driver number is contained within the dictionary.  See :ref:`driver-state-dict` for a description of the dictionary.
@@ -152,6 +223,17 @@ PinPROC Class
 	.. method:: watchdog_tickle()
 	
 		This method resets the hardware watchdog timer.  The timer should be tickled regularly, as the drivers are disabled when the watchdog timer expires.  The default watchdog timer period is 1 second.
+	
+	.. method:: write_data(module, address, data)
+	
+		``module``
+			P-ROC FPGA module number
+	
+		``address``
+			P-ROC FPGA Register address
+
+		``data``
+			32-bit data
 
 
 Functions, Constants, and Data Structures
@@ -199,8 +281,8 @@ Driver State Dictionary
 ``state``                On or off: 1 or 0.
 ``waitForFirstTimeSlot`` 1 instructs P-ROC to wait for the next time slot.
 ``timeslots``            32-bit driver schedule.
-``patterOnTime``         0-255.
-``patterOffTime``        0-255.
+``patterOnTime``         0-127.
+``patterOffTime``        0-127.
 ``patterEnable``         0 or 1 to enable patter behavior.
 ======================== ==================================
 

@@ -1,0 +1,21 @@
+pyprocgame 1.0 Release Notes
+============================
+
+The following change notes are a summary of changes between git hash
+`8a769c077d1c184f5dcd <http://github.com/preble/pyprocgame/commit/8a769c077d1c184f5dcd76cfb0e1275318695095>`_ and (...):
+
+pyprocgame
+----------
+
+	- Added :ref:`tool-dmdsplashrom` procgame tool which enables requesting custom power-up DMD images.
+
+
+pypinproc
+---------
+
+Added new methods supporting pinballcontroller.com's new `Power Driver Boards <http://pinballcontrollers.com/index.php/products/driver-boards>`_:
+
+	- :meth:`pinproc.PinPROC.driver_update_global_config`
+	- :meth:`pinproc.PinPROC.driver_update_group_config`
+	- :meth:`pinproc.PinPROC.write_data`
+

@@ -119,7 +119,10 @@ class Mode(object):
 		Keyword arguments:
 		
 		``name``
-			String name of the event, usually the corresponding switch name.
+			String name of the event.
+			Note that this name should not conflict with a switch name, as any
+			scheduled delay for a switch name will be canceled when that switch
+			changes state.
 		``event_type``
 			'closed', 'open', or None.
 		``delay``
