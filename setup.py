@@ -15,7 +15,7 @@ If you want to develop using the source code directly and not install, you can r
 See "Development Mode" at http://peak.telecommunity.com/DevCenter/setuptool for more.
 
 """
-VERSION = '0.9.1'
+VERSION = '1.0.1'
 
 from ez_setup import use_setuptools
 use_setuptools()
