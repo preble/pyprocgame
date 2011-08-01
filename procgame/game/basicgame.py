@@ -1,7 +1,6 @@
 from . import GameController
 from ..dmd import DisplayController, font_named
 from ..modes import ScoreDisplay
-from ..desktop import Desktop
 from .. import config
 from .. import auxport
 from .. import alphanumeric
@@ -38,12 +37,20 @@ class BasicGame(GameController):
 		else:
 			self.dmd = DisplayController(self, width=128, height=32, message_font=font_named('Font07x5.dmd'))
 		self.score_display = ScoreDisplay(self, 0)
-		self.desktop = Desktop()
+
+		
+		use_desktop = config.value_for_key_path(keypath='use_desktop', default=True)
+		if use_desktop: 
+			import procgame.desktop
+			from ..desktop import Desktop
+			self.desktop = Desktop()
+
 		if self.dmd: self.dmd.frame_handlers.append(self.set_last_frame)
 		key_map_config = config.value_for_key_path(keypath='keyboard_switch_map', default={})
-		for k, v in key_map_config.items():
-			self.desktop.add_key_map(ord(str(k)), pinproc.decode(machine_type, v))
-	
+		if self.desktop:
+			for k, v in key_map_config.items():
+				self.desktop.add_key_map(ord(str(k)), pinproc.decode(machine_type, v))
+
 	def reset(self):
 		"""Calls super's reset and adds the :class:`ScoreDisplay` mode to the mode queue."""
 		super(BasicGame, self).reset()
@@ -56,7 +63,7 @@ class BasicGame(GameController):
 	def get_events(self):
 		"""Overriding GameController's implementation in order to append keyboard events."""
 		events = super(BasicGame, self).get_events()
-		events.extend(self.desktop.get_keyboard_events())
+		if self.desktop: events.extend(self.desktop.get_keyboard_events())
 		return events
 	
 	def tick(self):
@@ -88,7 +95,7 @@ class BasicGame(GameController):
 		self.last_frame = frame
 	
 	def show_last_frame(self):
-		if self.last_frame:
+		if self.desktop and self.last_frame:
 			self.desktop.draw(self.last_frame)
 			self.last_frame = None
 
