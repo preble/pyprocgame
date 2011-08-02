@@ -61,7 +61,7 @@ class ExpandTransition(LayerTransitionBase):
 		self.direction = direction
 		self.progress_per_frame = 1.0/11.0
 	def transition_frame(self, from_frame, to_frame):
-		frame = Frame(width=from_frame.width, height=from_frame.height)
+		frame = from_frame.copy()
 		dst_x, dst_y = 0, 0
 		prog = self.progress
 		if self.in_out == 'out':
@@ -72,7 +72,7 @@ class ExpandTransition(LayerTransitionBase):
 		}[self.direction]
 
 		if (self.direction == 'vertical'):
-                	width = frame.width
+			width = frame.width
 			height = prog*frame.height
 		else:
 			width = prog*frame.width
