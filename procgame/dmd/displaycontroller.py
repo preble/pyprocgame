@@ -2,7 +2,7 @@ from dmd import *
 from layers import *
 
 
-class DisplayController:
+class DisplayController(object):
 	"""Manages the process of obtaining DMD frames from active modes and compositing them together for
 	display on the DMD.
 	
@@ -70,3 +70,5 @@ class DisplayController:
 		if frame != None:
 			for handler in self.frame_handlers:
 				handler(frame)
+				
+		return frame
