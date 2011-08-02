@@ -110,12 +110,15 @@ def main():
 	if command == 'submit':
 		dmd_path = sys.argv[3]
 		fpga_base = sys.argv[4]
+		#wm_x = sys.argv[5]
+		#wm_y = sys.argv[6]
 
 		with open(dmd_path, 'rb') as f:
 			dmd_data = f.read()
 
 		print 'length:', len(dmd_data)
 
+		#job_key = client.submit_job(dmd_data, fpga_base, wm_x, wm_y)
 		job_key = client.submit_job(dmd_data, fpga_base)
 		print 'Got job key:', job_key
 
