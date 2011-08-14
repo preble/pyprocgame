@@ -152,14 +152,12 @@ class SoundController(object):
 	#def on_rm_shred(self, num, name):
 	#	pass
 
-class TestGame(game.GameController):
+class TestGame(game.BasicGame):
 	"""docstring for TestGame"""
 	def __init__(self, machine_type):
 		super(TestGame, self).__init__(machine_type)
 		self.sound = SoundController(self)
 		self.dmd = dmd.DisplayController(self, width=128, height=32, message_font=font_tiny7)
-		self.desktop = procgame.desktop.Desktop()
-		self.get_keyboard_events = self.desktop.get_keyboard_events
 
 	def save_settings(self):
 		pass
