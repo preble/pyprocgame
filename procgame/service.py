@@ -138,7 +138,7 @@ class CoilTest(ServiceModeList):
 	def mode_started(self):
 		super(CoilTest, self).mode_started()
 		self.action = 'manual'
-		self.game.lamps.startButton.schedule(schedule=0xff00ff00, cycle_seconds=0, now=False)
+		if self.game.lamps.has_key('startButton'): self.game.lamps.startButton.schedule(schedule=0xff00ff00, cycle_seconds=0, now=False)
 		self.delay(name='auto', event_type=None, delay=2.0, handler=self.process_auto)
 
 	def process_auto(self):
@@ -150,11 +150,11 @@ class CoilTest(ServiceModeList):
 	def sw_enter_active(self,sw):
 		if (self.action == 'manual'):
 			self.action = 'auto'
-			self.game.lamps.startButton.disable()
+			if self.game.lamps.has_key('startButton'): self.game.lamps.startButton.disable()
 			self.instruction_layer.set_text('Auto pulse')
 		elif (self.action == 'auto'):
 			self.action = 'manual'
-			self.game.lamps.startButton.schedule(schedule=0xff00ff00, cycle_seconds=0, now=False)
+			if self.game.lamps.has_key('startButton'): self.game.lamps.startButton.schedule(schedule=0xff00ff00, cycle_seconds=0, now=False)
 			self.instruction_layer.set_text('Pulse with start button')
 		return True
 
