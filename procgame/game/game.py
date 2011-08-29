@@ -230,10 +230,15 @@ class GameController(object):
 				if 'bus' in item_dict and item_dict['bus'] == 'AuxPort':
 					item = VirtualDriver(self, name, number, polarity)
 					new_virtual_drivers += [number]
+					
 				else:
 					item = klass(self, name, number)
 					if 'type' in item_dict:
 						item.type = item_dict['type']
+
+					if klass==Switch:
+						if (('debounce' in item_dict and item_dict['debounce'] == False) or number >= pinproc.SwitchNeverDebounceFirst):
+							item.debounce = False
 				collection.add(name, item)
 
 		# In the P-ROC, VirtualDrivers will conflict with regular drivers on the same group.
@@ -262,8 +267,12 @@ class GameController(object):
 		# We want to receive events for all of the defined switches:
 		self.logger.info("Programming switch rules...")
 		for switch in self.switches:
-			self.proc.switch_update_rule(switch.number, 'closed_debounced', {'notifyHost':True, 'reloadActive':False}, [], False)
-			self.proc.switch_update_rule(switch.number, 'open_debounced', {'notifyHost':True, 'reloadActive':False}, [], False)
+			if switch.debounce:
+				self.proc.switch_update_rule(switch.number, 'closed_debounced', {'notifyHost':True, 'reloadActive':False}, [], False)
+				self.proc.switch_update_rule(switch.number, 'open_debounced', {'notifyHost':True, 'reloadActive':False}, [], False)
+			else:
+				self.proc.switch_update_rule(switch.number, 'closed_nondebounced', {'notifyHost':True, 'reloadActive':False}, [], False)
+				self.proc.switch_update_rule(switch.number, 'open_nondebounced', {'notifyHost':True, 'reloadActive':False}, [], False)
 		
 		# Configure the initial switch states:
 		states = self.proc.switch_get_states()
@@ -454,11 +463,15 @@ class GameController(object):
 			self.dmd_event()
 		else:
 			sw = self.switches[event_value]
-			recvd_state = event_type == pinproc.EventTypeSwitchClosedDebounced
+
+			if sw.debounce:
+				recvd_state = event_type == pinproc.EventTypeSwitchClosedDebounced
+			else:
+				recvd_state = event_type == pinproc.EventTypeSwitchClosedNondebounced
 
 			if sw.state != recvd_state:
 				sw.set_state(recvd_state)
-				self.logger.info("%s:\t%s", sw.name, sw.state_str())
+				self.logger.info("%s:\t%s\t(%s)", sw.name, sw.state_str(),event_type)
 				self.modes.handle_event(event)
 			else:
 				#self.logger.warning("DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s", sw.name, sw.state_str())

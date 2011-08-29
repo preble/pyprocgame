@@ -99,7 +99,10 @@ class Mode(object):
 				adjusted_event_type = 'closed'
 		else:
 			adjusted_event_type = event_type
-		et = {'closed':1, 'open':2}[adjusted_event_type]
+		if self.game.switches[name].debounce:
+			et = {'closed':1, 'open':2}[adjusted_event_type]
+		else:
+			et = {'closed':3, 'open':4}[adjusted_event_type]
 		sw = None
 		try:
 			sw = self.game.switches[name]

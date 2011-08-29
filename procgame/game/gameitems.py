@@ -152,6 +152,8 @@ class Switch(GameItem):
 	type = None
 	"""``'NO'`` (normally open) or ``'NC'`` (normally closed).  Mechanical switches are usually NO, while opto switches are almost always NC.  
 	This is used to determine whether a switch is active ("in contact with the ball") without ruleset code needing to be concerned with the details of the switch hardware."""
+	debounce = True
+	"""`True` indicates switch events should only change the state when they are debounced events."""
 	
 	def __init__(self, game, name, number, type='NO'):
 		GameItem.__init__(self, game, name, number)
