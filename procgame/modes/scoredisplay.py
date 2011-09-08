@@ -57,7 +57,12 @@ class ScoreDisplay(Mode):
 	def __init__(self, game, priority, left_players_justify="right"):
 		super(ScoreDisplay, self).__init__(game, priority)
 		self.layer = ScoreLayer(128, 32, self)
+                self.animated_layer = dmd.AnimatedTextLayer(128/2, 2, None, "center",4)
 		self.font_common = dmd.font_named("Font07x5.dmd")
+
+                #self.font_23x12 = dmd.font_named("font_23x12_bold.dmd")
+                self.font_23x12 = dmd.font_named("font_23x12_animated.dmd")
+
 		self.font_18x12 = dmd.font_named("Font18x12.dmd")
 		self.font_18x11 = dmd.font_named("Font18x11.dmd")
 		self.font_18x10 = dmd.font_named("Font18x10.dmd")
@@ -88,10 +93,13 @@ class ScoreDisplay(Mode):
 		else:
 			return locale.format("%d", score, True)
 	
-	def font_for_score_single(self, score):
+	def font_for_score_single(self, score, font=None):
 		"""Returns the font to be used for displaying the given numeric score value in a single-player game."""
-		if score <   1e10:
-			return self.font_18x12
+
+                if score <   1e10 and font:
+                        return font
+                elif score <   1e10:
+			return self.font_23x12
 		elif score < 1e11:
 			return self.font_18x11
 		else:
@@ -135,14 +143,18 @@ class ScoreDisplay(Mode):
 			common.set_text("BALL %d      FREE PLAY" % (self.game.ball))
 		self.layer.layers += [common]
 
-	def update_layer_1p(self):
+	def update_layer_1p(self, font=None):
 		if self.game.current_player() == None:
 			score = 0 # Small hack to make *something* show up on startup.
 		else:
 			score = self.game.current_player().score
-		layer = dmd.TextLayer(128/2, 5, self.font_for_score_single(score), "center")
-		layer.set_text(self.format_score(score))
-		self.layer.layers += [layer]
+                        
+		#layer = dmd.AnimatedTextLayer(128/2, 2, self.font_for_score_single(score,font), "center")
+                #layer.set_text(self.format_score(score))
+                #self.layer.layers += [layer]
+		self.animated_layer.set_font(self.font_for_score_single(score,font))
+                self.animated_layer.set_text(self.format_score(score))
+		self.layer.layers += [self.animated_layer]
 
 	def update_layer_4p(self):
 		for i in range(len(self.game.players[:4])): # Limit to first 4 players for now.

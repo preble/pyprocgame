@@ -44,13 +44,19 @@ class Font(object):
 			# This is so that they can be loaded as a basic bitmap, have their char widths modified, and then be saved.
 			print "Font animation file %s has 1 frame; adding one" % (filename)
 			self.__anim.frames += [Frame(self.__anim.width, self.__anim.height)]
-		elif len(self.__anim.frames) != 2:
-			raise ValueError, "Expected 2 frames: %d" % (len(self.__anim.frames))
-		self.char_size = self.__anim.width / 10
-		self.bitmap = self.__anim.frames[0]
-		self.char_widths = []
-		for i in range(96):
-			self.char_widths += [self.__anim.frames[1].get_dot(i%self.__anim.width, i/self.__anim.width)]
+		#elif len(self.__anim.frames) != 2:
+			#raise ValueError, "Expected 2 frames: %d" % (len(self.__anim.frames))
+
+
+                self.bitmap = self.__anim.frames[0]
+
+                self.char_size = self.__anim.width / 10
+
+                self.char_widths = []
+                for i in range(96):
+                    #mpc 28/4/11 load the last frame of animation for widths - changed from a fixed frame number
+                    self.char_widths += [self.__anim.frames[len(self.__anim.frames)-1].get_dot(i%self.__anim.width, i/self.__anim.width)]
+
 		return self
 	
 	def save(self, filename):
@@ -62,18 +68,19 @@ class Font(object):
 		for i in range(96):
 			out.frames[1].set_dot(i%self.__anim.width, i/self.__anim.width, self.char_widths[i])
 		out.save(filename)
-		
-	def draw(self, frame, text, x, y):
+
+	#mpc 28/4/11 added extra parameter for frame count of font frame
+	def draw(self, frame, text, x, y,frame_counter=0):
 		"""Uses this font's characters to draw the given string at the given position."""
-		for ch in text:
+                for ch in text:
 			char_offset = ord(ch) - ord(' ')
 			if char_offset < 0 or char_offset >= 96:
 				continue
 			char_x = self.char_size * (char_offset % 10)
 			char_y = self.char_size * (char_offset / 10)
 			width = self.char_widths[char_offset]
-			Frame.copy_rect(dst=frame, dst_x=x, dst_y=y, src=self.bitmap, src_x=char_x, src_y=char_y, width=width, height=self.char_size, op=self.composite_op)
-			x += width + self.tracking
+			Frame.copy_rect(dst=frame, dst_x=x, dst_y=y, src=self.__anim.frames[frame_counter], src_x=char_x, src_y=char_y, width=width, height=self.char_size, op=self.composite_op)
+			x += width + self.tracking        
 		return x
 	
 	def size(self, text):

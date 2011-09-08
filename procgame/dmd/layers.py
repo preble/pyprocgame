@@ -1,4 +1,5 @@
 from dmd import *
+from time import strftime
 
 class FrameLayer(Layer):
 	"""Displays a single frame."""
@@ -191,6 +192,169 @@ class TextLayer(Layer):
 	
 	def is_visible(self):
 		return self.frame != None
+
+
+class AnimatedTextLayer(Layer):
+	"""Layer that displays animated text."""
+	def __init__(self, x, y, font=None, justify="left", frame_time=1,opaque=False):
+		super(AnimatedTextLayer, self).__init__(opaque)
+		self.set_target_position(x, y)
+		self.font = font
+		self.started_at = None
+		self.seconds = None # Number of seconds to show the text for
+		self.frame = None # Frame that text is rendered into.
+		self.frame_old = None
+		self.justify = justify
+		self.blink_frames = None # Number of frame times to turn frame on/off
+		self.blink_frames_counter = 0
+                self.frame_count_max = 3
+                self.frame_counter = 0
+                self.text = None
+
+                self.frame_time = frame_time # Number of frames each frame should be displayed for before moving to the next.
+		self.frame_time_counter = self.frame_time
+
+
+        def set_font(self,font):
+                self.font=font
+
+                
+	def set_text(self, text, seconds=None, blink_frames=None):
+		"""Displays the given message for the given number of seconds."""
+		self.started_at = None
+		self.seconds = seconds
+		self.blink_frames = blink_frames
+		self.blink_frames_counter = self.blink_frames
+                self.text = text
+
+                return self.draw_text()
+
+
+        def draw_text(self,frame_counter=0):
+                if self.text == None:
+			self.frame = None
+                else:
+			(w, h) = self.font.size(self.text)
+			self.frame = Frame(w, h)
+			self.font.draw(self.frame, self.text, 0, 0,frame_counter)
+			if self.justify == "left":
+				(self.target_x_offset, self.target_y_offset) = (0,0)
+			elif self.justify == "right":
+				(self.target_x_offset, self.target_y_offset) = (-w,0)
+			elif self.justify == "center":
+				(self.target_x_offset, self.target_y_offset) = (-w/2,0)
+                return self
+
+
+	def next_frame(self):
+		if self.started_at == None:
+			self.started_at = time.time()
+
+		if (self.seconds != None) and ((self.started_at + self.seconds) < time.time()):
+			self.frame = None
+		elif self.blink_frames > 0:
+			if self.blink_frames_counter == 0:
+				self.blink_frames_counter = self.blink_frames
+				if self.frame == None:
+					self.frame = self.frame_old
+				else:
+					self.frame_old = self.frame
+					self.frame = None
+			else:
+				self.blink_frames_counter -= 1
+                else:
+                    
+
+                    #create a delay in the frame counter being incremented if frame_time>1
+                    self.frame_time_counter -= 1
+                    if self.frame_time_counter == 0:
+
+                        self.frame_counter += 1
+                        self.frame_time_counter = self.frame_time
+
+                    if self.frame_counter==self.frame_count_max:
+                        self.frame_counter=0
+
+
+                    #print(self.frame_counter)
+                    #create output
+                    self.draw_text(self.frame_counter)
+                    
+
+		return self.frame
+
+
+
+
+	def is_visible(self):
+		return self.frame != None
+            
+
+class DateLayer(Layer):
+	"""Layer that displays the date & time."""
+	def __init__(self, x, y, font, type="all",justify="left", opaque=False):
+		super(DateLayer, self).__init__(opaque)
+		self.set_target_position(x, y)
+		self.font = font
+		self.started_at = None
+		self.seconds = None # Number of seconds to show the text for
+		self.frame = None # Frame that text is rendered into.
+		self.frame_old = None
+		self.justify = justify
+		self.blink_frames = None # Number of frame times to turn frame on/off
+		self.blink_frames_counter = 0
+                self.type=type
+                self.date_time = None
+                self.old_date_time = None
+
+
+
+	def next_frame(self):
+
+                if self.type=='day':
+                    self.date_time = str(strftime("%A"))
+                elif self.type=='date':
+                    self.date_time = str(strftime("%d %b %Y"))
+                elif self.type=='time':
+                    self.date_time = str(strftime("%I:%M %S%p"))
+                elif self.type=='all':
+                    self.date_time = str(strftime("%d %b %Y  %I:%M %S%p"))
+
+                if self.old_date_time!=self.date_time:
+                    (w, h) = self.font.size(self.date_time)
+                    self.frame = Frame(w, h)
+                    self.font.draw(self.frame, self.date_time, 0, 0)
+                    self.old_frame = self.frame
+                    self.old_date_time = self.date_time
+
+                    if self.justify == "left":
+                        (self.target_x_offset, self.target_y_offset) = (0,0)
+                    elif self.justify == "right":
+                        (self.target_x_offset, self.target_y_offset) = (-w,0)
+                    elif self.justify == "center":
+                        (self.target_x_offset, self.target_y_offset) = (-w/2,0)
+
+                    #print("info changed")
+                else:
+                    self.frame = self.old_frame
+
+
+		if self.started_at == None:
+			self.started_at = time.time()
+		if (self.seconds != None) and ((self.started_at + self.seconds) < time.time()):
+			self.frame = None
+		elif self.blink_frames > 0:
+			if self.blink_frames_counter == 0:
+				self.blink_frames_counter = self.blink_frames
+				if self.frame == None:
+					self.frame = self.frame_old
+				else:
+					self.frame_old = self.frame
+					self.frame = None
+			else:
+				self.blink_frames_counter -= 1
+		return self.frame
+
 
 class ScriptedLayer(Layer):
 	"""Displays a set of layers based on a simple script.
