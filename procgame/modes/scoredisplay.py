@@ -54,6 +54,10 @@ class ScoreDisplay(Mode):
 	font_09x7 = None
 	"""Defaults to Font09x7.dmd."""
 	
+	credit_string_callback = None
+	"""If non-``None``, :meth:`update_layer` will call it with no parameters to get the credit string (usually FREE PLAY or CREDITS 1 or similar).
+	If this method returns the empty string no text will be shown (and any ball count will be centered).  If ``None``, FREE PLAY will be shown."""
+	
 	def __init__(self, game, priority, left_players_justify="right"):
 		super(ScoreDisplay, self).__init__(game, priority)
 		self.layer = ScoreLayer(128, 32, self)
@@ -129,10 +133,16 @@ class ScoreDisplay(Mode):
 			self.update_layer_4p()
 		# Common: Add the "BALL X ... FREE PLAY" footer.
 		common = dmd.TextLayer(128/2, 32-6, self.font_common, "center")
+		
+		credit_str = 'FREE PLAY'
+		if self.credit_string_callback:
+			credit_str = self.credit_string_callback()
 		if self.game.ball == 0:
-			common.set_text("FREE PLAY")
+			common.set_text(credit_str)
+		elif len(credit_str) > 0:
+			common.set_text("BALL %d      %s" % (self.game.ball, credit_str))
 		else:
-			common.set_text("BALL %d      FREE PLAY" % (self.game.ball))
+			common.set_text("BALL %d" % (self.game.ball))
 		self.layer.layers += [common]
 
 	def update_layer_1p(self):
