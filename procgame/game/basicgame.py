@@ -49,7 +49,7 @@ class BasicGame(GameController):
 		key_map_config = config.value_for_key_path(keypath='keyboard_switch_map', default={})
 		if self.desktop:
 			for k, v in key_map_config.items():
-				self.desktop.add_key_map(ord(str(k)), pinproc.decode(machine_type, v))
+				self.desktop.add_key_map(ord(str(k)), pinproc.decode(machine_type, str(v)))
 
 	def reset(self):
 		"""Calls super's reset and adds the :class:`ScoreDisplay` mode to the mode queue."""
