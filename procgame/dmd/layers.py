@@ -140,9 +140,17 @@ class FrameQueueLayer(Layer):
 
 class TextLayer(Layer):
 	"""Layer that displays text."""
-	def __init__(self, x, y, font, justify="left", opaque=False):
+	
+	fill_color = None
+	"""Dot value to fill the frame with.  Requres that ``width`` and ``height`` be set.  If ``None`` only the font characters will be drawn."""
+	
+	def __init__(self, x, y, font, justify="left", opaque=False, width=128, height=32, fill_color=None):
 		super(TextLayer, self).__init__(opaque)
-		self.set_target_position(x, y)
+		self.x = x
+		self.y = y
+		self.width = width
+		self.height = height
+		self.fill_color = fill_color
 		self.font = font
 		self.started_at = None
 		self.seconds = None # Number of seconds to show the text for
@@ -151,7 +159,7 @@ class TextLayer(Layer):
 		self.justify = justify
 		self.blink_frames = None # Number of frame times to turn frame on/off
 		self.blink_frames_counter = 0
-		
+
 	def set_text(self, text, seconds=None, blink_frames=None):
 		"""Displays the given message for the given number of seconds."""
 		self.started_at = None
@@ -162,14 +170,26 @@ class TextLayer(Layer):
 			self.frame = None
 		else:
 			(w, h) = self.font.size(text)
-			self.frame = Frame(w, h)
-			self.font.draw(self.frame, text, 0, 0)
-			if self.justify == "left":
-				(self.target_x_offset, self.target_y_offset) = (0,0)
-			elif self.justify == "right":
-				(self.target_x_offset, self.target_y_offset) = (-w,0)
-			elif self.justify == "center":
-				(self.target_x_offset, self.target_y_offset) = (-w/2,0)
+			x, y = 0, 0
+			if self.justify == 'left':
+				(x, y) = (0,0)
+			elif self.justify == 'right':
+				(x, y) = (-w,0)
+			elif self.justify == 'center':
+				(x, y) = (-w/2,0)
+
+			if self.fill_color != None:
+				self.set_target_position(0, 0)
+				self.frame = Frame(width=self.width, height=self.height)
+				self.frame.fill_rect(0, 0, self.width, self.height, self.fill_color)
+				self.font.draw(self.frame, text, self.x + x, self.y + y)
+			else:
+				self.set_target_position(self.x, self.y)
+				(w, h) = self.font.size(text)
+				self.frame = Frame(w, h)
+				self.font.draw(self.frame, text, 0, 0)
+				(self.target_x_offset, self.target_y_offset) = (x,y)
+
 		return self
 
 	def next_frame(self):
@@ -188,9 +208,10 @@ class TextLayer(Layer):
 			else:
 				self.blink_frames_counter -= 1
 		return self.frame
-	
+
 	def is_visible(self):
 		return self.frame != None
+
 
 class ScriptedLayer(Layer):
 	"""Displays a set of layers based on a simple script.
