@@ -116,18 +116,16 @@ class Mode(object):
 	def status_str(self):
 		return self.__class__.__name__
 	
-	def delay(self, name, event_type, delay, handler, param=None):
+	def delay(self, name=None, event_type=None, delay=0, handler=None, param=None):
 		"""Schedule the run loop to call the given handler at a later time.
 		
 		Keyword arguments:
 		
 		``name``
-			String name of the event.
-			Note that this name should not conflict with a switch name, as any
-			scheduled delay for a switch name will be canceled when that switch
-			changes state.
+			Switch name for this event.  If using this method for a delayed
+			method call, use ``None``.
 		``event_type``
-			'closed', 'open', or None.
+			'closed', 'open', or ``None``.
 		``delay``
 			Number of seconds to wait before calling the handler (float).
 		``handler``
@@ -137,6 +135,16 @@ class Mode(object):
 		
 		If param is None, handler's signature must be ``handler(self)``.  Otherwise,
 		it is ``handler(self, param)`` to match the switch method handler pattern.
+		
+		Example usage for delayed method invocation::
+		
+			def delayed_handler(self):
+				print 'thatButton was pressed 2 seconds ago!'
+			
+			def sw_thatButton_active(self):
+				# After 2 seconds, call delayed_handler() above.
+				self.delay(delay=2.0, handler=self.delayed_handler)
+		
 		"""
 		if type(event_type) == str:
 			event_type = {'closed':1, 'open':2}[event_type]
