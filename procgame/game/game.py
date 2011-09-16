@@ -462,7 +462,11 @@ class GameController(object):
 			#print "% 10.3f Frame event.  Value=%x" % (time.time()-self.t0, event_value)
 			self.dmd_event()
 		else:
-			sw = self.switches[event_value]
+			try:
+				sw = self.switches[event_value]
+			except KeyError:
+				self.logger.warning("Received switch event but couldn't find switch %s." % event_value)
+				return
 
 			if sw.debounce:
 				recvd_state = event_type == pinproc.EventTypeSwitchClosedDebounced
