@@ -464,10 +464,12 @@ class GameController(object):
 		else:
 			try:
 				sw = self.switches[event_value]
+				if 'time' in event:
+					sw.hw_timestamp = event['time']
 			except KeyError:
 				self.logger.warning("Received switch event but couldn't find switch %s." % event_value)
 				return
-
+			
 			if sw.debounce:
 				recvd_state = event_type == pinproc.EventTypeSwitchClosedDebounced
 			else:
