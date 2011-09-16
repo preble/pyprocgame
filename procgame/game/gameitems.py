@@ -149,6 +149,8 @@ class Switch(GameItem):
 	In most applications the :meth:`is_active` and :meth:`is_inactive` methods should be used to determine a switch's state."""
 	last_changed = None
 	""":class:`time` of the last state change of this switch.  `None` if the :class:`GameController` has not yet initialized this switch's state."""
+	hw_timestamp = None
+	"""Hardware timestamp of the last state change of this switch.  `None` until an event is received."""
 	type = None
 	"""``'NO'`` (normally open) or ``'NC'`` (normally closed).  Mechanical switches are usually NO, while opto switches are almost always NC.  
 	This is used to determine whether a switch is active ("in contact with the ball") without ruleset code needing to be concerned with the details of the switch hardware."""

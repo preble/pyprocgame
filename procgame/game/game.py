@@ -463,6 +463,7 @@ class GameController(object):
 			self.dmd_event()
 		else:
 			sw = self.switches[event_value]
+			sw.hw_timestamp = event['time']
 
 			if sw.debounce:
 				recvd_state = event_type == pinproc.EventTypeSwitchClosedDebounced
