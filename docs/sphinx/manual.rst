@@ -147,21 +147,43 @@ We've reorganized the code a bit to reflect the recommended layout for pyprocgam
 Other Mode Features
 -------------------
 
+Timed Switch Handlers
+`````````````````````
+
 In some cases you may wish to respond to a switch event only after the switch has been in that state for a certain time period.  The Mode class provides a means for accomplishing this with incredible ease -- just add a ``_for_(time period)_`` suffix to the normal switch method convention:
 
 - ``sw_switchName_active_for_500ms()`` -- called once switchName is active for 500 milliseconds
 - ``sw_switchName_inactive_for_3s()`` -- called once switchName is inactive for 3 seconds
 - ``sw_switchName_inactive_for_20ms()`` -- called once switchName is inactive for 20 milliseconds
 
-You can also schedule a method to be called after a specified delay using :meth:`procgame.game.Mode.delay`::
+
+Scheduling Delayed Method Calls
+```````````````````````````````
+
+You can schedule a method to be called after a specified delay using :meth:`procgame.game.Mode.delay`::
 
 	def sw_target1_active(self, sw):
-	  self.delay(name='example), event_type=None, 
-	             delay=0.5, handler=self.delayed_event)
+	  self.delay(delay=0.5, handler=self.delayed_event)
 	  return True
 	
 	def delayed_target(self):
 	  print("It's been 500 milliseconds!")
+
+If you want to cancel a delay at a later time, store the return value from :meth:`delay`::
+
+    def sw_target1_active(self, sw):
+      self.delayed_name = self.delay(delay=0.5, handler=self.delayed_event)
+    
+    def sw_target2_active(self, sw):
+      # Cancel the previously-scheduled delay:
+      self.cancel_delayed(self.delayed_name)
+
+    def delayed_target(self):
+      print("It's been 500 milliseconds!")
+
+
+Mode Status Methods
+```````````````````
 
 Mode subclasses can also implement the following methods to receive and respond to changes in state:
 

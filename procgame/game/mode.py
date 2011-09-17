@@ -147,7 +147,8 @@ class Mode(object):
 			
 			def sw_thatButton_active(self):
 				# After 2 seconds, call delayed_handler() above.
-				self.delay(delay=2.0, handler=self.delayed_handler)
+				self.delayed_name = self.delay(delay=2.0, handler=self.delayed_handler)
+				# Store name to cancel the delay later: self.cancel_delayed(self.delayed_name)
 		
 		"""
 		if type(event_type) == str:
