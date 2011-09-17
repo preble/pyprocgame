@@ -2,6 +2,7 @@ import time
 import re
 import copy
 import logging
+import uuid
 
 # Documented in game.rst:
 SwitchStop = True
@@ -123,7 +124,8 @@ class Mode(object):
 		
 		``name``
 			Switch name for this event.  If using this method for a delayed
-			method call, use ``None``.
+			method call, use ``None`` and a name will be generated for you.
+			The generated name can be obtained from the return value.
 		``event_type``
 			'closed', 'open', or ``None``.
 		``delay``
@@ -135,6 +137,8 @@ class Mode(object):
 		
 		If param is None, handler's signature must be ``handler(self)``.  Otherwise,
 		it is ``handler(self, param)`` to match the switch method handler pattern.
+		
+		Returns the ``name`` of the delay, which may later be used with :meth:`cancel_delayed`.
 		
 		Example usage for delayed method invocation::
 		
@@ -148,6 +152,8 @@ class Mode(object):
 		"""
 		if type(event_type) == str:
 			event_type = {'closed':1, 'open':2}[event_type]
+		if name == None:
+			name = 'anon_delay'+str(uuid.uuid1())
 		self.__delayed.append(Mode.Delayed(name=name, time=time.time()+delay, handler=handler, event_type=event_type, param=param))
 		try:
 			self.__delayed.sort(lambda x, y: int((x.time - y.time)*100))
@@ -156,6 +162,7 @@ class Mode(object):
 			for x in self.__delayed:
 				print(x)
 			raise ex
+		return name
 	
 	def cancel_delayed(self, name):
 		"""Removes the given named delays from the delayed list, cancelling their execution."""
