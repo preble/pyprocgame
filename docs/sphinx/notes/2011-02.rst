@@ -12,4 +12,5 @@ pyprocgame
 	- :attr:`procgame.game.Switch.hw_timestamp` is now set when available.
 	- Added :attr:`procgame.modes.ScoreDisplay.credit_string_callback`.
 	- :meth:`procgame.dmd.DisplayController.update` now returns the frame it generated.
+	- Added ``dmdimage`` tool.
 

@@ -7,6 +7,7 @@ commands = {
 	'config'	: 'Configuration tool.',
 	'dmdconvert': 'Converts image files to .dmd files.',
 	'dmdfontwidths': 'Interactively assign font width values.',
+	'dmdimage': 'Converts .dmd files to image files.',
 	'dmdsplashrom':  'Requests a new P-ROC image with a custom DMD splash image.',
 	'dmdplayer': 'Play a .dmd file.',
 	'lampshow': 'Play a lamp show.',
