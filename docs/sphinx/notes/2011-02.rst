@@ -1,0 +1,15 @@
+pyprocgame 1.x (Development) Release Notes
+==========================================
+
+The following change notes are a summary of changes since `1.0 <https://github.com/preble/pyprocgame/tree/1.0>`_:
+
+pyprocgame
+----------
+
+	- Added child modes.  See :meth:`procgame.game.Mode.add_child_mode` for more details.
+	- :meth:`procgame.game.Mode.delay` now has more optional parameters, and will autogenerate a unique name and return it.
+	- Added :attr:`procgame.dmd.TextLayer.fill_color`.
+	- :attr:`procgame.game.Switch.hw_timestamp` is now set when available.
+	- Added :attr:`procgame.modes.ScoreDisplay.credit_string_callback`.
+	- :meth:`procgame.dmd.DisplayController.update` now returns the frame it generated.
+
