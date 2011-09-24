@@ -167,7 +167,8 @@ class Animation(object):
 		
 		if animation_cache:
 			# Check the cache for this data:
-			data = animation_cache.get_at_path(key_path, os.path.getmtime(key_path))
+			if os.path.exists(key_path):
+				data = animation_cache.get_at_path(key_path, os.path.getmtime(key_path))
 	
 		# If there was data in the cache:
 		if data:
