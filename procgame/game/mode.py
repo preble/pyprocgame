@@ -285,7 +285,19 @@ class ModeQueue(object):
 				break
 		if len(self.modes) > 0:
 			self.modes[0].mode_topmost()
-
+	
+	def __iter__(self):
+		return self.modes.__iter__()
+	
+	def __len__(self):
+		return len(self.modes)
+	
+	def __contains__(self, mode):
+		return mode in self.modes
+	
+	def __getitem__(self, v):
+		return self.modes[v]
+	
 	def handle_event(self, event):
 		modes = copy.copy(self.modes) # Make a copy so if a mode is added we don't get into a loop.
 		for mode in modes:
