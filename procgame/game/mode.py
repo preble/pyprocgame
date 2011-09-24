@@ -45,12 +45,18 @@ class Mode(object):
 	
 	Modes can be programatically configured using :meth:`.add_switch_handler`.
 	"""
+	
+	parent_mode = None
+	"""The parent mode for this mode.  Set by :meth:`add_child_mode` and cleared in :meth:`remove_child_mode`."""
+	__children = None # child modes, managed with add_child_mode() and remove_child_mode()
+	
 	def __init__(self, game, priority):
 		super(Mode, self).__init__()
 		self.game = game
 		self.priority = priority
 		self.__accepted_switches = []
 		self.__delayed = []
+		self.__children = []
 		self.__scan_switch_handlers()
 	
 	def __scan_switch_handlers(self):
@@ -200,13 +206,17 @@ class Mode(object):
 		
 		This method should not be invoked directly; it is called by the GameController run loop.
 		"""
-		pass
+		for child in self.__children:
+			self.game.modes.add(child)
+		
 	def mode_stopped(self):
-		"""Notofies the mode that it has been removed from the mode queue.
+		"""Notifies the mode that it has been removed from the mode queue.
 		
 		This method should not be invoked directly; it is called by the GameController run loop.
 		"""
-		pass
+		for child in self.__children:
+			self.game.modes.remove(child)
+		
 	def mode_topmost(self):
 		"""Notifies the mode that it is now the topmost mode on the mode queue.
 		
@@ -216,6 +226,7 @@ class Mode(object):
 	def mode_tick(self):
 		"""Called by the GameController run loop during each loop when the mode is running."""
 		pass
+		
 	def dispatch_delayed(self):
 		"""Called by the GameController to dispatch any delayed events."""
 		t = time.time()
@@ -227,6 +238,43 @@ class Mode(object):
 				else:
 					handler()
 		self.__delayed = filter(lambda x: x.time > t, self.__delayed)
+
+	def is_started(self):
+		"""Returns ``True`` if this mode is on the mode queue (:meth:`mode_started` has already been called)."""
+		return self in self.game.modes
+
+	def add_child_mode(self, mode):
+		"""Add *mode* as a child of the receiver.
+		Child modes are added and removed from the game's mode queue when
+		:meth:`mode_started` and :meth:`mode_stopped` are called, respectively.
+		
+		If this mode is already on the mode queue (:meth:`is_started` == ``True``),
+		then *mode* will be added (started) immediately.
+		
+		Sets *mode*'s :attr:`parent_mode` to the receiver.
+		
+		:return: *mode*"""
+		self.__children.append(mode)
+		mode.parent_mode = self
+		if self.is_started():
+			self.game.modes.add(mode)
+		return mode
+	
+	def remove_child_mode(self, mode):
+		"""Remove *mode* as a child of the receiver.
+		See :meth:`add_child_mode` for a description of child modes.
+		If this mode is already on the mode queue,
+		the *mode* will be removed (stopped) immediately.
+		
+		Sets *mode*'s :attr:`parent_mode` to ``None``.
+		
+		See also: :meth:`add_child_mode`."""
+		self.__children.remove(mode)
+		mode.parent_mode = None
+		if self.is_started():
+			self.game.modes.remove(mode)
+		return mode
+	
 	def __str__(self):
 		return "%s  pri=%d" % (type(self).__name__, self.priority)
 	def update_lamps(self):
