@@ -269,10 +269,11 @@ class Mode(object):
 		Sets *mode*'s :attr:`parent_mode` to ``None``.
 		
 		See also: :meth:`add_child_mode`."""
-		self.__children.remove(mode)
-		mode.parent_mode = None
-		if self.is_started():
-			self.game.modes.remove(mode)
+		if mode in self.__children:
+			self.__children.remove(mode)
+			mode.parent_mode = None
+			if self.is_started():
+				self.game.modes.remove(mode)
 		return mode
 	
 	def __str__(self):
