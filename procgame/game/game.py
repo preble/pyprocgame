@@ -143,7 +143,6 @@ class GameController(object):
 	def ball_starting(self):
 		"""Called by the game framework when a new ball is starting."""
 		self.save_ball_start_time()	
-                print "Ball Start time: % 10.3f" % self.ball_start_time
 	
 	def shoot_again(self):
 		"""Called by the game framework when a new ball is starting which was the result of a stored extra ball (Player.extra_balls).  
@@ -161,8 +160,7 @@ class GameController(object):
 		# Calculate ball time and save it because the start time
 		# gets overwritten when the next ball starts.
 		self.ball_time = self.get_ball_time()
-                print "Ball End time: % 10.3f" % self.ball_end_time
-                self.current_player().game_time += self.ball_time
+		self.current_player().game_time += self.ball_time
 
 		self.ball_ended()
 		if self.current_player().extra_balls > 0:
