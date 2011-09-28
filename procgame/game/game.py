@@ -522,6 +522,10 @@ class GameController(object):
 				if self.proc:
 					self.proc.watchdog_tickle()
 					self.proc.flush()
+				if self.modes.changed:
+					self.modes.logger.info("Modes changed in last run loop cycle, now:")
+					self.modes.log_queue()
+					self.modes.changed = False
 		finally:
 			if loops != 0:
 				dt = time.time()-self.t0

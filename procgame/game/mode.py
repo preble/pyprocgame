@@ -305,7 +305,11 @@ class Mode(object):
 			return '<name=%s time=%s event_type=%s>' % (self.name, self.time, self.event_type)
 
 class ModeQueue(object):
-	"""docstring for ModeQueue"""
+	"""A queue of modes which dispatches switch events."""
+	
+	changed = False
+	"""True if the contents of the queue has changed since the last time this variable was set to False."""
+	
 	def __init__(self, game):
 		super(ModeQueue, self).__init__()
 		self.game = game
@@ -318,8 +322,8 @@ class ModeQueue(object):
 		self.modes += [mode]
 		# Sort by priority, descending:
 		self.modes.sort(lambda x, y: y.priority - x.priority)
-		self.logger.info("Added %s, now:", str(mode))
-		self.log_queue()
+		self.changed = True
+		self.logger.info("Added %s.", str(mode))
 		mode.mode_started()
 		if mode == self.modes[0]:
 			mode.mode_topmost()
@@ -328,8 +332,8 @@ class ModeQueue(object):
 		for idx, m in enumerate(self.modes):
 			if m == mode:
 				del self.modes[idx]
-				self.logger.info("Removed %s, now:", str(mode))
-				self.log_queue()
+				self.changed = True
+				self.logger.info("Removed %s.", str(mode))
 				mode.mode_stopped()
 				break
 		if len(self.modes) > 0:
