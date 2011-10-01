@@ -2,7 +2,7 @@ import logging
 import time
 
 class AttrCollection(object):
-	"""docstring for AttrCollection"""
+	"""A collection of :class:`procgame.game.GameItem` objects."""
 	def __init__(self):
 		self.__items_by_name = {}
 		self.__items_by_number = {}
@@ -31,7 +31,15 @@ class AttrCollection(object):
 			return self.__items_by_name.has_key(attr)
 		else:
 			return self.__items_by_number.has_key(attr)
-		
+	
+	def items_tagged(self, tag):
+		"""Returns a list of items with the given *tag*."""
+		output = []
+		for item in self:
+			if tag in item.tags:
+				output.append(item)
+		return output
+
 class GameItem(object):
 	"""Base class for :class:`Driver` and :class:`Switch`.  Contained in an instance of :class:`AttrCollection` within the :class:`GameController`."""
 	game = None
@@ -40,10 +48,13 @@ class GameItem(object):
 	"""String name of this item."""
 	number = None
 	"""Integer value for this item providing a mapping to the hardware."""
+	tags = None
+	"""List of string tags used to group this item."""
 	def __init__(self, game, name, number):
 		self.game = game
 		self.name = name
 		self.number = number
+		self.tags = []
 
 class Driver(GameItem):
 	"""Represents a driver in a pinball machine, such as a lamp, coil/solenoid, or flasher.

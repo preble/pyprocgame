@@ -233,6 +233,15 @@ class GameController(object):
 					item = klass(self, name, number)
 					if 'type' in item_dict:
 						item.type = item_dict['type']
+					
+					if 'tags' in item_dict:
+						tags = item_dict['tags']
+						if type(tags) == str:
+							item.tags = tags.split(',')
+						elif type(tags) == list:
+							item.tags = tags
+						else:
+							self.logger.warning('Configuration item named "%s" has unexpected tags type %s. Should be list or comma-delimited string.' % (name, type(tags)))
 
 					if klass==Switch:
 						if (('debounce' in item_dict and item_dict['debounce'] == False) or number >= pinproc.SwitchNeverDebounceFirst):

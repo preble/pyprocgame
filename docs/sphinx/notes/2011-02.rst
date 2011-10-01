@@ -14,4 +14,5 @@ pyprocgame
 	- Added :attr:`procgame.modes.ScoreDisplay.credit_string_callback`.
 	- :meth:`procgame.dmd.DisplayController.update` now returns the frame it generated.
 	- Added ``dmdimage`` tool.
+	- Game configuration file: game items (switches, coils, and lamps) can now have a ``tags`` key. This allows obtaining game items with a certain tag via :meth:`procgame.game.AttrCollection.items_tagged`.
 

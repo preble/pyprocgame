@@ -10,6 +10,11 @@ See :doc:`/manual` for a discussion on how to create a pyprocgame game.
 Core Classes
 ============
 
+AttrCollection
+--------------
+.. autoclass:: procgame.game.AttrCollection
+	:members:
+
 Driver
 ------
 .. autoclass:: procgame.game.Driver
