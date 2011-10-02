@@ -3,6 +3,17 @@ from procgame.dmd import Animation, Frame
 from procgame import config
 from procgame import util
 
+# Anchor values are used by Font.draw_in_rect():
+AnchorN = 1
+AnchorW = 2
+AnchorE = 4
+AnchorS = 8
+AnchorNE = AnchorN | AnchorE
+AnchorNW = AnchorN | AnchorW
+AnchorSE = AnchorS | AnchorE
+AnchorSW = AnchorS | AnchorW
+AnchorCenter = 0
+
 class Font(object):
 	"""Variable-width bitmap font.
 	
@@ -86,7 +97,45 @@ class Font(object):
 			width = self.char_widths[char_offset]
 			x += width + self.tracking
 		return (x, self.char_size)
-
+	
+	def draw_in_rect(self, frame, text, rect=(0,0,128,32), anchor=AnchorCenter):
+		"""Draw *text* on *frame* within the given *rect*, aligned in accordance with *anchor*.
+		
+		*rect* is a tuple of length 4: (origin_x, origin_y, height, width). 0,0 is in the upper left (NW) corner.
+		
+		*anchor* is one of:
+		:attr:`~procgame.dmd.AnchorN`,
+		:attr:`~procgame.dmd.AnchorE`,
+		:attr:`~procgame.dmd.AnchorS`,
+		:attr:`~procgame.dmd.AnchorW`,
+		:attr:`~procgame.dmd.AnchorNE`,
+		:attr:`~procgame.dmd.AnchorNW`,
+		:attr:`~procgame.dmd.AnchorSE`,
+		:attr:`~procgame.dmd.AnchorSW`, or
+		:attr:`~procgame.dmd.AnchorCenter` (the default).
+		"""
+		origin_x, origin_y, width, height = rect
+		text_width, text_height = self.size(text)
+		x = 0
+		y = 0
+		
+		# print "Size: %d x %d" % (text_height)
+		
+		if anchor & AnchorN:
+			y = origin_y
+		elif anchor & AnchorS:
+			y = origin_y + (height - text_height)
+		else:
+			y = origin_y + (height/2.0 - text_height/2.0)
+		
+		if anchor & AnchorW:
+			x = origin_x
+		elif anchor & AnchorE:
+			x = origin_x + (width - text_width)
+		else:
+			x = origin_x + (width/2.0 - text_width/2.0)
+		
+		self.draw(frame=frame, text=text, x=x, y=y)
 
 font_path = []
 """Array of paths that will be searched by :meth:`~procgame.dmd.font_named` to locate fonts.

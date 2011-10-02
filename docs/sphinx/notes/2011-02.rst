@@ -9,6 +9,7 @@ pyprocgame
 	- Changed named parameter for :meth:`procgame.game.Driver.patter`: ``orig_on_time`` is now ``original_on_time``, to be consistent with pypinproc and other existing methods.
 	- Added child modes.  See :meth:`procgame.game.Mode.add_child_mode` for more details.
 	- :meth:`procgame.game.Mode.delay` now has more optional parameters, and will autogenerate a unique name and return it.
+	- Added :meth:`procgame.dmd.Font.draw_in_rect`.
 	- Added :attr:`procgame.dmd.TextLayer.fill_color`.
 	- :attr:`procgame.game.Switch.hw_timestamp` is now set when available.
 	- Added :attr:`procgame.modes.ScoreDisplay.credit_string_callback`.
