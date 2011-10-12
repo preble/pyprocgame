@@ -144,10 +144,10 @@ class EntrySequenceManager(game.Mode):
 		self.prompt_for_initials(left_text=self.active_prompt.left, right_text=self.active_prompt.right)
 
 	def prompt_for_initials(self, left_text, right_text):
-		self.highscore_entry = InitialEntryMode(game=self.game, priority=5, left_text=left_text, right_text=right_text, entered_handler=self.highscore_entered)
-		self.game.modes.add(self.highscore_entry)
+		self.highscore_entry = InitialEntryMode(game=self.game, priority=self.priority+1, left_text=left_text, right_text=right_text, entered_handler=self.highscore_entered)
+		self.add_child_mode(self.highscore_entry)
 
 	def highscore_entered(self, mode, inits):
 		self.logic.store_initials(key=self.active_prompt.key, inits=inits)
-		self.game.modes.remove(self.highscore_entry) # same as *mode*
+		self.remove_child_mode(self.highscore_entry) # same as *mode*
 		self.next()
