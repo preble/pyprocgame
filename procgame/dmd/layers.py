@@ -311,6 +311,13 @@ class ScriptedLayer(Layer):
 	def force_next(self, forward=True):
 		"""Advances to the next script element in the given direction."""
 		self.force_direction = forward
+	
+	def duration(self):
+		"""Returns the complete duration of the script."""
+		seconds = 0
+		for script_item in self.script:
+			seconds += script_item['seconds']
+		return seconds
 
 
 class GroupedLayer(Layer):
