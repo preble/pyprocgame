@@ -342,17 +342,21 @@ class GroupedLayer(Layer):
 		for layer in self.layers:
 			layer.reset()
 
-	def next_frame(self):
+	def next_frame(self):		
+		layers = []
+		for layer in self.layers[::-1]:
+			layers.append(layer)
+			if layer.opaque:
+				break # if we have an opaque layer we don't render any lower layers
+				
 		self.buffer.clear()
 		composited_count = 0
-		for layer in self.layers:
+		for layer in layers[::-1]:
 			frame = None
 			if layer.enabled:
 				frame = layer.composite_next(self.buffer)
 			if frame != None:
 				composited_count += 1
-			if frame != None and layer.opaque: # If an opaque layer doesn't draw anything, don't stop.
-				break
 		if composited_count == 0:
 			return None
 		return self.buffer
