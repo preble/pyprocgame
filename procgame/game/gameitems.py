@@ -16,7 +16,8 @@ class AttrCollection(object):
 			raise KeyError, "Error looking up key %s" % (attr)
 	def add(self, item, value):
 		self.__items_by_name[item] = value
-		self.__items_by_number[value.number] = value
+		if hasattr(value, 'number'):
+			self.__items_by_number[value.number] = value
 	def remove(self, name, number):
 		del self.__items_by_name[name]
 		del self.__items_by_number[number]
