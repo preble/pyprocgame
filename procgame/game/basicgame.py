@@ -46,10 +46,22 @@ class BasicGame(GameController):
 			self.desktop = Desktop()
 
 		if self.dmd: self.dmd.frame_handlers.append(self.set_last_frame)
+
+	def load_config(self, path):
+		super(BasicGame,self).load_config(path)
+		
+		# Setup the key mappings from the config.yaml.
+		# We used to do this in __init__, but at that time the
+		# configuration isn't loaded so we can't peek into self.switches.
 		key_map_config = config.value_for_key_path(keypath='keyboard_switch_map', default={})
 		if self.desktop:
 			for k, v in key_map_config.items():
-				self.desktop.add_key_map(ord(str(k)), pinproc.decode(machine_type, str(v)))
+				switch_name = str(v)
+				if self.switches.has_key(switch_name):
+					switch_number = self.switches[switch_name].number
+				else:
+					switch_number = pinproc.decode(self.machine_type, switch_name)
+				self.desktop.add_key_map(ord(str(k)), switch_number)
 
 	def reset(self):
 		"""Calls super's reset and adds the :class:`ScoreDisplay` mode to the mode queue."""
