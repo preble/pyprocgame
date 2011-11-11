@@ -254,6 +254,8 @@ class Mode(object):
 		Sets *mode*'s :attr:`parent_mode` to the receiver.
 		
 		:return: *mode*"""
+		if mode in self.__children:
+			return mode
 		self.__children.append(mode)
 		mode.parent_mode = self
 		if self.is_started():
