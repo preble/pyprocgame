@@ -49,6 +49,8 @@ class GameItem(object):
 	"""String name of this item."""
 	number = None
 	"""Integer value for this item providing a mapping to the hardware."""
+	yaml_number = None
+	"""Integer value for this item providing a mapping to the hardware."""
 	tags = None
 	"""List of string tags used to group this item."""
 	def __init__(self, game, name, number):
