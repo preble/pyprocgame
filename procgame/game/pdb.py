@@ -23,11 +23,11 @@ class Coil(object):
 	def __init__(self, number_str):
 
 		number_str = number_str.upper()
-		if self.direct_coil(number_str):
+		if self.is_direct_coil(number_str):
 			self.coil_type = 'dedicated'
 			self.banknum = (int(number_str[1:]) - 1)/8
 			self.outputnum = (int(number_str[1:]) -1)%8
-		elif self.pdb_coil(number_str):
+		elif self.is_pdb_coil(number_str):
 			self.coil_type = 'pdb'
 			params = number_str.rsplit('-')
 			self.boardnum = int(params[0][1:])
@@ -47,13 +47,13 @@ class Coil(object):
 	def output(self):
 		return self.outputnum
 
-	def direct_coil(self, string):
+	def is_direct_coil(self, string):
 		if len(string) < 2 or len(string) > 3: return False
 		if not string[0] == 'C': return False 
 		if not string[1:].alpha(): return False
 		return True
 
-	def pdb_coil(self, string):
+	def is_pdb_coil(self, string):
 		params = string.rsplit('-')
 		if len(params) != 3: return False
 		return True
@@ -62,11 +62,11 @@ class Lamp(object):
 	def __init__(self, number_str):
 
 		number_str = number_str.upper()
-		if self.direct_lamp(number_str):
+		if self.is_direct_lamp(number_str):
 			self.lamp_type = 'dedicated'
 			self.banknum = (int(number_str[1:]) - 1)/8
 			self.output = (int(number_str[1:]) -1)%8
-		elif self.pdb_lamp(number_str):
+		elif self.is_pdb_lamp(number_str):
 			self.lamp_type = 'pdb'
 			params = number_str.rsplit(':')
 			source_params = params[0].rsplit('-')
@@ -97,13 +97,13 @@ class Lamp(object):
 	def dedicated_output(self):
 		return self.output
 
-	def direct_lamp(self, string):
+	def is_direct_lamp(self, string):
 		if len(string) < 2 or len(string) > 3: return False
 		if not string[0] == 'L': return False 
 		if not string[1:].alpha(): return False
 		return 
 
-	def pdb_lamp(self, string):
+	def is_pdb_lamp(self, string):
 		params = string.rsplit(':')
 		if len(params) != 2: return False
 		return True
