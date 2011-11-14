@@ -26,12 +26,15 @@ class AttrCollection(object):
 	            yield item
 	def __getitem__(self, index):
 		return self.__getattr__(index)
-
+	
 	def has_key(self, attr):
-		if type(attr) == str:
-			return self.__items_by_name.has_key(attr)
+		return (attr in self) # calls __contains__.
+		
+	def __contains__(self, item):
+		if type(item) == str:
+			return self.__items_by_name.has_key(item)
 		else:
-			return self.__items_by_number.has_key(attr)
+			return self.__items_by_number.has_key(item)
 	
 	def items_tagged(self, tag):
 		"""Returns a list of items with the given *tag*."""
