@@ -373,8 +373,37 @@ class ModeQueue(object):
 			mode.mode_tick()
 	
 	def log_queue(self, log_level=logging.INFO):
+		log_rows = []
+		
 		for mode in self.modes:
 			layer = None
 			if hasattr(mode, 'layer'):
 				layer = mode.layer
-			self.logger.log(log_level, "\t\t#%d %s\t\tlayer=%s", mode.priority, type(mode).__name__, type(layer).__name__)
+			if layer:
+				log_rows.append([str(mode.priority), type(mode).__name__, type(layer).__name__])
+			else:
+				log_rows.append([str(mode.priority), type(mode).__name__, '-'])
+		
+		for line in tabularize(log_rows):
+			self.logger.log(log_level, '  '+line)
+
+def tabularize(rows, col_spacing=2):
+	"""*rows* should be a list of lists of strings: [[r1c1, r1c2], [r2c1, r2c2], ..].
+	Returns a list of formatted lines of text, with column values left justified."""
+	
+	# Find the column widths:
+	max_column_widths = []
+	for row in rows:
+		while len(row) > len(max_column_widths):
+			max_column_widths.append(0)
+		for index, col in enumerate(row):
+			if len(col) > max_column_widths[index]:
+				max_column_widths[index] = len(col)
+	# Now that we have the column widths, create the individual lines:
+	output = []
+	for row in rows:
+		line = ''
+		for index, col in enumerate(row):
+			line += col.ljust(max_column_widths[index]+col_spacing)
+		output.append(line)
+	return output
