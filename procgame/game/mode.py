@@ -74,7 +74,13 @@ class Mode(object):
 
 			handler = getattr(self, item)
 			
-			self.add_switch_handler(name=m.group('name'), event_type=m.group('state'), delay=seconds, handler=handler)
+			switch_name = m.group('name')
+			switch_state = m.group('state')
+			
+			if switch_name not in self.game.switches:
+				raise ValueError, 'Unrecognized switch name %s in handler %s.%s().' % (switch_name, self.__class__.__name__, item)
+
+			self.add_switch_handler(name=switch_name, event_type=switch_state, delay=seconds, handler=handler)
 	
 	def add_switch_handler(self, name, event_type, delay, handler):
 		"""Programatically configure a switch event handler.
