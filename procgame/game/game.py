@@ -10,7 +10,7 @@ from procgame import config
 from gameitems import *
 from procgame import util
 from mode import *
-from pdb import PDB_config
+from pdb import PDBConfig
 
 def config_named(name):
 	if not os.path.isfile(name): # If we cannot find this file easily, try searching the config_path:
@@ -225,7 +225,7 @@ class GameController(object):
 		# the P-ROC appropriately to use those PDBs.  Only then can we relate the YAML
 		# coil/lamp #'s to P-ROC numbers for the collections.
 		if self.machine_type == pinproc.MachineTypePDB:
-			pdb_config = PDB_config(self.proc, self.config)
+			pdb_config = PDBConfig(self.proc, self.config)
 		
 		for section, collection, klass in pairs:
 			sect_dict = self.config[section]

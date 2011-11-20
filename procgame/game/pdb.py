@@ -97,7 +97,7 @@ class Lamp(object):
 		if len(params) != 2: return False
 		return True
 
-class PDB_config(object):
+class PDBConfig(object):
 	indexes = []
 	proc = None
 	logger = None
