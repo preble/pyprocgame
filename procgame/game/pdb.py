@@ -1,8 +1,9 @@
 import logging
 import pinproc
+import re
 
 class Switch(object):
-	def __init__(self, number_str):
+	def __init__(self, pdb, number_str):
 		number_str = number_str.upper()
 		if number_str.startswith('SD'):
 			self.sw_type = 'dedicated'
@@ -20,8 +21,8 @@ class Switch(object):
 		elif self.sw_type == 'dedicated': return  self.sw_number 
 
 class Coil(object):
-	def __init__(self, number_str):
-
+	def __init__(self, pdb, number_str):
+		self.pdb = pdb
 		number_str = number_str.upper()
 		if self.is_direct_coil(number_str):
 			self.coil_type = 'dedicated'
@@ -29,7 +30,7 @@ class Coil(object):
 			self.outputnum = (int(number_str[1:]) -1)%8
 		elif self.is_pdb_coil(number_str):
 			self.coil_type = 'pdb'
-			(self.boardnum, self.banknum, self.outputnum) = decode_pdb_address(number_str)
+			(self.boardnum, self.banknum, self.outputnum) = self.pdb.decode_pdb_address(number_str)
 		else: 
 			coil_type = 'unknown'
 
@@ -51,11 +52,11 @@ class Coil(object):
 		return True
 
 	def is_pdb_coil(self, string):
-		return is_pdb_address(string)
+		return self.pdb.is_pdb_address(string)
 
 class Lamp(object):
-	def __init__(self, number_str):
-
+	def __init__(self, pdb, number_str):
+		self.pdb = pdb
 		number_str = number_str.upper()
 		if self.is_direct_lamp(number_str):
 			self.lamp_type = 'dedicated'
@@ -63,9 +64,9 @@ class Lamp(object):
 			self.output = (int(number_str[1:]) -1)%8
 		elif self.is_pdb_lamp(number_str): # C-Ax-By-z:R-Ax-By-z  or  C-x/y/z:R-x/y/z
 			self.lamp_type = 'pdb'
-			params = number_str.rsplit(':')
-			(self.source_boardnum, self.source_banknum, self.source_outputnum) = decode_pdb_address(params[0][2:])
-			(self.sink_boardnum, self.sink_banknum, self.sink_outputnum) = decode_pdb_address(params[1][2:])
+			source_addr, sink_addr = self.split_matrix_addr_parts(number_str)
+			(self.source_boardnum, self.source_banknum, self.source_outputnum) = self.pdb.decode_pdb_address(source_addr)
+			(self.sink_boardnum, self.sink_banknum, self.sink_outputnum) = self.pdb.decode_pdb_address(sink_addr)
 		else:
 			self.lamp_type = 'unknown'
 
@@ -92,9 +93,28 @@ class Lamp(object):
 		if not string[1:].alpha(): return False
 		return 
 
+	def split_matrix_addr_parts(self, string):
+		# Input is of form C-Ax-By-z:R-Ax-By-z  or  C-x/y/z:R-x/y/z  or  aliasX:aliasY
+		# We want to return only the address part: Ax-By-z, x/y/z, or aliasX.  That is, remove the two character prefix if present.
+		addrs = string.rsplit(':')
+		if len(addrs) is not 2:
+			return []
+		addrs_out = []
+		for addr in addrs:
+			bits = addr.split('-')
+			if len(bits) is 1:
+				addrs_out.append(addr) # Append unchanged.
+			else:                                    # Generally this will be len(bits) 2 or 4.
+				addrs_out.append('-'.join(bits[1:])) # Remove the first bit and rejoin.
+		return addrs_out
+
 	def is_pdb_lamp(self, string):
-		params = string.rsplit(':')
+		params = self.split_matrix_addr_parts(string)
 		if len(params) != 2: return False
+		for addr in params:
+			if not self.pdb.is_pdb_address(addr):
+				print "not pdb address!", addr
+				return False
 		return True
 
 class PDBConfig(object):
@@ -116,11 +136,17 @@ class PDBConfig(object):
 		lamp_source_bank_list = []
 		lamp_list = []
 		lamp_list_for_index = []
+		
+		self.aliases = []
+		if 'PRDriverAliases' in config:
+			for alias_dict in config['PRDriverAliases']:
+				alias = DriverAlias(alias_dict['expr'], alias_dict['repl'])
+				self.aliases.append(alias)
 
 		# Make a list of unique coil banks
 		for name in config['PRCoils']:
 			item_dict = config['PRCoils'][name]
-			coil = Coil(str(item_dict['number']))
+			coil = Coil(self, str(item_dict['number']))
 			if coil.bank() not in coil_bank_list:
 				coil_bank_list.append(coil.bank())
 
@@ -128,7 +154,7 @@ class PDBConfig(object):
 		# TODO: What should be done if 2 is exceeded?
 		for name in config['PRLamps']:
 			item_dict = config['PRLamps'][name]
-			lamp = Lamp(str(item_dict['number']))
+			lamp = Lamp(self, str(item_dict['number']))
 
 			# Dedicated lamps are same as coils.  Use the coil_bank_list.
 			if lamp.lamp_type == 'dedicated':
@@ -232,9 +258,9 @@ class PDBConfig(object):
 			self.logger.info("Disabling P-ROC driver group %d", i)
 			proc.driver_update_group_config(i,
 							self.lamp_matrix_strobe_time,
-							lamp_dict['sink_bank'],
-							lamp_dict['source_output'],
-							lamp_dict['source_index'],
+							0,
+							0,
+							0,
 							False,
 							True,
 							False,
@@ -320,7 +346,7 @@ class PDBConfig(object):
 	# to that.
 	def get_proc_number(self, section, number_str):
 		if section == 'PRCoils':
-			coil = Coil(number_str)
+			coil = Coil(self, number_str)
 			bank = coil.bank()
 			if bank == -1: return (-1)
 			index = self.indexes.index(coil.bank())
@@ -328,7 +354,7 @@ class PDBConfig(object):
 			return num
 
 		if section == 'PRLamps':
-			lamp = Lamp(number_str)
+			lamp = Lamp(self, number_str)
 			if lamp.lamp_type == 'unknown': return (-1)
 			elif lamp.lamp_type == 'dedicated': return lamp.dedicated_bank() * 8 + lamp.dedicated_output()
 
@@ -339,40 +365,57 @@ class PDBConfig(object):
 			return num
 
 		if section == 'PRSwitches':
-			switch = Switch(number_str)
+			switch = Switch(self, number_str)
 			num = switch.proc_num()
 			return num
 
-def is_pdb_address(addr):
-	"""Returne True if the given address is a valid PDB address."""
-	try:
-		t = decode_pdb_address(addr)
-		return True
-	except:
-		return False
+	def is_pdb_address(self, addr):
+		"""Returne True if the given address is a valid PDB address."""
+		try:
+			t = self.decode_pdb_address(addr)
+			return True
+		except:
+			return False
 
-def decode_pdb_address(addr):
-	"""Decodes Ax-By-z or x/y/z into PDB address, bank number, and output number.
+	def decode_pdb_address(self, addr):
+		"""Decodes Ax-By-z or x/y/z into PDB address, bank number, and output number.
 	
-	Raises a ValueError exception if it is not a PDB address, otherwise returns a tuple of (addr, bank, number).
-	"""
-	if '-' in addr: # Ax-By-z form
-		params = addr.rsplit('-')
-		if len(params) != 3:
-			raise ValueError, 'pdb address must have 3 components'
-		board = int(params[0][1:])
-		bank = int(params[1][1:])
-		output = int(params[2][0:])
-		return (board, bank, output)
+		Raises a ValueError exception if it is not a PDB address, otherwise returns a tuple of (addr, bank, number).
+		"""
+		for alias in self.aliases:
+			if alias.matches(addr):
+				addr = alias.decode(addr)
+				break
+		
+		if '-' in addr: # Ax-By-z form
+			params = addr.rsplit('-')
+			if len(params) != 3:
+				raise ValueError, 'pdb address must have 3 components'
+			board = int(params[0][1:])
+			bank = int(params[1][1:])
+			output = int(params[2][0:])
+			return (board, bank, output)
 	
-	elif '/' in addr: # x/y/z form
-		params = addr.rsplit('/')
-		if len(params) != 3:
-			raise ValueError, 'pdb address must have 3 components'
-		board = int(params[0])
-		bank = int(params[1])
-		output = int(params[2])
-		return (board, bank, output)
+		elif '/' in addr: # x/y/z form
+			params = addr.rsplit('/')
+			if len(params) != 3:
+				raise ValueError, 'pdb address must have 3 components'
+			board = int(params[0])
+			bank = int(params[1])
+			output = int(params[2])
+			return (board, bank, output)
 	
-	else:
-		raise ValueError, 'PDB address delimeter (- or /) not found.'
+		else:
+			raise ValueError, 'PDB address delimeter (- or /) not found.'
+
+class DriverAlias(object):
+	def __init__(self, key, value):
+		self.expr = re.compile(key)
+		self.repl = value
+
+	def matches(self, addr):
+		return self.expr.match(addr)
+
+	def decode(self, addr):
+		return self.expr.sub(repl=self.repl, string=addr)
+
