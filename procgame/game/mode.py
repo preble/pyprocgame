@@ -120,7 +120,7 @@ class Mode(object):
 		try:
 			sw = self.game.switches[name]
 		except KeyError:
-			print("WARNING: Unknown switch %s for mode method %s in class %s!" % (name, item, self.__class__.__name__))
+			self.game.logger.error("WARNING: add_switch_handler(): Switch %s unknown. Please check your machine configuration file." % (name))
 			return
 		d = {'name':name, 'type':et, 'delay':delay, 'handler':handler, 'param':sw}
 		if d not in self.__accepted_switches:
