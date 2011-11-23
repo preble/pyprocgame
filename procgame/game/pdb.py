@@ -4,13 +4,13 @@ import re
 
 class Switch(object):
 	def __init__(self, pdb, number_str):
-		number_str = number_str.upper()
-		if number_str.startswith('SD'):
+		upper_str = number_str.upper()
+		if upper_str.startswith('SD'):
 			self.sw_type = 'dedicated'
-			self.sw_number = int(number_str[2:])
-		elif number_str.startswith('S'):
+			self.sw_number = int(upper_str[2:])
+		elif upper_str.startswith('S'):
 			self.sw_type = 'matrix'
-			self.sw_number = int(number_str[1:])
+			self.sw_number = int(upper_str[1:])
 		else:
 			self.sw_type = 'proc'
 			self.sw_number = int(number_str)
@@ -23,8 +23,8 @@ class Switch(object):
 class Coil(object):
 	def __init__(self, pdb, number_str):
 		self.pdb = pdb
-		number_str = number_str.upper()
-		if self.is_direct_coil(number_str):
+		upper_str = number_str.upper()
+		if self.is_direct_coil(upper_str):
 			self.coil_type = 'dedicated'
 			self.banknum = (int(number_str[1:]) - 1)/8
 			self.outputnum = (int(number_str[1:]) -1)%8
@@ -57,8 +57,8 @@ class Coil(object):
 class Lamp(object):
 	def __init__(self, pdb, number_str):
 		self.pdb = pdb
-		number_str = number_str.upper()
-		if self.is_direct_lamp(number_str):
+		upper_str = number_str.upper()
+		if self.is_direct_lamp(upper_str):
 			self.lamp_type = 'dedicated'
 			self.banknum = (int(number_str[1:]) - 1)/8
 			self.output = (int(number_str[1:]) -1)%8
