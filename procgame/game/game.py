@@ -392,19 +392,20 @@ class GameController(object):
 					drivers += [pinproc.driver_state_pulse(hold_coil.state(), 0)]
 				else:
 					drivers += [pinproc.driver_state_patter(main_coil.state(), 2, 18, 34)]
-				self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers, len(drivers) > 0)
+			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers, len(drivers) > 0)
 			
-				drivers = []
+			drivers = []
+			if enable:
 				drivers += [pinproc.driver_state_disable(main_coil.state())]
 				if style == 'wpc':
 					drivers += [pinproc.driver_state_disable(hold_coil.state())]
 	
-				self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers, len(drivers) > 0)
+			self.proc.switch_update_rule(switch_num, 'open_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers, len(drivers) > 0)
 
-				if not enable:
-					main_coil.disable()
-					if style == 'wpc':
-						hold_coil.disable()
+			if not enable:
+				main_coil.disable()
+				if style == 'wpc':
+					hold_coil.disable()
 
 			# Enable the flipper relay on wpcAlphanumeric machines
                         if self.machine_type == pinproc.MachineTypeWPCAlphanumeric:
