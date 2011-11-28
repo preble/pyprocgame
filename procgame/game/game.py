@@ -509,14 +509,17 @@ class GameController(object):
 		for lamp in self.lamps:
 			lamp.tick()
 	
-	def run_loop(self):
+	def run_loop(self, min_seconds_per_cycle=None):
 		"""Called by the programmer to read and process switch events until interrupted."""
 		loops = 0
 		self.done = False
 		self.dmd_event()
 		try:
 			while self.done == False:
-
+				
+				if min_seconds_per_cycle:
+					t0 = time.time()
+				
 				loops += 1
 				for event in self.get_events():
 					self.process_event(event)
@@ -530,6 +533,11 @@ class GameController(object):
 					self.modes.logger.info("Modes changed in last run loop cycle, now:")
 					self.modes.log_queue()
 					self.modes.changed = False
+				
+				if min_seconds_per_cycle:
+					dt = time.time() - t0
+					if min_seconds_per_cycle > dt:
+						time.sleep(min_seconds_per_cycle - dt)
 		finally:
 			if loops != 0:
 				dt = time.time()-self.t0
