@@ -16,4 +16,5 @@ pyprocgame
 	- :meth:`procgame.dmd.DisplayController.update` now returns the frame it generated.
 	- Added ``dmdimage`` tool.
 	- Game configuration file: game items (switches, coils, and lamps) can now have a ``tags`` key. This allows obtaining game items with a certain tag via :meth:`procgame.game.AttrCollection.items_tagged`.
+	- Fixed an issue where :meth:`procgame.game.Switch.time_since_change` did not behave as documented. Previously, querying :meth:`time_since_changed` would always return 0 if called within that switch's handler. Now the time will be properly reset *after* the switch's events are handled.
 

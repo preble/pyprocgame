@@ -482,6 +482,7 @@ class GameController(object):
 				sw.set_state(recvd_state)
 				self.logger.info("%s:\t%s\t(%s)", sw.name, sw.state_str(),event_type)
 				self.modes.handle_event(event)
+				sw.reset_timer()
 			else:
 				#self.logger.warning("DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s", sw.name, sw.state_str())
 				pass

@@ -179,7 +179,6 @@ class Switch(GameItem):
 		self.type = type
 	def set_state(self, state):
 		self.state = state
-		self.reset_timer()
 	def is_state(self, state, seconds = None):
 		# Changed from simple '==' to boolean logic for weird 
 		# TypeError issue when running with Visual Pinball.
