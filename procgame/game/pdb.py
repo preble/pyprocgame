@@ -30,7 +30,7 @@ class Coil(object):
 			self.outputnum = (int(number_str[1:]) -1)%8
 		elif self.is_pdb_coil(number_str):
 			self.coil_type = 'pdb'
-			(self.boardnum, self.banknum, self.outputnum) = self.pdb.decode_pdb_address(number_str)
+			(self.boardnum, self.banknum, self.outputnum) = decode_pdb_address(number_str, self.pdb.aliases)
 		else: 
 			coil_type = 'unknown'
 
@@ -52,7 +52,7 @@ class Coil(object):
 		return True
 
 	def is_pdb_coil(self, string):
-		return self.pdb.is_pdb_address(string)
+		return is_pdb_address(string, self.pdb.aliases)
 
 class Lamp(object):
 	def __init__(self, pdb, number_str):
@@ -65,8 +65,8 @@ class Lamp(object):
 		elif self.is_pdb_lamp(number_str): # C-Ax-By-z:R-Ax-By-z  or  C-x/y/z:R-x/y/z
 			self.lamp_type = 'pdb'
 			source_addr, sink_addr = self.split_matrix_addr_parts(number_str)
-			(self.source_boardnum, self.source_banknum, self.source_outputnum) = self.pdb.decode_pdb_address(source_addr)
-			(self.sink_boardnum, self.sink_banknum, self.sink_outputnum) = self.pdb.decode_pdb_address(sink_addr)
+			(self.source_boardnum, self.source_banknum, self.source_outputnum) = decode_pdb_address(source_addr, self.pdb.aliases)
+			(self.sink_boardnum, self.sink_banknum, self.sink_outputnum) = decode_pdb_address(sink_addr, self.pdb.aliases)
 		else:
 			self.lamp_type = 'unknown'
 
@@ -112,7 +112,7 @@ class Lamp(object):
 		params = self.split_matrix_addr_parts(string)
 		if len(params) != 2: return False
 		for addr in params:
-			if not self.pdb.is_pdb_address(addr):
+			if not is_pdb_address(addr, self.pdb.aliases):
 				print "not pdb address!", addr
 				return False
 		return True
@@ -121,6 +121,10 @@ class PDBConfig(object):
 	indexes = []
 	proc = None
 	logger = None
+	
+	aliases = None # set in __init__
+	"""Loaded from ``PRDriverAliases`` section of config in :meth:`__init__`."""
+	
 	def __init__(self, proc, config):
 
 		self.logger = logging.getLogger('pdb')
@@ -369,44 +373,6 @@ class PDBConfig(object):
 			num = switch.proc_num()
 			return num
 
-	def is_pdb_address(self, addr):
-		"""Returne True if the given address is a valid PDB address."""
-		try:
-			t = self.decode_pdb_address(addr)
-			return True
-		except:
-			return False
-
-	def decode_pdb_address(self, addr):
-		"""Decodes Ax-By-z or x/y/z into PDB address, bank number, and output number.
-	
-		Raises a ValueError exception if it is not a PDB address, otherwise returns a tuple of (addr, bank, number).
-		"""
-		for alias in self.aliases:
-			if alias.matches(addr):
-				addr = alias.decode(addr)
-				break
-		
-		if '-' in addr: # Ax-By-z form
-			params = addr.rsplit('-')
-			if len(params) != 3:
-				raise ValueError, 'pdb address must have 3 components'
-			board = int(params[0][1:])
-			bank = int(params[1][1:])
-			output = int(params[2][0:])
-			return (board, bank, output)
-	
-		elif '/' in addr: # x/y/z form
-			params = addr.rsplit('/')
-			if len(params) != 3:
-				raise ValueError, 'pdb address must have 3 components'
-			board = int(params[0])
-			bank = int(params[1])
-			output = int(params[2])
-			return (board, bank, output)
-	
-		else:
-			raise ValueError, 'PDB address delimeter (- or /) not found.'
 
 class DriverAlias(object):
 	def __init__(self, key, value):
@@ -419,3 +385,42 @@ class DriverAlias(object):
 	def decode(self, addr):
 		return self.expr.sub(repl=self.repl, string=addr)
 
+
+def is_pdb_address(addr, aliases=[]):
+	"""Returne True if the given address is a valid PDB address."""
+	try:
+		t = decode_pdb_address(addr=addr, aliases=aliases)
+		return True
+	except:
+		return False
+
+def decode_pdb_address(addr, aliases=[]):
+	"""Decodes Ax-By-z or x/y/z into PDB address, bank number, and output number.
+
+	Raises a ValueError exception if it is not a PDB address, otherwise returns a tuple of (addr, bank, number).
+	"""
+	for alias in aliases:
+		if alias.matches(addr):
+			addr = alias.decode(addr)
+			break
+
+	if '-' in addr: # Ax-By-z form
+		params = addr.rsplit('-')
+		if len(params) != 3:
+			raise ValueError, 'pdb address must have 3 components'
+		board = int(params[0][1:])
+		bank = int(params[1][1:])
+		output = int(params[2][0:])
+		return (board, bank, output)
+
+	elif '/' in addr: # x/y/z form
+		params = addr.rsplit('/')
+		if len(params) != 3:
+			raise ValueError, 'pdb address must have 3 components'
+		board = int(params[0])
+		bank = int(params[1])
+		output = int(params[2])
+		return (board, bank, output)
+
+	else:
+		raise ValueError, 'PDB address delimeter (- or /) not found.'
