@@ -214,6 +214,21 @@ class GameController(object):
 		self.config = config_named(filename)
 		if not self.config:
 			raise ValueError, 'load_config(filename="%s") could not be found. Did you set config_path?' % (filename)
+		self.process_config()
+
+	def load_config_stream(self, stream):
+		"""Reads the YAML machine configuration in stream form (string or opened file) into memory.
+		Configures the switches, lamps, and coils members.
+		Enables notifyHost for the open and closed debounced states on each configured switch.
+		"""
+		self.config = yaml.load(stream)
+		if not self.config:
+			raise ValueError, 'load_config_stream() could not load configuration.  Malformed YAML?'
+		print self.config
+		self.process_config()
+	
+	def process_config(self):
+		"""Called by :meth:`load_config` and :meth:`load_config_stream` to process the values in :attr:`config`."""
 		pairs = [('PRCoils', self.coils, Driver), 
 		         ('PRLamps', self.lamps, Driver), 
 		         ('PRSwitches', self.switches, Switch)]
@@ -486,6 +501,7 @@ class GameController(object):
 				sw.set_state(recvd_state)
 				self.logger.info("%s:\t%s\t(%s)", sw.name, sw.state_str(),event_type)
 				self.modes.handle_event(event)
+				sw.reset_timer()
 			else:
 				#self.logger.warning("DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s", sw.name, sw.state_str())
 				pass
@@ -514,14 +530,17 @@ class GameController(object):
 		for lamp in self.lamps:
 			lamp.tick()
 	
-	def run_loop(self):
+	def run_loop(self, min_seconds_per_cycle=None):
 		"""Called by the programmer to read and process switch events until interrupted."""
 		loops = 0
 		self.done = False
 		self.dmd_event()
 		try:
 			while self.done == False:
-
+				
+				if min_seconds_per_cycle:
+					t0 = time.time()
+				
 				loops += 1
 				for event in self.get_events():
 					self.process_event(event)
@@ -535,6 +554,11 @@ class GameController(object):
 					self.modes.logger.info("Modes changed in last run loop cycle, now:")
 					self.modes.log_queue()
 					self.modes.changed = False
+				
+				if min_seconds_per_cycle:
+					dt = time.time() - t0
+					if min_seconds_per_cycle > dt:
+						time.sleep(min_seconds_per_cycle - dt)
 		finally:
 			if loops != 0:
 				dt = time.time()-self.t0
