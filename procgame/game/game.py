@@ -265,6 +265,10 @@ class GameController(object):
 					if klass==Switch:
 						if (('debounce' in item_dict and item_dict['debounce'] == False) or number >= pinproc.SwitchNeverDebounceFirst):
 							item.debounce = False
+					if klass==Driver:
+						if ('pulseTime' in item_dict):
+							item.default_pulse_time = item_dict['pulseTime']	
+
 				collection.add(name, item)
 
 		# In the P-ROC, VirtualDrivers will conflict with regular drivers on the same group.
