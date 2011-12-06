@@ -265,6 +265,8 @@ class GameController(object):
 				else:
 					item = klass(self, name, number)
 					item.yaml_number = str(item_dict['number'])
+					if 'label' in item_dict:
+						item.label = item_dict['label']
 					if 'type' in item_dict:
 						item.type = item_dict['type']
 					
@@ -407,10 +409,10 @@ class GameController(object):
 			drivers = []
 			if enable:
 				if style == 'wpc':
-					drivers += [pinproc.driver_state_pulse(main_coil.state(), 34)]
+					drivers += [pinproc.driver_state_pulse(main_coil.state(), main_coil.default_pulse_time)]
 					drivers += [pinproc.driver_state_pulse(hold_coil.state(), 0)]
 				else:
-					drivers += [pinproc.driver_state_patter(main_coil.state(), 2, 18, 34)]
+					drivers += [pinproc.driver_state_patter(main_coil.state(), 2, 18, main_coil.default_pulse_time)]
 			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers, len(drivers) > 0)
 			
 			drivers = []
@@ -441,7 +443,7 @@ class GameController(object):
 
 			drivers = []
 			if enable:
-				drivers += [pinproc.driver_state_pulse(coil.state(), 20)]
+				drivers += [pinproc.driver_state_pulse(coil.state(), coil.default_pulse_time)]
 
 			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':True}, drivers, False)
 

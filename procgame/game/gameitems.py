@@ -50,10 +50,12 @@ class GameItem(object):
 	""":class:`GameController` to which this item belongs."""
 	name = None
 	"""String name of this item."""
+	label = None
+	"""Display name of this item."""
 	number = None
 	"""Integer value for this item providing a mapping to the hardware."""
 	yaml_number = None
-	"""Integer value for this item providing a mapping to the hardware."""
+	"""Number string from YAML config file"""
 	tags = None
 	"""List of string tags used to group this item."""
 	def __init__(self, game, name, number):
