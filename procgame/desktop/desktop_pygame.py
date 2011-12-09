@@ -73,6 +73,9 @@ class Desktop():
 		of events similar to what would be returned by :meth:`pinproc.PinPROC.get_events`."""
 		key_events = []
 		for event in pygame.event.get():
+			if event.type in self.event_listeners:
+				self.event_listeners[event.type]()
+				continue
 			key_event = {}
 			if event.type == pygame.locals.KEYDOWN:
 				if event.key == pygame.locals.K_RCTRL or event.key == pygame.locals.K_LCTRL:
@@ -96,7 +99,16 @@ class Desktop():
 			if len(key_event):
 				key_events.append(key_event)
 		return key_events
-		
+	
+	
+	event_listeners = {}
+	
+	def add_pygame_event_listener(self, event_type, handler):
+		self.event_listeners[event_type] = handler
+	
+	def remove_pygame_event_listener(self, event_type):
+		if event_type in self.event_listeners:
+			del self.event_listeners[event_type]
 	
 	screen = None
 	""":class:`pygame.Surface` object representing the screen's surface."""
