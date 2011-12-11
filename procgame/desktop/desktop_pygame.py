@@ -74,7 +74,7 @@ class Desktop():
 		key_events = []
 		for event in pygame.event.get():
 			if event.type in self.event_listeners:
-				self.event_listeners[event.type]()
+				self.event_listeners[event.type](event)
 				continue
 			key_event = {}
 			if event.type == pygame.locals.KEYDOWN:
@@ -104,6 +104,7 @@ class Desktop():
 	event_listeners = {}
 	
 	def add_pygame_event_listener(self, event_type, handler):
+		"""Handler should take one argument, the pygame event itself."""
 		self.event_listeners[event_type] = handler
 	
 	def remove_pygame_event_listener(self, event_type):
