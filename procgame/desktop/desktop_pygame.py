@@ -9,6 +9,7 @@ import locale
 import math
 import copy
 import ctypes
+from procgame.events import EventManager
 
 try:
 	import pygame
@@ -50,9 +51,6 @@ class Desktop():
 	
 	key_map = {}
 	
-	events = None
-	""":class:`~procgame.game.EventManager` instance, if any.  Usually set by :class:`procgame.game.GameController` instance."""
-	
 	def __init__(self):
 		self.ctrl = 0
 		self.i = 0
@@ -77,8 +75,7 @@ class Desktop():
 		of events similar to what would be returned by :meth:`pinproc.PinPROC.get_events`."""
 		key_events = []
 		for event in pygame.event.get():
-			if self.events:
-				self.events.dispatch(name=self.event_name_for_pygame_event_type(event.type), object=self, info=event)
+			EventManager.default().post(name=self.event_name_for_pygame_event_type(event.type), object=self, info=event)
 			key_event = {}
 			if event.type == pygame.locals.KEYDOWN:
 				if event.key == pygame.locals.K_RCTRL or event.key == pygame.locals.K_LCTRL:

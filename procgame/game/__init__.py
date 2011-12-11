@@ -3,10 +3,8 @@ __all__ = [
 	'game'
 	'gameitems',
 	'mode',
-	'events',
 	]
 from game import *
 from gameitems import *
 from basicgame import *
 from mode import *
-from events import *

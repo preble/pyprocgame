@@ -66,16 +66,12 @@ class GameController(object):
 	user_settings = {}
 	"""Contains local game configuration, such as the volume."""
 
-	events = None
-	""":class:`~procgame.game.EventManager` instance."""
-
 	logger = None
 	""":class:`Logger` object instance; instantiated in :meth:`__init__` with the logger name "game"."""
 	
 	def __init__(self, machine_type):
 		super(GameController, self).__init__()
 		self.logger = logging.getLogger('game')
-		self.events = EventManager()
 		self.machine_type = pinproc.normalize_machine_type(machine_type)
 		self.proc = self.create_pinproc()
 		self.proc.reset(1)

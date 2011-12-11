@@ -1,6 +1,7 @@
 
 class Event(object):
-	"""An Event dispatched by :class:`EventManager`."""
+	"""Describes an event dispatched by :class:`EventManager`."""
+	
 	name = None
 	"""Name of the event."""
 	object = None
@@ -14,8 +15,23 @@ class Event(object):
 		self.object = object
 		self.info = info
 
+global_event_manager = None
+
 class EventManager(object):
-	"""EventManager dispatches events to event handlers."""
+	"""Dispatches events to event handlers.  Until better documentation is created, it may be helpful to know that this class is strongly influenced by the Cocoa class :class:`NSNotificationCenter`.
+	
+	Most users will want to obtain the default instance using :meth:`default`::
+	
+		EventManager.default().add_event_handler(...)
+	"""
+	
+	@classmethod
+	def default(cls):
+		"""Returns the default (shared) EventManager instance."""
+		global global_event_manager
+		if not global_event_manager:
+			global_event_manager = cls()
+		return global_event_manager
 	
 	def __init__(self):
 		super(EventManager, self).__init__()
@@ -24,7 +40,7 @@ class EventManager(object):
 		self.__handlers = {}
 	
 	def add_event_handler(self, name, handler, object=None):
-		"""Handlers take a single parameter, the Event object being dispatched."""
+		"""Handlers take a single parameter, the :class:`Event` object being posted."""
 		if name not in self.__handlers:
 			self.__handlers[name] = {object:[handler]}
 		else:
@@ -44,8 +60,8 @@ class EventManager(object):
 				if handler in handlers:
 					handlers.remove(handler)
 	
-	def dispatch_event(self, event):
-		"""Dispatch the given event."""
+	def post_event(self, event):
+		"""Post the given :class:`Event` instance. Blocks while the resulting handlers are called."""
 		if event.name in self.__handlers:
 			obj_keyed = self.__handlers[event.name]
 			if None in obj_keyed:
@@ -55,9 +71,9 @@ class EventManager(object):
 				for handler in obj_keyed[event.object]:
 					handler(event)
 	
-	def dispatch(self, name, object=None, info=None):
-		"""Dispatch an event with the given properties."""
+	def post(self, name, object=None, info=None):
+		"""Post an :class:`Event` with the given properties."""
 		event = Event(name, object, info)
-		self.dispatch_event(event)
+		self.post_event(event)
 
 

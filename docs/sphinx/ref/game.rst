@@ -20,11 +20,6 @@ Driver
 .. autoclass:: procgame.game.Driver
 	:members:
 
-EventManager
-------------
-.. autoclass:: procgame.game.EventManager
-    :members:
-
 GameController
 --------------
 .. autoclass:: procgame.game.GameController
