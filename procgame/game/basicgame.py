@@ -44,6 +44,8 @@ class BasicGame(GameController):
 			import procgame.desktop
 			from ..desktop import Desktop
 			self.desktop = Desktop()
+			if hasattr(self.desktop, 'events'):
+				self.desktop.events = self.events
 
 		if self.dmd: self.dmd.frame_handlers.append(self.set_last_frame)
 

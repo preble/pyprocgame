@@ -50,9 +50,13 @@ class Desktop():
 	
 	key_map = {}
 	
+	events = None
+	""":class:`~procgame.game.EventManager` instance, if any.  Usually set by :class:`procgame.game.GameController` instance."""
+	
 	def __init__(self):
 		self.ctrl = 0
 		self.i = 0
+		
 		if 'pygame' in globals():
 			self.setup_window()
 		else:
@@ -73,9 +77,8 @@ class Desktop():
 		of events similar to what would be returned by :meth:`pinproc.PinPROC.get_events`."""
 		key_events = []
 		for event in pygame.event.get():
-			if event.type in self.event_listeners:
-				self.event_listeners[event.type](event)
-				continue
+			if self.events:
+				self.events.dispatch(name=self.event_name_for_pygame_event_type(event.type), object=self, info=event)
 			key_event = {}
 			if event.type == pygame.locals.KEYDOWN:
 				if event.key == pygame.locals.K_RCTRL or event.key == pygame.locals.K_LCTRL:
@@ -103,13 +106,8 @@ class Desktop():
 	
 	event_listeners = {}
 	
-	def add_pygame_event_listener(self, event_type, handler):
-		"""Handler should take one argument, the pygame event itself."""
-		self.event_listeners[event_type] = handler
-	
-	def remove_pygame_event_listener(self, event_type):
-		if event_type in self.event_listeners:
-			del self.event_listeners[event_type]
+	def event_name_for_pygame_event_type(self, event_type):
+		return 'pygame(%s)' % (event_type)
 	
 	screen = None
 	""":class:`pygame.Surface` object representing the screen's surface."""
