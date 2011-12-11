@@ -18,4 +18,5 @@ pyprocgame
 	- Game configuration file: game items (switches, coils, and lamps) can now have a ``tags`` key. This allows obtaining game items with a certain tag via :meth:`procgame.game.AttrCollection.items_tagged`.
 	- Fixed an issue where :meth:`procgame.game.Switch.time_since_change` did not behave as documented. Previously, querying :meth:`time_since_changed` would always return 0 if called within that switch's handler. Now the time will be properly reset *after* the switch's events are handled.
 	- Added :meth:`procgame.game.GameController.load_config_stream`.
+	- Added :attr:`procgame.game.GameController.events`, an instance of :class:`procgame.game.EventManager`, which is a general purpose event dispatcher.
 
