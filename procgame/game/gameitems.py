@@ -22,8 +22,8 @@ class AttrCollection(object):
 		del self.__items_by_name[name]
 		del self.__items_by_number[number]
 	def __iter__(self):
-	        for item in self.__items_by_number.itervalues():
-	            yield item
+		for item in self.__items_by_number.itervalues():
+			yield item
 	def __getitem__(self, index):
 		return self.__getattr__(index)
 	
@@ -35,6 +35,9 @@ class AttrCollection(object):
 			return self.__items_by_name.has_key(item)
 		else:
 			return self.__items_by_number.has_key(item)
+	
+	def __len__(self):
+		return len(self.__items_by_name)
 	
 	def items_tagged(self, tag):
 		"""Returns a list of items with the given *tag*."""
