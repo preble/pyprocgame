@@ -11,7 +11,6 @@ from gameitems import *
 from procgame import util
 from mode import *
 from pdb import PDBConfig
-from events import EventManager
 
 def config_named(name):
 	if not os.path.isfile(name): # If we cannot find this file easily, try searching the config_path:
