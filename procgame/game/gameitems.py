@@ -97,6 +97,20 @@ class Driver(GameItem):
 		self.logger.debug("Driver %s - pulse %d", self.name, milliseconds)
 		self.game.proc.driver_pulse(self.number, milliseconds)
 		self.last_time_changed = time.time()
+	def future_pulse(self, milliseconds=None, timestamp=0):
+		"""Enables this driver for `milliseconds` at P-ROC timestamp: `timestamp`.
+		
+		If no parameter is provided for `milliseconds`, :attr:`default_pulse_time` is used.
+		If no parameter is provided or `timestamp`, 0 is used.
+		``ValueError`` will be raised if `milliseconds` is outside of the range 0-255.
+		"""
+		if milliseconds == None:
+			milliseconds = self.default_pulse_time
+		if not milliseconds in range(256):
+			raise ValueError, 'milliseconds must be in range 0-255.'
+		self.logger.debug("Driver %s - future pulse %d", self.name, milliseconds, timestamp)
+		self.game.proc.driver_future_pulse(self.number, milliseconds, timestamp)
+		self.last_time_changed = time.time()
 	def patter(self, on_time=10, off_time=10, original_on_time=0):
 		"""Enables a pitter-patter sequence.  
 
