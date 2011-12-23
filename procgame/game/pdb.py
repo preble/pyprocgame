@@ -120,14 +120,12 @@ class Lamp(object):
 class PDBConfig(object):
 	indexes = []
 	proc = None
-	logger = None
-	
 	aliases = None # set in __init__
 	"""Loaded from ``PRDriverAliases`` section of config in :meth:`__init__`."""
 	
 	def __init__(self, proc, config):
 
-		self.logger = logging.getLogger('pdb')
+		self.logger = logging.getLogger('game.pdb')
 		self.logger.info("Configuring P-ROC to work with PDBs")
 
 		self.proc = proc
@@ -186,7 +184,7 @@ class PDBConfig(object):
 		# The index of the bank is used to calculate the P-ROC driver number for
 		# each driver.
 		num_proc_banks = pinproc.DriverCount/8
-		self.indexes = [0] * num_proc_banks
+		self.indexes = [99] * num_proc_banks
 
 		self.initialize_drivers(proc)
 
@@ -289,7 +287,8 @@ class PDBConfig(object):
        	                'timeslots': 0,
        	                'patterOnTime': 0,
        	                'patterOffTime': 0,
-       	                'patterEnable': False}
+       	                'patterEnable': False,
+       	                'futureEnable': False}
 	
 			proc.driver_update_state(state)
 
