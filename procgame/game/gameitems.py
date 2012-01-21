@@ -8,12 +8,12 @@ class AttrCollection(object):
 		self.__items_by_number = {}
 	def __getattr__(self, attr):
 		try:
-			if type(attr) == str:
+			if type(attr) == str or type(attr) == unicode:
 				return self.__items_by_name[attr]
 			else:
 				return self.__items_by_number[attr]
 		except KeyError, e:
-			raise KeyError, "Error looking up key %s" % (attr)
+			raise KeyError, "Error looking up key %s: %s" % (attr, e)
 	def add(self, item, value):
 		self.__items_by_name[item] = value
 		if hasattr(value, 'number'):
