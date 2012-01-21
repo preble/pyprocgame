@@ -192,7 +192,7 @@ class PDBConfig(object):
 		for group_ctr in range(0,4):
 			# TODO: Fix this.  PDB Banks 0-3 are also interpreted as dedicated bank here.
 			enable =  group_ctr in coil_bank_list
-			self.logger.info("Setting up dedicated driver group %d: Enable=%s", group_ctr,enable)
+			self.logger.info("Driver group %02d (dedicated): Enable=%s", group_ctr,enable)
 			proc.driver_update_group_config(group_ctr,
 							0,
 							group_ctr,
@@ -219,7 +219,7 @@ class PDBConfig(object):
 			if (group_ctr >= num_proc_banks or lamp_dict['sink_bank'] >= 16):
 				self.logger.error("Lamp matrix banks can't be mapped to index %d because that's outside of the banks the P-ROC can control.", lamp_dict['sink_bank'])
 			else:
-				self.logger.info("Setting up lamp sink group %d:\nslow_time=%d\nenable_index=%d\nrow_activate_index=%d\nrow_enable_index=%d\nmatrix=%s", group_ctr, self.lamp_matrix_strobe_time, lamp_dict['sink_bank'], lamp_dict['source_output'], lamp_dict['source_index'], True )
+				self.logger.info("Driver group %02d (lamp sink): slow_time=%d enable_index=%d row_activate_index=%d row_enable_index=%d matrix=%s", group_ctr, self.lamp_matrix_strobe_time, lamp_dict['sink_bank'], lamp_dict['source_output'], lamp_dict['source_index'], True )
 				self.indexes[group_ctr] = lamp_list_for_index[i]
 				proc.driver_update_group_config(group_ctr,
 								self.lamp_matrix_strobe_time,
@@ -243,7 +243,7 @@ class PDBConfig(object):
 				self.logger.warning("Driver group %d mapped to driver index outside of P-ROC control.  These Drivers will become VirtualDrivers.  Note, the index will not match the board/bank number; so software will need to request those values before updating the drivers.", coil_bank)
 				self.indexes.append(coil_bank)
 			else:
-				self.logger.info("Setting up driver group %d:\nslow_time=%d\nEnable Index=%d", group_ctr, 0, coil_bank)
+				self.logger.info("Driver group %02d: slow_time=%d Enable Index=%d", group_ctr, 0, coil_bank)
 				self.indexes[group_ctr] = coil_bank
 				proc.driver_update_group_config(group_ctr,
 								0,
@@ -257,7 +257,7 @@ class PDBConfig(object):
 				group_ctr += 1
 		
 		for i in range(group_ctr, 26):
-			self.logger.info("Disabling P-ROC driver group %d", i)
+			self.logger.info("Driver group %02d: disabled", i)
 			proc.driver_update_group_config(i,
 							self.lamp_matrix_strobe_time,
 							0,
@@ -312,7 +312,7 @@ class PDBConfig(object):
 
 	def configure_globals(self, proc, lamp_source_bank_list, enable=True):
 		
-		if enable: self.logger.info("Configuring PDB Driver Globals:\nPolarity: %s\nMatrix Column Index 0: %d\nMatrix Column Index 1: %d", True, lamp_source_bank_list[0], lamp_source_bank_list[1]);
+		if enable: self.logger.info("Configuring PDB Driver Globals:  polarity = %s  matrix column index 0 = %d  matrix column index 1 = %d", True, lamp_source_bank_list[0], lamp_source_bank_list[1]);
 		proc.driver_update_global_config(enable, # Don't enable outputs yet
 						True,  # Polarity
 						False, # N/A
