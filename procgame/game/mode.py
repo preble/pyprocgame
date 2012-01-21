@@ -198,7 +198,7 @@ class Mode(object):
 		
 		filt = lambda accepted: (accepted.event_type == event['type']) and (accepted.name == sw_name)
 		for accepted in filter(filt, self.__accepted_switches):
-			if accepted.delay == None:
+			if accepted.delay == None or accepted.delay == 0:
 				handler = accepted.handler
 				result = handler(self.game.switches[accepted.name])
 				if result == SwitchStop:
