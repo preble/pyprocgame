@@ -17,7 +17,7 @@ class MarkupFrameGenerator:
 	font_plain = None
 	"""Font used for plain, non-bold characters."""
 	font_bold = None
-	""""""
+	"""Font used for bold characters."""
 	
 	def __init__(self, width=128, min_height=32):
 		self.width = width
