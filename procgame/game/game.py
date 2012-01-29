@@ -197,6 +197,10 @@ class GameController(object):
 		self.ball = 0
 		self.game_ended()
 
+	def is_game_over(self):
+		"""Returns `True` if the game is in game over.  A game is in game over if :attr:`ball` is 0."""
+		return self.ball == 0
+
 	def dmd_event(self):
 		"""Called by the GameController when a DMD event has been received."""
 		pass
