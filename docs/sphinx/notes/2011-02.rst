@@ -19,4 +19,5 @@ pyprocgame
 	- Fixed an issue where :meth:`procgame.game.Switch.time_since_change` did not behave as documented. Previously, querying :meth:`time_since_changed` would always return 0 if called within that switch's handler. Now the time will be properly reset *after* the switch's events are handled.
 	- Added :meth:`procgame.game.GameController.load_config_stream`.
 	- Added :class:`procgame.events.EventManager`, a general purpose event dispatcher.
-
+	- In :meth:`procgame.game.GameController.end_game`, :attr:`~procgame.game.GameController.ball` is now set to 0 before calling :meth:`~procgame.game.GameController.game_ended`.
+	- Added :meth:`procgame.game.GameController.is_game_over`.

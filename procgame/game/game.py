@@ -194,8 +194,8 @@ class GameController(object):
 		
 	def end_game(self):
 		"""Called by the implementor to mark notify the game that the game has ended."""
-		self.game_ended()
 		self.ball = 0
+		self.game_ended()
 
 	def dmd_event(self):
 		"""Called by the GameController when a DMD event has been received."""
