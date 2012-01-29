@@ -43,6 +43,10 @@ class Mode(object):
 		def sw_switchName_open_for_500ms(self, sw):
 			pass
 	
+	.. NOTE::
+		Presently only switch names with the characters a-z, A-Z, and 0-9 are recognized.
+		If a switch name has an underscore in it, the switch handler will not be recognized.
+	
 	Modes can be programatically configured using :meth:`.add_switch_handler`.
 	"""
 	
