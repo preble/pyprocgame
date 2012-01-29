@@ -143,8 +143,12 @@ class EntrySequenceManager(game.Mode):
 		Presents the initials entry mode."""
 		self.prompt_for_initials(left_text=self.active_prompt.left, right_text=self.active_prompt.right)
 
+	def create_highscore_entry_mode(self, left_text, right_text, entered_handler):
+		"""Subclasses can override this to supply their own entry handler."""
+		return InitialEntryMode(game=self.game, priority=self.priority+1, left_text=left_text, right_text=right_text, entered_handler=entered_handler)
+
 	def prompt_for_initials(self, left_text, right_text):
-		self.highscore_entry = InitialEntryMode(game=self.game, priority=self.priority+1, left_text=left_text, right_text=right_text, entered_handler=self.highscore_entered)
+		self.highscore_entry = self.create_highscore_entry_mode(left_text, right_text, self.highscore_entered)
 		self.add_child_mode(self.highscore_entry)
 
 	def highscore_entered(self, mode, inits):
