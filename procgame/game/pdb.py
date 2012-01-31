@@ -27,7 +27,7 @@ class Coil(object):
 		if self.is_direct_coil(upper_str):
 			self.coil_type = 'dedicated'
 			self.banknum = (int(number_str[1:]) - 1)/8
-			self.outputnum = (int(number_str[1:]) -1)%8
+			self.outputnum = int(number_str[1:])
 		elif self.is_pdb_coil(number_str):
 			self.coil_type = 'pdb'
 			(self.boardnum, self.banknum, self.outputnum) = decode_pdb_address(number_str, self.pdb.aliases)
@@ -48,7 +48,7 @@ class Coil(object):
 	def is_direct_coil(self, string):
 		if len(string) < 2 or len(string) > 3: return False
 		if not string[0] == 'C': return False 
-		if not string[1:].alpha(): return False
+		if not string[1:].isdigit(): return False
 		return True
 
 	def is_pdb_coil(self, string):
@@ -60,8 +60,7 @@ class Lamp(object):
 		upper_str = number_str.upper()
 		if self.is_direct_lamp(upper_str):
 			self.lamp_type = 'dedicated'
-			self.banknum = (int(number_str[1:]) - 1)/8
-			self.output = (int(number_str[1:]) -1)%8
+			self.output = int(number_str[1:])
 		elif self.is_pdb_lamp(number_str): # C-Ax-By-z:R-Ax-By-z  or  C-x/y/z:R-x/y/z
 			self.lamp_type = 'pdb'
 			source_addr, sink_addr = self.split_matrix_addr_parts(number_str)
@@ -90,8 +89,8 @@ class Lamp(object):
 	def is_direct_lamp(self, string):
 		if len(string) < 2 or len(string) > 3: return False
 		if not string[0] == 'L': return False 
-		if not string[1:].alpha(): return False
-		return 
+		if not string[1:].isdigit(): return False
+		return True
 
 	def split_matrix_addr_parts(self, string):
 		# Input is of form C-Ax-By-z:R-Ax-By-z  or  C-x/y/z:R-x/y/z  or  aliasX:aliasY
@@ -158,10 +157,12 @@ class PDBConfig(object):
 			item_dict = config['PRLamps'][name]
 			lamp = Lamp(self, str(item_dict['number']))
 
-			# Dedicated lamps are same as coils.  Use the coil_bank_list.
+			# Catalog PDB banks
+			# Dedicated lamps don't use PDB banks.  They use P-ROC direct
+			# driver pins.  
 			if lamp.lamp_type == 'dedicated':
-				if lamp.bank() not in coil_bank_list:
-					coil_bank_list.append(lamp.bank())
+				pass
+
 			elif lamp.lamp_type == 'pdb':
 				if lamp.source_bank() not in lamp_source_bank_list:
 					lamp_source_bank_list.append(lamp.source_bank())
@@ -359,7 +360,8 @@ class PDBConfig(object):
 		if section == 'PRLamps':
 			lamp = Lamp(self, number_str)
 			if lamp.lamp_type == 'unknown': return (-1)
-			elif lamp.lamp_type == 'dedicated': return lamp.dedicated_bank() * 8 + lamp.dedicated_output()
+			elif lamp.lamp_type == 'dedicated': 
+				return lamp.dedicated_output()
 
 			lamp_dict_for_index = {'source_board': lamp.source_board(), 'sink_bank': lamp.sink_bank(), 'source_output': lamp.source_output()}
 			if lamp_dict_for_index not in self.indexes: return -1
