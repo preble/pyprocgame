@@ -289,6 +289,9 @@ class GameController(object):
 					if klass==Driver:
 						if ('pulseTime' in item_dict):
 							item.default_pulse_time = item_dict['pulseTime']	
+						if ('polarity' in item_dict):
+							item.reconfigure(item_dict['polarity'])
+								
 
 				collection.add(name, item)
 

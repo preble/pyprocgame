@@ -67,6 +67,12 @@ class GameItem(object):
 		self.number = number
 		self.tags = []
 
+	def reconfigure(self, polarity):
+		state = self.game.proc.driver_get_state(self.number)
+		state['polarity'] = polarity
+		self.game.proc.driver_update_state(state)
+
+
 class Driver(GameItem):
 	"""Represents a driver in a pinball machine, such as a lamp, coil/solenoid, or flasher.
 	
