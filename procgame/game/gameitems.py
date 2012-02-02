@@ -67,7 +67,6 @@ class GameItem(object):
 		self.number = number
 		self.tags = []
 
-
 class Driver(GameItem):
 	"""Represents a driver in a pinball machine, such as a lamp, coil/solenoid, or flasher.
 	
@@ -285,7 +284,8 @@ class VirtualDriver(Driver):
 		              'patterOffTime':0,
 		              'state':0,
 		              'outputDriveTime':0,
-		              'waitForFirstTimeSlot':0}
+		              'waitForFirstTimeSlot':0,
+		              'futureEnable':False}
 
 		self.curr_value = not (self.curr_state ^ self.state['polarity'])
 		self.logger = logging.getLogger('game.vdriver')
