@@ -419,7 +419,7 @@ class GameController(object):
 					drivers += [pinproc.driver_state_pulse(main_coil.state(), main_coil.default_pulse_time)]
 					drivers += [pinproc.driver_state_pulse(hold_coil.state(), 0)]
 				else:
-					drivers += [pinproc.driver_state_patter(main_coil.state(), 2, 18, main_coil.default_pulse_time)]
+					drivers += [pinproc.driver_state_patter(main_coil.state(), 2, 18, main_coil.default_pulse_time, True)]
 			self.proc.switch_update_rule(switch_num, 'closed_nondebounced', {'notifyHost':False, 'reloadActive':False}, drivers, len(drivers) > 0)
 			
 			drivers = []
@@ -480,7 +480,7 @@ class GameController(object):
 		coil = self.coils[coil_name];
 		drivers = []
 		if enable:
-			drivers += [pinproc.driver_state_patter(coil.state(),milliseconds_on,milliseconds_off,original_on_time)]
+			drivers += [pinproc.driver_state_patter(coil.state(),milliseconds_on,milliseconds_off,original_on_time, True)]
 		self.proc.switch_update_rule(switch_num, switch_state, {'notifyHost':notify_host, 'reloadActive':reload_active}, drivers, drive_coil_now_if_valid)
 
 	def process_event(self, event):

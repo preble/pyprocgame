@@ -114,7 +114,7 @@ class Driver(GameItem):
 		self.logger.debug("Driver %s - future pulse %d", self.name, milliseconds, timestamp)
 		self.game.proc.driver_future_pulse(self.number, milliseconds, timestamp)
 		self.last_time_changed = time.time()
-	def patter(self, on_time=10, off_time=10, original_on_time=0):
+	def patter(self, on_time=10, off_time=10, original_on_time=0, now=True):
 		"""Enables a pitter-patter sequence.  
 
 		It starts by activating the driver for `original_on_time` milliseconds.  
@@ -129,10 +129,10 @@ class Driver(GameItem):
 		if not off_time in range(128):
 			raise ValueError, 'off_time must be in range 0-127.'
 
-		self.logger.debug("Driver %s - patter on:%d, off:%d, orig_on:%d", self.name, on_time, off_time, original_on_time)
-		self.game.proc.driver_patter(self.number, on_time, off_time, original_on_time)
+		self.logger.debug("Driver %s - patter on:%d, off:%d, orig_on:%d, now:%s", self.name, on_time, off_time, original_on_time, now)
+		self.game.proc.driver_patter(self.number, on_time, off_time, original_on_time, now)
 		self.last_time_changed = time.time()
-	def pulsed_patter(self, on_time=10, off_time=10, run_time=0):
+	def pulsed_patter(self, on_time=10, off_time=10, run_time=0, now=True):
 		"""Enables a pitter-patter sequence that runs for `run_time` milliseconds.  
 
 		Until it ends, the sequence repeatedly turns the driver on for `on_time` 
@@ -146,8 +146,8 @@ class Driver(GameItem):
 		if not off_time in range(128):
 			raise ValueError, 'off_time must be in range 0-127.'
 
-		self.logger.debug("Driver %s - pulsed patter on:%d, off:%d, run_time:%d", self.name, on_time, off_time, run_time)
-		self.game.proc.driver_pulsed_patter(self.number, on_time, off_time, run_time)
+		self.logger.debug("Driver %s - pulsed patter on:%d, off:%d, run_time:%d, now:%s", self.name, on_time, off_time, run_time, now)
+		self.game.proc.driver_pulsed_patter(self.number, on_time, off_time, run_time, now)
 		self.last_time_changed = time.time()
 	def schedule(self, schedule, cycle_seconds=0, now=True):
 		"""Schedules this driver to be enabled according to the given `schedule` bitmask."""
