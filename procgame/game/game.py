@@ -435,14 +435,21 @@ class GameController(object):
 				if style == 'wpc':
 					hold_coil.disable()
 
-			# Enable the flipper relay on wpcAlphanumeric machines
-                        if self.machine_type == pinproc.MachineTypeWPCAlphanumeric:
-				# 79 corresponds to the circuit on the power/driver board.  It will be 79 for all WPCAlphanumeric machines.
-				flipperRelayPRNumber = 79
-                                if enable:
-                                        self.coils[79].pulse(0)
-                                else:
-                                        self.coils[79].disable()
+		# Enable the flipper relay on wpcAlphanumeric machines
+		if self.machine_type == pinproc.MachineTypeWPCAlphanumeric:
+			self.enable_alphanumeric_flippers(enable)
+
+		self.enable_bumpers(enable)
+		
+	def enable_alphanumeric_flippers(self, enable):
+		# 79 corresponds to the circuit on the power/driver board.  It will be 79 for all WPCAlphanumeric machines.
+		flipperRelayPRNumber = 79
+		if enable:
+			self.coils[79].pulse(0)
+		else:
+			self.coils[79].disable()
+
+	def enable_bumpers(self, enable):
 	
 		for bumper in self.config['PRBumpers']:
 			switch_num = self.switches[bumper].number

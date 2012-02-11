@@ -8,17 +8,19 @@ class Switch(object):
 		if upper_str.startswith('SD'):
 			self.sw_type = 'dedicated'
 			self.sw_number = int(upper_str[2:])
-		elif upper_str.startswith('S'):
+		elif '/' in upper_str:
 			self.sw_type = 'matrix'
-			self.sw_number = int(upper_str[1:])
+			self.sw_number = self.parse_matrix_num(upper_str)
 		else:
 			self.sw_type = 'proc'
 			self.sw_number = int(number_str)
 	
 	def proc_num(self):
-		if self.sw_type == 'proc': return self.sw_number
-		elif self.sw_type == 'matrix': return  16 + self.sw_number
-		elif self.sw_type == 'dedicated': return  self.sw_number 
+		return self.sw_number
+
+	def parse_matrix_num(self, num_str):
+		cr_list = num_str.split('/')
+		return (32 + int(cr_list[0])*16 + int(cr_list[1]))
 
 class Coil(object):
 	def __init__(self, pdb, number_str):

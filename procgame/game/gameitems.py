@@ -237,7 +237,7 @@ class Switch(GameItem):
 		"""Number of seconds that this switch has been in its current state.
 		This value is reset to 0 by the :class:`GameController` *after* the switch event has been processed by the active :class:`Mode` instances."""
 		if self.last_changed == None:
-			return 0.0
+			return 1000000
 		else:
 			return time.time() - self.last_changed
 	def reset_timer(self):

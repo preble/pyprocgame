@@ -30,10 +30,17 @@ def value_for_key_path(keypath, default=None):
 def load():
     global values, path
     logger = logging.getLogger('game.config')
-    path = os.path.expanduser('~/.pyprocgame/config.yaml')
-    if not os.path.exists(path):
-        logger.warning('pyprocgame configuration not found at %s' % path)
-        return
+    curr_path = os.path.expanduser('./config.yaml')
+    system_path = os.path.expanduser('~/.pyprocgame/config.yaml')
+    if os.path.exists(curr_path):
+         path = curr_path
+    else:
+        logger.warning('pyprocgame configuration not found at %s. Checking %s.' % (curr_path, system_path))
+        if os.path.exists(system_path):
+            path = system_path
+        else:
+            logger.warning('pyprocgame configuration not found at %s' % system_path)
+            return
     logger.info('pyprocgame configuration found at %s' % path)
     try:
         values = yaml.load(open(path, 'r'))
