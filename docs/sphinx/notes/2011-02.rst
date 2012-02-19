@@ -21,3 +21,9 @@ pyprocgame
 	- Added :class:`procgame.events.EventManager`, a general purpose event dispatcher.
 	- In :meth:`procgame.game.GameController.end_game`, :attr:`~procgame.game.GameController.ball` is now set to 0 before calling :meth:`~procgame.game.GameController.game_ended`.
 	- Added :meth:`procgame.game.GameController.is_game_over`.
+	- Added 'now' parameter to :meth:`procgame.game.Driver.patter`.  
+	- Added :meth:`procgame.game.Driver.future_pulse`
+	- Added :class:`procgame.game.PDBConfig` to handle 'pdb' machineType YAML parsing
+	- Added 'polarity' field to YAML driver parsing
+	- Added 'pulseTime' field to YAML driver parsing to set a driver's default pulse width.
+	- Added 'label' field to YAML item parsing for human readable item descriptions.
