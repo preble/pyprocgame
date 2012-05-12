@@ -41,8 +41,6 @@ class AuxPort(object):
 		commands += [pinproc.aux_command_jump(0)]
 		self.game.proc.aux_send_commands(0,commands)
 
-		if self.game.logging_enabled: self.print_commands(commands)
-
 		commands = []
 		commands += [pinproc.aux_command_jump(1)]
 		self.game.proc.aux_send_commands(0,commands)
