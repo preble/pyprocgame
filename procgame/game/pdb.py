@@ -297,17 +297,17 @@ class PDBConfig(object):
 
 
 	def get_globals(self, config):
-		if 'lamp_matrix_strobe_time' in config['PRDriverGlobals']:
+		if 'PRDriverGlobals' in config and 'lamp_matrix_strobe_time' in config['PRDriverGlobals']:
 			self.lamp_matrix_strobe_time = int(config['PRDriverGlobals']['lamp_matrix_strobe_time'])
 		else:
 			self.lamp_matrix_strobe_time = 200
 
-		if 'watchdog_time' in config['PRDriverGlobals']:
+		if 'PRDriverGlobals' in config and 'watchdog_time' in config['PRDriverGlobals']:
 			self.watchdog_time = int(config['PRDriverGlobals']['watchdog_time'])
 		else:
 			self.watchdog_time = 1000
 
-		if 'use_watchdog' in config['PRDriverGlobals']:
+		if 'PRDriverGlobals' in config and 'use_watchdog' in config['PRDriverGlobals']:
 			self.use_watchdog = bool(config['PRDriverGlobals']['use_watchdog'])
 		else:
 			self.use_watchdog = True
