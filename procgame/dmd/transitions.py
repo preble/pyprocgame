@@ -188,7 +188,7 @@ class ObscuredWipeTransition(LayerTransitionBase):
 
 class CrossFadeTransition(LayerTransitionBase):
 	"""Performs a cross-fade between two layers.  As one fades out the other one fades in."""
-	def __init__(self, width, height):
+	def __init__(self, width=128, height=32):
 		LayerTransitionBase.__init__(self)
 		self.width, self.height = width, height
 		self.progress_per_frame = 1.0/45.0
