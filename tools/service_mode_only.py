@@ -14,6 +14,9 @@ import yaml
 
 locale.setlocale(locale.LC_ALL, "") # Used to put commas in the score.
 
+import logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
 fonts_path = "../shared/dmd/"
 sound_path = "../shared/sound/"
 font_tiny7 = dmd.Font(fonts_path+"04B-03-7px.dmd")
