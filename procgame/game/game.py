@@ -204,7 +204,7 @@ class GameController(object):
 	def dmd_event(self):
 		"""Called by the GameController when a DMD event has been received."""
 		pass
-	
+
 	def tick(self):
 		"""Called by the GameController once per run loop."""
 		pass
@@ -236,6 +236,7 @@ class GameController(object):
 		pairs = [('PRCoils', self.coils, Driver), 
 		         ('PRLamps', self.lamps, Driver), 
 		         ('PRSwitches', self.switches, Switch)]
+
 		new_virtual_drivers = []
 		polarity = self.machine_type == pinproc.MachineTypeSternWhitestar or self.machine_type == pinproc.MachineTypeSternSAM or self.machine_type == pinproc.MachineTypePDB
 		
@@ -497,30 +498,48 @@ class GameController(object):
 			print "CTRL-C detected, quiting..."	
 			self.end_run_loop()
 		elif event_type == pinproc.EventTypeDMDFrameDisplayed: # DMD events
-			#print "% 10.3f Frame event.  Value=%x" % (time.time()-self.t0, event_value)
 			self.dmd_event()
+		elif event_type == pinproc.EventTypeBurstSwitchOpen or \
+		     event_type == pinproc.EventTypeBurstSwitchClosed:
+			self.burst_event(event)
+		elif event_type == pinproc.EventTypeSwitchClosedDebounced or \
+		     event_type == pinproc.EventTypeSwitchOpenDebounced or \
+		     event_type == pinproc.EventTypeSwitchClosedNondebounced or \
+		     event_type == pinproc.EventTypeSwitchOpenNondebounced:
+			self.switch_event(event)
 		else:
-			try:
-				sw = self.switches[event_value]
-				if 'time' in event:
-					sw.hw_timestamp = event['time']
-			except KeyError:
-				self.logger.warning("Received switch event but couldn't find switch %s." % event_value)
-				return
-			
-			if sw.debounce:
-				recvd_state = event_type == pinproc.EventTypeSwitchClosedDebounced
-			else:
-				recvd_state = event_type == pinproc.EventTypeSwitchClosedNondebounced
+			self.other_event(event)
 
-			if sw.state != recvd_state:
-				sw.set_state(recvd_state)
-				self.logger.info("%s:\t%s\t(%s)", sw.name, sw.state_str(),event_type)
-				self.modes.handle_event(event)
-				sw.reset_timer()
-			else:
-				#self.logger.warning("DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s", sw.name, sw.state_str())
-				pass
+	def other_event(self, event):
+		self.logger.warning("Unknown event type received.  Type:%d, Value:%s." % (event['type'], event['value']))
+
+	def switch_event(self, event):
+		event_type = event['type']
+		event_value = event['value']
+		try:
+			sw = self.switches[event_value]
+			if 'time' in event:
+				sw.hw_timestamp = event['time']
+		except KeyError:
+			self.logger.warning("Received switch event but couldn't find switch %s." % event_value)
+			return
+		
+		if sw.debounce:
+			recvd_state = event_type == pinproc.EventTypeSwitchClosedDebounced
+		else:
+			recvd_state = event_type == pinproc.EventTypeSwitchClosedNondebounced
+
+		if sw.state != recvd_state:
+			sw.set_state(recvd_state)
+			self.logger.info("%s:\t%s\t(%s)", sw.name, sw.state_str(),event_type)
+			self.modes.handle_event(event)
+			sw.reset_timer()
+		else:
+			#self.logger.warning("DUPLICATE STATE RECEIVED, IGNORING: %s:\t%s", sw.name, sw.state_str())
+			pass
+
+	def burst_event(self, event):
+		pass
 
 	def update_lamps(self):
 		for mode in reversed(self.modes.modes):
