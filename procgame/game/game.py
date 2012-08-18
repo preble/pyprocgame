@@ -10,7 +10,7 @@ from procgame import config
 from gameitems import *
 from procgame import util
 from mode import *
-from pdb import PDBConfig
+from pdb import PDBConfig, LED
 
 def config_named(name):
 	if not os.path.isfile(name): # If we cannot find this file easily, try searching the config_path:
@@ -45,6 +45,8 @@ class GameController(object):
 	"""An :class:`AttrCollection` of :class:`Driver` objects.  Populated by :meth:`load_config`."""
 	switches = AttrCollection()
 	"""An :class:`AttrCollection` of :class:`Switch` objects.  Populated by :meth:`load_config`."""
+	leds = AttrCollection()
+	"""An :class:`AttrCollection` of :class:`LED` objects.  Populated by :meth:`load_config`."""
 	
 	ball = 0
 	"""The number of the current ball.  A value of 1 represents the first ball; 0 indicates game over."""
@@ -235,7 +237,8 @@ class GameController(object):
 		"""Called by :meth:`load_config` and :meth:`load_config_stream` to process the values in :attr:`config`."""
 		pairs = [('PRCoils', self.coils, Driver), 
 		         ('PRLamps', self.lamps, Driver), 
-		         ('PRSwitches', self.switches, Switch)]
+		         ('PRSwitches', self.switches, Switch),
+		         ('PRLEDs', self.leds, LED) ]
 
 		new_virtual_drivers = []
 		polarity = self.machine_type == pinproc.MachineTypeSternWhitestar or self.machine_type == pinproc.MachineTypeSternSAM or self.machine_type == pinproc.MachineTypePDB
@@ -248,54 +251,62 @@ class GameController(object):
 			pdb_config = PDBConfig(self.proc, self.config)
 		
 		for section, collection, klass in pairs:
-			sect_dict = self.config[section]
-			for name in sect_dict:
-				item_dict = sect_dict[name]
+			if section in self.config:
+				sect_dict = self.config[section]
+				for name in sect_dict:
 
-				# Find the P-ROC number for each item in the YAML sections.  For PDB's
-				# the number is based on the PDB configuration determined above.  For
-				# other machine types, pinproc's decode() method can provide the number.
-				if self.machine_type == pinproc.MachineTypePDB:
-					number = pdb_config.get_proc_number(section, str(item_dict['number']))
-					if number == -1: 
-						self.logger.error('%s Item: %s cannot be controlled by the P-ROC.  Ignoring...', section, name)
-						continue
-				else:
-					number = pinproc.decode(self.machine_type, str(item_dict['number']))
-				item = None
-				if ('bus' in item_dict and item_dict['bus'] == 'AuxPort') or number >= pinproc.DriverCount:
-					item = VirtualDriver(self, name, number, polarity)
-					new_virtual_drivers += [number]
-					
-				else:
-					item = klass(self, name, number)
-					item.yaml_number = str(item_dict['number'])
-					if 'label' in item_dict:
-						item.label = item_dict['label']
-					if 'type' in item_dict:
-						item.type = item_dict['type']
-					
-					if 'tags' in item_dict:
-						tags = item_dict['tags']
-						if type(tags) == str:
-							item.tags = tags.split(',')
-						elif type(tags) == list:
-							item.tags = tags
-						else:
-							self.logger.warning('Configuration item named "%s" has unexpected tags type %s. Should be list or comma-delimited string.' % (name, type(tags)))
+					item_dict = sect_dict[name]
+	
+					# Find the P-ROC number for each item in the YAML sections.  For PDB's
+					# the number is based on the PDB configuration determined above.  For
+					# other machine types, pinproc's decode() method can provide the number.
+					if self.machine_type == pinproc.MachineTypePDB:
+						number = pdb_config.get_proc_number(section, str(item_dict['number']))
+						if number == -1: 
+							self.logger.error('%s Item: %s cannot be controlled by the P-ROC.  Ignoring...', section, name)
+							continue
+					else:
+						number = pinproc.decode(self.machine_type, str(item_dict['number']))
 
-					if klass==Switch:
-						if (('debounce' in item_dict and item_dict['debounce'] == False) or number >= pinproc.SwitchNeverDebounceFirst):
-							item.debounce = False
-					if klass==Driver:
-						if ('pulseTime' in item_dict):
-							item.default_pulse_time = item_dict['pulseTime']	
-						if ('polarity' in item_dict):
-							item.reconfigure(item_dict['polarity'])
-								
+					item = None
+					if ('bus' in item_dict and item_dict['bus'] == 'AuxPort') or number >= pinproc.DriverCount:
+						item = VirtualDriver(self, name, number, polarity)
+						new_virtual_drivers += [number]
+					else:
+						yaml_number = str(item_dict['number'])
+						if klass==LED:
+							number = yaml_number
+						
+						item = klass(self, name, number)
+						item.yaml_number = yaml_number
+						if 'label' in item_dict:
+							item.label = item_dict['label']
+						if 'type' in item_dict:
+							item.type = item_dict['type']
+						
+						if 'tags' in item_dict:
+							tags = item_dict['tags']
+							if type(tags) == str:
+								item.tags = tags.split(',')
+							elif type(tags) == list:
+								item.tags = tags
+							else:
+								self.logger.warning('Configuration item named "%s" has unexpected tags type %s. Should be list or comma-delimited string.' % (name, type(tags)))
+	
+						if klass==Switch:
+							if (('debounce' in item_dict and item_dict['debounce'] == False) or number >= pinproc.SwitchNeverDebounceFirst):
+								item.debounce = False
+						if klass==Driver:
+							if ('pulseTime' in item_dict):
+								item.default_pulse_time = item_dict['pulseTime']	
+							if ('polarity' in item_dict):
+								item.reconfigure(item_dict['polarity'])
+						if klass==LED:
+							if ('polarity' in item_dict):
+								item.invert = not item_dict['polarity']
 
-				collection.add(name, item)
-
+					collection.add(name, item)
+	
 		# In the P-ROC, VirtualDrivers will conflict with regular drivers on the same group.
 		# So if any VirtualDrivers were added, the regular drivers in that group must be changed
 		# to VirtualDrivers as well.
@@ -336,6 +347,11 @@ class GameController(object):
 
 		sect_dict = self.config['PRGame']
 		self.num_balls_total = sect_dict['numBalls']
+
+		print "LEDS"
+		for led in self.leds:
+			print led.name
+			print led.yaml_number
 
 
 	def load_settings(self, template_filename, user_filename):
@@ -564,6 +580,8 @@ class GameController(object):
 			coil.tick()
 		for lamp in self.lamps:
 			lamp.tick()
+		for led in self.leds:
+			led.tick()
 	
 	def run_loop(self, min_seconds_per_cycle=None):
 		"""Called by the programmer to read and process switch events until interrupted."""

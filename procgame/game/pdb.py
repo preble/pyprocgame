@@ -1,6 +1,153 @@
 import logging
 import pinproc
 import re
+import time
+from gameitems import GameItem
+
+proc_output_module = 3
+proc_pdb_bus_addr = 0xC00
+PDLEDs = []
+
+class PDLED(object):
+	def __init__(self, proc, board_addr):
+		self.proc = proc
+		self.board_addr = board_addr
+		self.base_reg_addr = 0x01000000 | (board_addr & 0x3F) << 16
+		self.fade_time = 0
+		print ("Creating PDLED board: %d" % (board_addr))
+	
+	def write_fade_time(self, time):
+		if time != self.fade_time:
+			self.fade_time = time
+			data = self.base_reg_addr | (3 << 8) | (time & 0xFF)	
+			self.proc.write_data(proc_output_module, proc_pdb_bus_addr, data)
+			data = self.base_reg_addr | (4 << 8) | ((time >> 8) & 0xFF)	
+			self.proc.write_data(proc_output_module, proc_pdb_bus_addr, data)
+
+	def write_color(self, index, color):
+		self.write_addr(index)
+		data = self.base_reg_addr | (1 << 8) | (color & 0xFF)	
+		self.proc.write_data(proc_output_module, proc_pdb_bus_addr, data)
+
+	def write_fade_color(self, index, color):
+		self.write_addr(index)
+		data = self.base_reg_addr | (2 << 8) | (color & 0xFF)	
+		self.proc.write_data(proc_output_module, proc_pdb_bus_addr, data)
+
+	def write_addr(self, addr):
+		data = self.base_reg_addr | (addr & 0xFF)	
+		self.proc.write_data(proc_output_module, proc_pdb_bus_addr, data)
+
+class LED(GameItem):
+	"""Represents an LED LED in a pinball machine.
+	
+	Subclass of :class:`GameItem`.
+	"""
+	
+	default_pulse_time = 30
+	"""Default number of milliseconds to pulse this driver.  See :meth:`pulse`."""
+	last_time_changed = 0
+	"""The last :class:`time` that this driver's state was modified."""
+	
+	def __init__(self, game, name, number):
+		GameItem.__init__(self, game, name, number)
+		self.logger = logging.getLogger('game.LED')
+
+		cr_list = number.split('-')
+		self.board_addr = int(cr_list[0][1:])
+		self.addrs = []
+		self.invert = False
+		for color in cr_list[1:]:
+			self.addrs.append(int(color[1:]))
+
+		self.logger.debug("Creating LED: %s, board_addr: %s, color_addrs: %s", self.name, self.board_addr, self.addrs)
+		self.function = 'none'
+
+		pdled_exists = False
+		for pdled in PDLEDs:
+			if pdled.board_addr == self.board_addr:
+				pdled_exists = True
+				self.board = pdled
+				continue
+
+		if not pdled_exists:
+			self.board = PDLED(self.game.proc, self.board_addr)
+			PDLEDs.append(self.board)
+
+	def color(self, color):
+		self.logger.debug('LED %s - color: %s', self.name, color)
+		self.function = 'None'
+		self.change_color(color)
+
+	def change_color(self, color):
+		for i in range(0,3):
+			new_color = self.normalize_color(color[i])
+			self.board.write_color(self.addrs[i],new_color)
+
+	def fade(self, color, time):
+		self.logger.debug('LED %s - color: %s, time: %s', self.name, color, time)
+		self.function = 'None'
+		self.change_fade(color, time)
+
+	def change_fade(self, color, time):
+		self.board.write_fade_time(int(time * 0x100))
+		for i in range(0,3):
+			new_color = self.normalize_color(color[i])
+			self.board.write_fade_color(self.addrs[i],new_color)
+
+	def disable(self):
+		"""Disables (turns off) this LED."""
+		self.function = 'None'
+		self.logger.debug('LED %s - disable', self.name)
+		for i in range(0,3):
+			new_color = self.normalize_color(0)
+			self.board.write_color(self.addrs[i],new_color)
+		self.last_time_changed = time.time()
+
+	def normalize_color(self, color):
+		if self.invert: 
+			return 255-color
+		else:
+			return color
+		
+	def script(self, new_script, runtime=1):
+		"""Script this led to be according to the given `script`."""
+		self.logger.debug("LED %s - script %08x", self.name, new_script)
+
+		self.script_i = -1
+		self.active_script = new_script
+		self.runtime = runtime
+		self.function = 'script'
+		self.start_time = time.time()
+		self.iterate_script()
+
+	def get_script_duration(self, script):
+		time = 0
+		for entry in script:
+			time += entry['duration']
+		return time
+
+	def iterate_script(self):
+		if self.script_i == len(self.active_script)-1:
+			self.script_i = 0
+		else:
+			self.script_i += 1
+
+		entry = self.active_script[self.script_i]
+		if entry['fade_time'] == 0:
+			self.change_color(entry['color'])
+		else:
+			self.change_fade(entry['color'], entry['fade_time'])
+		self.next_action_time = time.time() + entry['duration']
+		self.last_time_changed = time.time()
+
+	def tick(self):
+		if self.function == 'script':
+			if self.runtime == 0 or (time.time() - self.start_time) < self.runtime:
+				if time.time() >= self.next_action_time:
+					self.iterate_script()
+			else:
+				self.function = 'none'
 
 class Switch(object):
 	def __init__(self, pdb, number_str):
