@@ -83,6 +83,7 @@ class LED(GameItem):
 		for i in range(0,3):
 			new_color = self.normalize_color(color[i])
 			self.board.write_color(self.addrs[i],new_color)
+		
 
 	def fade(self, color, time):
 		self.logger.debug('LED %s - color: %s, time: %s', self.name, color, time)
@@ -110,7 +111,7 @@ class LED(GameItem):
 		else:
 			return color
 		
-	def script(self, new_script, runtime=1):
+	def script(self, new_script, runtime=0, repeat=True):
 		"""Script this led to be according to the given `script`."""
 		self.logger.debug("LED %s - script %08x", self.name, new_script)
 
@@ -119,6 +120,8 @@ class LED(GameItem):
 		self.runtime = runtime
 		self.function = 'script'
 		self.start_time = time.time()
+		self.finished = False
+		self.repeat = repeat
 		self.iterate_script()
 
 	def get_script_duration(self, script):
@@ -140,10 +143,14 @@ class LED(GameItem):
 			self.change_fade(entry['color'], entry['fade_time'])
 		self.next_action_time = time.time() + entry['duration']
 		self.last_time_changed = time.time()
+		
+		if self.script_i == len(self.active_script)-1:
+			if not self.repeat:
+				self.finished = True
 
 	def tick(self):
 		if self.function == 'script':
-			if self.runtime == 0 or (time.time() - self.start_time) < self.runtime:
+			if (self.runtime == 0 and not self.finished) or (time.time() - self.start_time) < self.runtime:
 				if time.time() >= self.next_action_time:
 					self.iterate_script()
 			else:
