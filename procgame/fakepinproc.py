@@ -23,6 +23,8 @@ class FakePinPROC(object):
 		for i in range(0, 256):
 			name = 'driver' + str(i)
 			self.drivers.add(name, gameitems.VirtualDriver(None, name, i, True))
+			
+		
 
 	def noop(self, *args, **kwargs):
 		""" Empty method used when no virtual equivalent to a pypinproc method is necessary.  This allows a game to switch back and forth between pypinproc and this fakepinproc class without modification. """
@@ -115,3 +117,78 @@ class FakePinPROC(object):
 			return self.switch_get_states
 		else:
 			return self.noop
+
+class FakePinPROCPlayback(FakePinPROC):
+	
+	_start_time = 0
+	
+	_playback_file = None
+	
+	_events = dict()
+	
+	_event_timestamps = None
+	
+	_game_controller = None
+	
+	def __init__(self, machine_type, game_obj):
+		super(FakePinPROCPlayback, self).__init__(machine_type)
+		
+		self._game_controller = game_obj
+		
+		self._playback_file = open("playback.txt", 'r')
+		self._parse_playback_file()
+		self._playback_file.close()
+		
+		self._event_timestamps = self._events.keys()
+		self._event_timestamps.sort()
+		
+		
+		self._start_time = (time.clock() * 1000)
+		
+		self._states = [0] * 256
+		
+	def switch_get_states(self, *args):
+		""" Method to provide default switch states. """
+		
+		return self._states
+		
+	def get_events(self):
+		events = super(FakePinPROCPlayback, self).get_events()
+		current_time = self._get_current_simulator_time()
+		
+		#print str(len(self._event_timestamps)) + " > 0 and " + str(self._event_timestamps[0]) + "<= " + str(current_time);
+		while len(self._event_timestamps) > 0 and self._event_timestamps[0] <= current_time:
+			evt = self._events[self._event_timestamps[0]]
+			print "[%s] [%s] Firing switch %s" % (str(current_time),str(self._event_timestamps[0]), evt['swname']) 
+			events.append(evt)
+			del self._events[self._event_timestamps[0]]
+			del self._event_timestamps[0]
+			
+		return events
+			
+		
+	def _get_current_simulator_time(self):
+		return (time.clock() * 1000) - self._start_time
+		
+	def _parse_playback_file(self):
+		line = self._playback_file.readline()
+		while line:
+			line = line.strip()
+			evt = line.split("|")
+			if len(evt) == 2:
+				# This is a switch state declaration
+				swnum = int(evt[0])
+				swval = int(evt[1])
+				self._states[swnum] = swval
+			elif len(evt) >= 4:
+				procEvent = dict()
+				procEvent['type'] = int(evt[1])
+				procEvent['value'] = int(evt[2])
+				procEvent['swname'] = evt[3]
+				if len(evt) >= 5:
+					procEvent['time'] = evt[4]
+				
+				self._events[float(evt[0])] = procEvent
+			
+			line = self._playback_file.readline()
+
