@@ -126,18 +126,29 @@ class BasicRecordableGame(BasicGame):
 	def __init__(self, machine_type):
 		super(BasicRecordableGame, self).__init__(machine_type)
 			
+		# Mark down our start time so we get relative simulator timestamps when recording events
 		self._start_time = (time.time() * 1000)
 		
 		
 	def start_recording(self):
+		""" Grabs the current switch matrix state snapshot and begins recording
+		    switch events starting at simulator time zero (0)
+		"""
+		# Grab the current timestamp and key the switch record file off of that timestamp
 		current_time = datetime.datetime.now()
 		timestamp = current_time.strftime("%Y-%m-%d-%H%M")
+		# Open the switch record file for writing.
+		# Note, we don't close it until after the game loop exits
 		self._switch_record_file = open("switch-record-"+timestamp+".txt", 'w')
+		
+		# Grab switch matrix snapshot and write it to the file
 		self.take_switch_snapshot()
+		
 		self._is_currently_recording = True
 		self.logger.info("Recording Started")
 		
 	def stop_recording(self):
+		""" Stops a currently recording switch file and closes it """
 		self._is_currently_recording = False
 		self._switch_record_file.close()
 		self.logger.info("Recording Stopped")
@@ -146,11 +157,18 @@ class BasicRecordableGame(BasicGame):
 		return self._is_currently_recording;
 	
 	def take_switch_snapshot(self):
+		""" Iterates through the entire switch matrix and writes the states of all switches
+		    into the switch record file.
+		"""
 		states = self.proc.switch_get_states()
 		for sw in self.switches:
 			self._switch_record_file.write(str(sw.number) + "|" + str(states[sw.number]) + "\n")
 		
 	def process_event(self, event):
+		""" Called each time an event happens on the machine. This is where
+		    we intercept switch state changes and write them to a file before
+		    passing them down the mode queue
+		"""
 		event_type = event['type']
 		event_value = event['value']
 		if event_type == 99: # CTRL-C to quit
@@ -173,6 +191,7 @@ class BasicRecordableGame(BasicGame):
 			else:
 				recvd_state = event_type == pinproc.EventTypeSwitchClosedNondebounced
 
+			# If we're recording, write the switch event to our file
 			if self.is_recording():
 				self.write_event_to_file(event,sw.name)
 
@@ -184,6 +203,7 @@ class BasicRecordableGame(BasicGame):
 				sw.reset_timer()
 
 	def write_event_to_file(self, event, friendly_switch_name = ""):
+		""" Writes the specified event array to a switch record file """
 		currentTime = (time.time() * 1000) - self._start_time
 		eventStr = str(currentTime) + "|" + str(event['type']) + "|" + str(event['value']) + "|" + friendly_switch_name;
 		if 'time' in event:
