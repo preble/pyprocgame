@@ -129,11 +129,13 @@ class FakePinPROCPlayback(FakePinPROC):
 	_event_timestamps = None
 	
 	_game_controller = None
+
+	_states = [0] * 256
 	
-	def __init__(self, machine_type, game_obj):
+	def __init__(self, machine_type):
 		super(FakePinPROCPlayback, self).__init__(machine_type)
 		
-		self._game_controller = game_obj
+		self._states = [0] * 256
 		
 		self._playback_file = open("playback.txt", 'r')
 		self._parse_playback_file()
@@ -144,8 +146,6 @@ class FakePinPROCPlayback(FakePinPROC):
 		
 		
 		self._start_time = (time.clock() * 1000)
-		
-		self._states = [0] * 256
 		
 	def switch_get_states(self, *args):
 		""" Method to provide default switch states. """
