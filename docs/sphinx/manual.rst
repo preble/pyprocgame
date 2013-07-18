@@ -48,19 +48,24 @@ Fortunately you won't need to understand all of those classes in order to build 
 
 Let's look at a ridiculously simple game implemented with pyprocgame::
 
-	import procgame
-	game = procgame.game.GameController(machine_type='wpc')
+	import pinproc
+	import procgame.game
+	game = procgame.game.GameController(machine_type=pinproc.MachineTypeWPC)
 	game.load_config('mygame.yaml')
 	game.enable_flippers(enable=True)
 	game.run_loop()
 
-This particular game isn't much fun, but it's a good way to demonstrate what a pyprocgame program looks like from the very highest level.  Let's see what's happening line-by-line::
+This particular game isn't particularly deep, but it's a good way to demonstrate what a pyprocgame program looks like from the very highest level.  Let's see what's happening line-by-line::
 
-	import procgame
+    import pinproc
 
-Our first step is to import the pyprocgame module (called "procgame" in the context of Python).  This particular program assumes that pyprocgame is in your sys.path.  If it's not, you will need to modify sys.path. ::
+Our first step is to import the pinproc module, which contains some useful constants. It also contains a lower-level interface to the P-ROC, which pyprocgame relies upon.
 
-	game = procgame.game.GameController(machine_type='wpc')
+	import procgame.game
+
+Next we'll import the procgame.game module, which contains higher level classes used by most games.  This particular program assumes that pyprocgame is in your sys.path.  If it's not, you will need to modify sys.path. ::
+
+	game = procgame.game.GameController(machine_type=pinproc.MachineTypeWPC)
 
 Next we create a new :class:`~procgame.game.GameController` object.  This is the central object in your pinball game.  It maintains collections for all of the switches, lamps and coils, as well as players in the current game.  It also contains a :class:`~procgame.game.ModeQueue`, which we'll cover later.  (If this were an actual full-blown pyprocgame program we would create our own subclass of :class:`~procgame.game.GameController`.)
 

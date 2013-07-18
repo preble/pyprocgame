@@ -23,6 +23,8 @@ class FakePinPROC(object):
 		for i in range(0, 256):
 			name = 'driver' + str(i)
 			self.drivers.add(name, gameitems.VirtualDriver(None, name, i, True))
+			
+		
 
 	def noop(self, *args, **kwargs):
 		""" Empty method used when no virtual equivalent to a pypinproc method is necessary.  This allows a game to switch back and forth between pypinproc and this fakepinproc class without modification. """
@@ -115,3 +117,87 @@ class FakePinPROC(object):
 			return self.switch_get_states
 		else:
 			return self.noop
+
+class FakePinPROCPlayback(FakePinPROC):
+	""" FakePinPROCPlayback offers the functionality to play back switch
+	events from a switch record file taken from real gameplay.
+	
+	The class subclasses fakepinproc to maintain the same functionality and
+	interop by simply changing the proc class in config.yaml
+	"""
+	
+	_start_time = 0 # The simulator start time so we know how to calculate simulator time
+	
+	_playback_file = None # Playback file object that we read from
+	
+	_events = dict() # We store events in a dictionary keyed by their simulator time
+	
+	_event_timestamps = None # Event timestamps are stored in a list so they can be sorted so we access the dictionary in order.
+
+	_states = [0] * 256 # Local switch state repository
+	
+	def __init__(self, machine_type):
+		super(FakePinPROCPlayback, self).__init__(machine_type)
+		
+		self._states = [0] * 256 # Initialize all switch values to 0
+		
+		self._playback_file = open("playback.txt", 'r') # Open our playback file for reading
+		self._parse_playback_file() # Parse the playback file to get our initial switch states and load all events into memory
+		self._playback_file.close() # Close the playback file after reading into memory
+		
+		self._event_timestamps = self._events.keys() # Populate our list of timestamps from the events dictionary keys
+		self._event_timestamps.sort() # Sort timestamps from least to greatest so we access all events in order
+		
+		
+		self._start_time = (time.clock() * 1000) # Mark down the current start time so we know when to process an event
+		
+	def switch_get_states(self, *args):
+		""" Method to provide current simulator switch states. """
+		
+		return self._states
+		
+	def get_events(self):
+		# Populate the events list from our fakepinproc DMD events, etc
+		events = super(FakePinPROCPlayback, self).get_events()
+		# Mark down the current time so we can check whether or not we should fire an event yet
+		current_time = self._get_current_simulator_time()
+
+		# Loop through all events that we should execute now
+		while len(self._event_timestamps) > 0 and self._event_timestamps[0] <= current_time:
+			evt = self._events[self._event_timestamps[0]]
+			print "[%s] [%s] Firing switch %s" % (str(current_time),str(self._event_timestamps[0]), evt['swname']) 
+			# Add the event to the event queue
+			events.append(evt)
+			# Remove the already processed events from our data structures so we don't process them again
+			del self._events[self._event_timestamps[0]]
+			del self._event_timestamps[0]
+			
+		return events
+			
+		
+	def _get_current_simulator_time(self):
+		return (time.clock() * 1000) - self._start_time
+		
+	def _parse_playback_file(self):
+		line = self._playback_file.readline()
+		while line:
+			line = line.strip()
+			evt = line.split("|")
+			if len(evt) == 2:
+				# This is a switch state declaration
+				swnum = int(evt[0])
+				swval = int(evt[1])
+				self._states[swnum] = swval
+			elif len(evt) >= 4:
+				# This is an actual event to schedule
+				procEvent = dict()
+				procEvent['type'] = int(evt[1])
+				procEvent['value'] = int(evt[2])
+				procEvent['swname'] = evt[3]
+				if len(evt) >= 5:
+					procEvent['time'] = evt[4]
+				
+				self._events[float(evt[0])] = procEvent
+			
+			line = self._playback_file.readline()
+

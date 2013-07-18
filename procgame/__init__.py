@@ -11,6 +11,7 @@ __all__ = [
 	'service',
 	'sound',
 	'util',
+	'tools',
 	]
 
 from _version import __version_info__
