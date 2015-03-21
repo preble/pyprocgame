@@ -418,7 +418,8 @@ class GameController(object):
 		#return True
 		
 		"""Enables or disables the flippers AND bumpers."""
-		for flipper in self.config['PRFlippers']:
+		if self.config.has_key('PRFlippers'):
+		  for flipper in self.config['PRFlippers']:
 			self.logger.info("Programming flipper %s", flipper)
 			main_coil = self.coils[flipper+'Main']
 			if self.coils.has_key(flipper+'Hold'): 
@@ -468,7 +469,8 @@ class GameController(object):
 
 	def enable_bumpers(self, enable):
 	
-		for bumper in self.config['PRBumpers']:
+		if self.config.has_key('PRBumpers'):
+		  for bumper in self.config['PRBumpers']:
 			switch_num = self.switches[bumper].number
 			coil = self.coils[bumper]
 
