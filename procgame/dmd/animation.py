@@ -5,7 +5,6 @@ import sqlite3
 import bz2
 import StringIO
 import time
-import Image
 from procgame.dmd import Frame
 from procgame import config
 import logging
