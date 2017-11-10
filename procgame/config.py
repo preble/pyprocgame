@@ -33,14 +33,12 @@ def load():
     curr_path = os.path.expanduser('./config.yaml')
     system_path = os.path.expanduser('~/.pyprocgame/config.yaml')
     if os.path.exists(curr_path):
-         path = curr_path
+        path = curr_path
+    elif os.path.exists(system_path):
+        path = system_path
     else:
-        logger.warning('pyprocgame configuration not found at %s. Checking %s.' % (curr_path, system_path))
-        if os.path.exists(system_path):
-            path = system_path
-        else:
-            logger.warning('pyprocgame configuration not found at %s' % system_path)
-            return
+        logger.error('pyprocgame configuration not found at %s or %s' % (curr_path, system_path))
+        return
     logger.info('pyprocgame configuration found at %s' % path)
     try:
         values = yaml.load(open(path, 'r'))
