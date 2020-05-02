@@ -22,4 +22,3 @@ def encode_multipart_formdata(fields, files):
     body = CRLF.join(L)
     content_type = 'multipart/form-data; boundary=%s' % LIMIT
     return content_type, body
-

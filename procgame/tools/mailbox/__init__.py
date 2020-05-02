@@ -2,5 +2,5 @@ __all__ = [
 	'clientutil',
 	'mailboxclient',
 	]
-from clientutil import *
-from mailboxclient import *
+from .clientutil import *
+from .mailboxclient import *
