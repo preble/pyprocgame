@@ -6,6 +6,6 @@ except ImportError:
 	_pyglet = None
 
 if _pyglet:
-	from desktop_pyglet import Desktop
+	from .desktop_pyglet import Desktop
 else:
-	from desktop_pygame import Desktop
+	from .desktop_pygame import Desktop

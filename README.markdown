@@ -6,7 +6,7 @@ pyprocgame is a high-level pinball development framework for use with P-ROC (Pin
 
 pyprocgame requires the following:
 
-- [Python 2.6](http://python.org/)
+- [Python 3.7+](http://python.org/)
 - [pypinproc](http://github.com/preble/pypinproc) -- native Python extension enabling P-ROC hardware access and native DMD frame manipulation.
 - [setuptools](http://pypi.python.org/pypi/setuptools) -- required for procgame script installation.  Also adds easy\_install, a helpful installer tool for popular Python modules.
 - [pyyaml](http://pyyaml.org/) -- YAML parsing.
@@ -37,7 +37,7 @@ Please see the [pyprocgame Documentation](http://pyprocgame.pindev.org/) site fo
 
 ## License
 
-Copyright (c) 2009-2011 Adam Preble and Gerry Stellenberg
+Copyright (c) 2009-2020 Adam Preble, Gerry Stellenberg, Jimmy Lipham, Michael Ocean & Other Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

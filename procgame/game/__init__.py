@@ -4,7 +4,7 @@ __all__ = [
 	'gameitems',
 	'mode',
 	]
-from game import *
-from gameitems import *
-from basicgame import *
-from mode import *
+from .game import *
+from .gameitems import *
+from .basicgame import *
+from .mode import *
